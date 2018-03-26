@@ -1,0 +1,22 @@
+{
+  "name": "puppetlabs-pdksync",
+  "version": "0.0.0",
+  "author": "Puppet Inc",
+  "summary": "Implements standard changes across puppet modules",
+  "license": "proprietary",
+  "source": "",
+  "project_page": "",
+  "issues_url": "https://tickets.puppetlabs.com/browse/MODULES",
+  "dependencies": [
+
+  ],
+  "operatingsystem_support": [
+
+  ],
+  "requirements": [
+
+  ],
+  "pdk-version": "",
+  "template-url": "",
+  "template-ref": ""
+}

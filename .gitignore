@@ -1,0 +1,5 @@
+tmp/
+modules/
+*.gem
+Gemfile.lock
+.bundle/
