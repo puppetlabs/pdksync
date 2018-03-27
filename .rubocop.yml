@@ -13,6 +13,7 @@ AllCops:
   - pkg/**/*
   - spec/fixtures/**/*
   - vendor/**/*
+  - modules_pdksync/**/*
 Metrics/LineLength:
   Description: People have wide screens, use them.
   Max: 200
@@ -55,10 +56,6 @@ Style/TernaryParentheses:
 Style/TrailingCommaInArguments:
   Description: Prefer always trailing comma on multiline argument lists. This makes
     diffs, and re-ordering nicer.
-  EnforcedStyleForMultiline: comma
-Style/TrailingCommaInLiteral:
-  Description: Prefer always trailing comma on multiline literals. This makes diffs,
-    and re-ordering nicer.
   EnforcedStyleForMultiline: comma
 Style/SymbolArray:
   Description: Using percent style obscures symbolic intent of array's contents.
