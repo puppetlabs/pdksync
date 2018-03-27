@@ -26,4 +26,8 @@ end
   if File.directory?(@output_path)
     puts module_name + ' cloned successfully.'
   end
+
+  # Create a new branch and check it out.
+  @clone.branch('pdkupdate')
+  @clone.branch('pdkupdate').checkout
 end
