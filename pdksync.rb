@@ -26,7 +26,7 @@ require 'open3'
     FileUtils.rm_rf(output_path)
 
     puts "Currently Cloning: #{module_name} to #{output_path}"
-    git_repo = Git.clone("git://github.com/#{namespace}/#{module_name}.git", output_path.to_s)
+    git_repo = Git.clone("https://github.com/#{namespace}/#{module_name}.git", output_path.to_s)
     puts 'Clone complete.'
     git_repo
   end
