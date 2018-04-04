@@ -1,6 +1,4 @@
-
 # !/usr/bin/env ruby
-
 require 'git'
 require 'open3'
 require 'fileutils'
@@ -16,8 +14,7 @@ module PdkSync
     @module_name = 'puppetlabs-motd'
     @output_path = "#{@pdksync_dir}/#{@module_name}"
 
-    FileUtils.mkdir @pdksync_dir unless Dir.exist?(@pdksync_dir)
-    return unless Dir.exist?(@pdksync_dir)
+    create_filespace(@pdksync_dir)
     @git_repo = clone_directory(@namespace, @module_name, @output_path)
     checkout_branch(@timestamp, @git_repo)
     pdk_update(@output_path)
@@ -25,8 +22,13 @@ module PdkSync
     commit_staged_files(@git_repo, @timestamp)
   end
 
+  def self.create_filespace(pdksync_dir)
+    FileUtils.mkdir pdksync_dir unless Dir.exist?(pdksync_dir)
+  end
+
   def self.clone_directory(namespace, module_name, output_path)
     puts 'Cleaning up'
+    # If a local copy already exists it is removed
     FileUtils.rm_rf(output_path)
 
     puts "Currently Cloning: #{module_name} to #{output_path}"
@@ -42,17 +44,24 @@ module PdkSync
   end
 
   def self.pdk_update(output_path)
+    # Navigate into the correct directory
     Dir.chdir(output_path)
     puts Dir.pwd
+    # Removes bundler env values that cause errors with pdk
+    remove_envs = %w[BUNDLE_BIN_PATH BUNDLE_GEMFILE BUNDLER_VERSION RUBYOPT RUBYLIB]
+    remove_envs.each do |env|
+      ENV.delete(env)
+    end
+    # Runs the pdk update command
     stdout, stderr, status = Open3.capture3('pdk update --force')
     if status != 0
-      puts 'Something bad happened'
-      puts '================='
-      puts stderr
-      puts stdout
-      puts '================='
+      raise 'Something bad happened'\
+            '================='\
+            "#{stderr}"\
+            "#{stdout}"\
+            '================='
     else
-      puts 'Echod text into file.txt, REVISIT FOR PDK UPDATE'
+      puts 'Echoed text into file.txt, REVISIT FOR PDK UPDATE'
     end
   end
 
