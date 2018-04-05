@@ -3,6 +3,7 @@ require 'git'
 require 'open3'
 require 'fileutils'
 require 'rake'
+require 'pdk'
 
 # Initialization of running pdksync
 module PdkSync
@@ -47,11 +48,11 @@ module PdkSync
     # Navigate into the correct directory
     Dir.chdir(output_path)
     puts Dir.pwd
-    # Removes bundler env values that cause errors with pdk
-    remove_envs = %w[BUNDLE_BIN_PATH BUNDLE_GEMFILE BUNDLER_VERSION RUBYOPT RUBYLIB]
-    remove_envs.each do |env|
-      ENV.delete(env)
-    end
+    # # Removes bundler env values that can cause errors with pdk, making it unable to find bundler. Seem's to have resolved, code left just in case.
+    # remove_envs = %w[BUNDLE_BIN_PATH BUNDLE_GEMFILE BUNDLER_VERSION RUBYOPT RUBYLIB]
+    # remove_envs.each do |env|
+    #   ENV.delete(env)
+    # end
     # Runs the pdk update command
     stdout, stderr, status = Open3.capture3('pdk update --force')
     if status != 0
