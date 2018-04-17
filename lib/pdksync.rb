@@ -4,6 +4,7 @@ require 'open3'
 require 'fileutils'
 require 'rake'
 require 'pdk'
+require 'octokit'
 
 # Initialization of running pdksync
 module PdkSync
@@ -15,12 +16,16 @@ module PdkSync
     @module_name = 'puppetlabs-motd'
     @output_path = "#{@pdksync_dir}/#{@module_name}"
 
+    @access_token = ''
+
     create_filespace(@pdksync_dir)
     @git_repo = clone_directory(@namespace, @module_name, @output_path)
     checkout_branch(@timestamp, @git_repo)
     pdk_update(@output_path)
     add_staged_files(@git_repo)
     commit_staged_files(@git_repo, @timestamp)
+    setup_client(@access_token)
+    create_pr(@git_repo)
   end
 
   def self.create_filespace(pdksync_dir)
@@ -39,9 +44,10 @@ module PdkSync
   end
 
   def self.checkout_branch(timestamp, git_repo)
-    puts "Creating a branch called: pdksync_#{timestamp}"
+    @branch_name = "pdksync_#{timestamp}"
+    puts "Creating a branch called: #{@branch_name}"
     # TODO: This is awesome, placeholder for SHA of template.
-    git_repo.branch("pdksync_#{timestamp}").checkout
+    git_repo.branch(@branch_name.to_s).checkout
   end
 
   def self.pdk_update(output_path)
@@ -74,5 +80,17 @@ module PdkSync
   def self.commit_staged_files(git_repo, timestamp)
     git_repo.commit("(maint) - pdksync[#{timestamp}]")
     puts "The following commit has been created: pdksync[#{timestamp}]"
+  end
+
+  def self.create_pr(_git_repo)
+    Open3.capture3("git remote add upstream git@github.com:puppetlabs/#{@module_name}.git")
+    # Open3.capture3("git remote add upstream https://github.com/puppetlabs/#{@module_name}/")
+    Open3.capture3("git push upstream #{@branch_name}")
+    @client.create_pull_request("puppetlabs/#{@module_name}", 'master', @branch_name.to_s, "pdksync - #{@branch_name}", 'This is the body.')
+  end
+
+  def self.setup_client(access_token)
+    @client = Octokit::Client.new(access_token: access_token.to_s)
+    @client.user.login
   end
 end
