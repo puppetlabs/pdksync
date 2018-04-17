@@ -11,12 +11,12 @@ module PdkSync
   def self.run_pdksync
     puts 'Running pdksync'
     @timestamp = Time.now.to_i
-    @namespace = 'HelenCampbell'
+    @namespace = 'puppetlabs'
     @pdksync_dir = './modules_pdksync'
-    @module_name = 'puppetlabs-motd'
+    @module_name = 'puppetlabs-testing'
     @output_path = "#{@pdksync_dir}/#{@module_name}"
 
-    @access_token = ''
+    @access_token = ENV['GITHUB_TOKEN']
 
     create_filespace(@pdksync_dir)
     @git_repo = clone_directory(@namespace, @module_name, @output_path)
@@ -83,9 +83,9 @@ module PdkSync
   end
 
   def self.create_pr(_git_repo)
-    Open3.capture3("git remote add upstream git@github.com:puppetlabs/#{@module_name}.git")
+    # Open3.capture3("git remote add upstream git@github.com:puppetlabs/#{@module_name}.git")
     # Open3.capture3("git remote add upstream https://github.com/puppetlabs/#{@module_name}/")
-    Open3.capture3("git push upstream #{@branch_name}")
+    Open3.capture3("git push origin #{@branch_name}")
     @client.create_pull_request("puppetlabs/#{@module_name}", 'master', @branch_name.to_s, "pdksync - #{@branch_name}", 'This is the body.')
   end
 
