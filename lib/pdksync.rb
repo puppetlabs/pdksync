@@ -25,7 +25,8 @@ module PdkSync
     add_staged_files(@git_repo)
     commit_staged_files(@git_repo, @timestamp)
     setup_client(@access_token)
-    create_pr(@git_repo)
+    push_staged_files(@git_repo)
+    create_pr
   end
 
   def self.create_filespace(pdksync_dir)
@@ -38,7 +39,7 @@ module PdkSync
     FileUtils.rm_rf(output_path)
 
     puts "Currently Cloning: #{module_name} to #{output_path}"
-    git_repo = Git.clone("https://github.com/#{namespace}/#{module_name}.git", output_path.to_s)
+    git_repo = Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s)
     puts 'Clone complete.'
     git_repo
   end
@@ -82,10 +83,11 @@ module PdkSync
     puts "The following commit has been created: pdksync[#{timestamp}]"
   end
 
-  def self.create_pr(_git_repo)
-    # Open3.capture3("git remote add upstream git@github.com:puppetlabs/#{@module_name}.git")
-    # Open3.capture3("git remote add upstream https://github.com/puppetlabs/#{@module_name}/")
-    Open3.capture3("git push origin #{@branch_name}")
+  def self.push_staged_files(git_repo)
+    git_repo.push('origin', @branch_name)
+  end
+
+  def self.create_pr
     @client.create_pull_request("puppetlabs/#{@module_name}", 'master', @branch_name.to_s, "pdksync - #{@branch_name}", 'This is the body.')
   end
 
