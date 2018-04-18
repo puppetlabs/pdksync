@@ -1,14 +1,16 @@
 require_relative '../../lib/pdksync'
 require 'git'
 require 'fileutils'
+require 'octokit'
 
 describe PdkSync do
   before(:all) do
     @timestamp = Time.now.to_i
-    @namespace = 'HelenCampbell'
+    @namespace = 'puppetlabs'
     @pdksync_dir = './modules_pdksync'
-    @module_name = 'puppetlabs-motd'
+    @module_name = 'puppetlabs-testing'
     @output_path = "#{@pdksync_dir}/#{@module_name}"
+    @access_token = ENV['GITHUB_TOKEN']
   end
 
   context 'The environment is set up' do
@@ -50,6 +52,13 @@ describe PdkSync do
       PdkSync.commit_staged_files(@git_repo, @timestamp)
       post_commit = @git_repo.log.last
       expect(pre_commit).not_to eq(post_commit)
+    end
+
+    it 'The committed files should be pushed and the PR created' do
+      PdkSync.setup_client(@access_token)
+      PdkSync.push_staged_files(@git_repo)
+      pr = PdkSync.create_pr('puppetlabs/puppetlabs-testing')
+      expect(pr.title).to eq("pdksync - pdksync_#{@timestamp}")
     end
   end
 end
