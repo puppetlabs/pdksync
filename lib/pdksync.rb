@@ -38,7 +38,7 @@ module PdkSync
     puts 'Cleaning up'
     # If a local copy already exists it is removed
     FileUtils.rm_rf(output_path)
-
+    puts '*************************************'
     puts "Currently Cloning: #{module_name} to #{output_path}"
     git_repo = Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s)
     puts 'Clone complete.'
@@ -47,6 +47,7 @@ module PdkSync
 
   def self.checkout_branch(timestamp, git_repo)
     @branch_name = "pdksync_#{timestamp}"
+    puts '*************************************'
     puts "Creating a branch called: #{@branch_name}"
     # TODO: This is awesome, placeholder for SHA of template.
     git_repo.branch(@branch_name.to_s).checkout
@@ -55,7 +56,6 @@ module PdkSync
   def self.pdk_update(output_path)
     # Navigate into the correct directory
     Dir.chdir(output_path)
-    puts Dir.pwd
     # # Removes bundler env values that can cause errors with pdk, making it unable to find bundler. Seem's to have resolved, code left just in case.
     # remove_envs = %w[BUNDLE_BIN_PATH BUNDLE_GEMFILE BUNDLER_VERSION RUBYOPT RUBYLIB]
     # remove_envs.each do |env|
@@ -70,30 +70,39 @@ module PdkSync
             "#{stdout}"\
             '================='
     else
-      puts 'Echoed text into file.txt, REVISIT FOR PDK UPDATE'
+      puts '*************************************'
+      puts 'PDK Update has ran successfully.'
     end
   end
 
   def self.add_staged_files(git_repo)
     git_repo.add(all: true)
+    puts '*************************************'
     puts 'All files have been staged'
   end
 
   def self.commit_staged_files(git_repo, timestamp)
     git_repo.commit("(maint) - pdksync[#{timestamp}]")
+    puts '*************************************'
     puts "The following commit has been created: pdksync[#{timestamp}]"
   end
 
   def self.push_staged_files(git_repo)
     git_repo.push('origin', @branch_name)
+    puts '*************************************'
+    puts 'All staged files have been pushed to the repo, bon voyage!'
   end
 
   def self.create_pr(repo_name)
     @client.create_pull_request(repo_name, 'master', @branch_name.to_s, "pdksync - #{@branch_name}", 'This is the body.')
+    puts '*************************************'
+    puts 'The PR has successfully been created.'
   end
 
   def self.setup_client(access_token)
     @client = Octokit::Client.new(access_token: access_token.to_s)
     @client.user.login
+    puts '*************************************'
+    puts 'Client login has been successful.'
   end
 end
