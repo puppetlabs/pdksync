@@ -14,6 +14,7 @@ module PdkSync
     @namespace = 'puppetlabs'
     @pdksync_dir = './modules_pdksync'
     @module_name = 'puppetlabs-testing'
+    @repo_name = "#{@namespace}/#{@module_name}"
     @output_path = "#{@pdksync_dir}/#{@module_name}"
 
     @access_token = ENV['GITHUB_TOKEN']
@@ -26,7 +27,7 @@ module PdkSync
     commit_staged_files(@git_repo, @timestamp)
     setup_client(@access_token)
     push_staged_files(@git_repo)
-    create_pr
+    create_pr(@repo_name)
   end
 
   def self.create_filespace(pdksync_dir)
@@ -87,8 +88,8 @@ module PdkSync
     git_repo.push('origin', @branch_name)
   end
 
-  def self.create_pr
-    @client.create_pull_request("puppetlabs/#{@module_name}", 'master', @branch_name.to_s, "pdksync - #{@branch_name}", 'This is the body.')
+  def self.create_pr(repo_name)
+    @client.create_pull_request(repo_name, 'master', @branch_name.to_s, "pdksync - #{@branch_name}", 'This is the body.')
   end
 
   def self.setup_client(access_token)
