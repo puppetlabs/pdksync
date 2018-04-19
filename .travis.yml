@@ -11,5 +11,5 @@ rvm:
   - 2.3.3
 
 env:
-  - "CHECK='rspec spec'"
+  - "CHECK='rspec spec/'"
   - "CHECK=rubocop"
