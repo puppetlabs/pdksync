@@ -5,16 +5,18 @@ require 'fileutils'
 require 'rake'
 require 'pdk'
 require 'octokit'
+require 'pdksync/constants'
 
 # This module set's out and controls the pdksync process
 module PdkSync
+  include Constants
   # When a new instance of this module is called, this method will be run in order
   #   to start the pdksync process.
   def self.run_pdksync
     puts 'Running pdksync'
     @params = build_params
     # Temporarily placed here, will me moved to prep method
-    create_filespace(@pdksync_dir)
+    create_filespace(Constants::PDKSYNC_DIR)
 
     sync_repo(@params)
   end
@@ -25,19 +27,17 @@ module PdkSync
   #   representing a different repository.
   # TODO: This method is currently incomplete pending the addition of iteration to the code.
   def self.build_params
-    # Variables that should be the same across all repos, i.e. hardcoded
-    @pdksync_dir = './modules_pdksync'
-    @access_token = ENV['GITHUB_TOKEN']
-    @client = setup_client(@access_token)
+    # Variable never changes therefore has been declared in the constants file
+    access_token = Constants::ACCESS_TOKEN
+    # Setting up the client, making use of the access_token to access github api
+    @client = setup_client(access_token)
     # Variables that will differ for each repo/run, i.e. softcoded
     @timestamp = Time.now.to_i
-    @namespace = 'puppetlabs'
     @module_name = 'puppetlabs-testing'
-
     _params = {
-      pdksync_dir: @pdksync_dir,
+      pdksync_dir: Constants::PDKSYNC_DIR,
+      namespace: Constants::NAMESPACE,
       timestamp: @timestamp,
-      namespace: @namespace,
       module_name: @module_name,
       client: @client
     }
@@ -47,15 +47,6 @@ module PdkSync
   #   and use it in order to begin the pdksync process for said repository.
   # @param [Hash] params - The different parameters needed to run each method called via this one.
   def self.sync_repo(params)
-    # Passed in as a param
-    # pdksync_dir = params[:pdksync_dir]
-    # timestamp = params[:timestamp]
-    # client = params[:client]
-    #
-    # namespace = params[:namespace]
-    # module_name = params[:module_name]
-    # timestamp = params[:timestamp]
-
     # Set in this method from the given params
     @repo_name = "#{params[:namespace]}/#{params[:module_name]}"
     @output_path = "#{params[:pdksync_dir]}/#{params[:module_name]}"
@@ -112,11 +103,6 @@ module PdkSync
   def self.pdk_update(output_path)
     # Navigate into the correct directory
     Dir.chdir(output_path)
-    # # Removes bundler env values that can cause errors with pdk, making it unable to find bundler. Seem's to have resolved, code left just in case.
-    # remove_envs = %w[BUNDLE_BIN_PATH BUNDLE_GEMFILE BUNDLER_VERSION RUBYOPT RUBYLIB]
-    # remove_envs.each do |env|
-    #   ENV.delete(env)
-    # end
     # Runs the pdk update command
     stdout, stderr, status = Open3.capture3('pdk update --force')
     if status != 0
