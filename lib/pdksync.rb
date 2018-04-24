@@ -24,25 +24,32 @@ module PdkSync
 
   # Dynamic variables that will change (when iterating through module)
   @module_name = 'puppetlabs-testing'
-  @repo_name = "#{@namespace}/#{@module_name}"
-  @output_path = "#{@pdksync_dir}/#{@module_name}"
 
   def self.run_pdksync
     puts '*************************************'
     puts 'Running pdksync'
     puts '*************************************'
-    create_filespace(@pdksync_dir)
-    @git_repo = clone_directory(@namespace, @module_name, @output_path)
-    checkout_branch(@git_repo, @timestamp)
-    pdk_update(@output_path)
-    add_staged_files(@git_repo)
-    commit_staged_files(@git_repo, @timestamp)
-    @client = setup_client(@access_token)
-    push_staged_files(@git_repo, @branch_name)
-    create_pr(@client, @repo_name, @branch_name, @create_pr_against, @pr_title, @pr_body)
+    create_filespace
+    @client = setup_client
+
+    # Run an iterative loop for each @module_name
+    sync(@module_name, @client)
   end
 
-  def self.create_filespace(_pdksync_dir)
+  def self.sync(module_name, client)
+    @repo_name = "#{@namespace}/#{module_name}"
+    @output_path = "#{@pdksync_dir}/#{module_name}"
+
+    @git_repo = clone_directory(@namespace, module_name, @output_path)
+    checkout_branch(@git_repo)
+    pdk_update(@output_path)
+    add_staged_files(@git_repo)
+    commit_staged_files(@git_repo)
+    push_staged_files(@git_repo)
+    create_pr(client, @repo_name)
+  end
+
+  def self.create_filespace
     FileUtils.mkdir @pdksync_dir unless Dir.exist?(@pdksync_dir)
   end
 
@@ -51,10 +58,10 @@ module PdkSync
     # If a local copy already exists it is removed
     FileUtils.rm_rf(output_path) if Dir.exist?(output_path)
     puts "Cloning to: #{module_name} to #{output_path}."
-    git_repo = Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # rubocop:disable Lint/UselessAssignment
+    Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   end
 
-  def self.checkout_branch(git_repo, _timestamp)
+  def self.checkout_branch(git_repo)
     puts '*************************************'
     puts "Creating a branch called: #{@branch_name}."
     git_repo.branch(@branch_name.to_s).checkout
@@ -79,30 +86,30 @@ module PdkSync
     puts 'All files have been staged.'
   end
 
-  def self.commit_staged_files(git_repo, _timestamp)
+  def self.commit_staged_files(git_repo)
     git_repo.commit(@commit_message)
     puts '*************************************'
     puts "The following commit has been created: #{@commit_message}."
   end
 
-  def self.push_staged_files(git_repo, _branch_name)
+  def self.push_staged_files(git_repo)
     git_repo.push(@push_file_destination, @branch_name)
     puts '*************************************'
     puts 'All staged files have been pushed to the repo, bon voyage!'
   end
 
-  def self.create_pr(_client, _repo_name, _branch_name, _create_pr_against, _pr_title, _pr_body)
-    pr = @client.create_pull_request(@repo_name, @create_pr_against, @branch_name.to_s, @pr_title, @pr_body)
+  def self.setup_client
+    client = Octokit::Client.new(access_token: @access_token.to_s)
+    client.user.login
+    puts '*************************************'
+    puts 'Client login has been successful.'
+    client
+  end
+
+  def self.create_pr(client, repo_name)
+    pr = client.create_pull_request(repo_name, @create_pr_against, @branch_name.to_s, @pr_title, @pr_body)
     puts '*************************************'
     puts 'The PR has successfully been created.'
     pr
-  end
-
-  def self.setup_client(_access_token)
-    @client = Octokit::Client.new(access_token: @access_token.to_s)
-    @client.user.login
-    puts '*************************************'
-    puts 'Client login has been successful.'
-    @client
   end
 end

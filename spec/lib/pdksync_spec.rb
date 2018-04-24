@@ -18,7 +18,7 @@ describe PdkSync do
 
   context 'The environment is set up' do
     it 'The filespace should exist' do
-      PdkSync.create_filespace(@pdksync_dir)
+      PdkSync.create_filespace
 
       expect(Dir.exist?(@pdksync_dir)).to be(true)
     end
@@ -36,7 +36,7 @@ describe PdkSync do
     end
 
     it 'The repo should be branched' do
-      PdkSync.checkout_branch(@git_repo, @branch_name)
+      PdkSync.checkout_branch(@git_repo)
 
       expect(@git_repo.current_branch).to eq("pdksync_#{@timestamp}")
     end
@@ -52,7 +52,7 @@ describe PdkSync do
 
     it 'The staged files should be committed' do
       pre_commit = @git_repo.log.last
-      PdkSync.commit_staged_files(@git_repo, @timestamp)
+      PdkSync.commit_staged_files(@git_repo)
       post_commit = @git_repo.log.last
       expect(pre_commit).not_to eq(post_commit)
     end
