@@ -28,7 +28,6 @@ module PdkSync
   def self.run_pdksync
     puts '*************************************'
     puts 'Running pdksync'
-    puts '*************************************'
     create_filespace
     @client = setup_client
 
@@ -54,9 +53,11 @@ module PdkSync
   end
 
   def self.clone_directory(namespace, module_name, output_path)
+    puts '*************************************' if Dir.exist?(output_path)
     puts 'Cleaning your environment.' if Dir.exist?(output_path)
     # If a local copy already exists it is removed
     FileUtils.rm_rf(output_path) if Dir.exist?(output_path)
+    puts '*************************************'
     puts "Cloning to: #{module_name} to #{output_path}."
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   end
@@ -109,7 +110,7 @@ module PdkSync
   def self.create_pr(client, repo_name)
     pr = client.create_pull_request(repo_name, @create_pr_against, @branch_name.to_s, @pr_title, @pr_body)
     puts '*************************************'
-    puts 'The PR has successfully been created.'
+    puts 'The PR has been created.'
     pr
   end
 end
