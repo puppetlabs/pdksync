@@ -38,7 +38,7 @@ module PdkSync
   def self.sync(module_name, client)
     @repo_name = "#{@namespace}/#{module_name}"
     @output_path = "#{@pdksync_dir}/#{module_name}"
-
+    clean_env(@output_path) if Dir.exist?(@output_path)
     @git_repo = clone_directory(@namespace, module_name, @output_path)
     checkout_branch(@git_repo)
     pdk_update(@output_path)
@@ -52,11 +52,14 @@ module PdkSync
     FileUtils.mkdir @pdksync_dir unless Dir.exist?(@pdksync_dir)
   end
 
-  def self.clone_directory(namespace, module_name, output_path)
-    puts '*************************************' if Dir.exist?(output_path)
-    puts 'Cleaning your environment.' if Dir.exist?(output_path)
+  def self.clean_env(output_path)
+    puts '*************************************'
+    puts 'Cleaning your environment.'
     # If a local copy already exists it is removed
-    FileUtils.rm_rf(output_path) if Dir.exist?(output_path)
+    FileUtils.rm_rf(output_path)
+  end
+
+  def self.clone_directory(namespace, module_name, output_path)
     puts '*************************************'
     puts "Cloning to: #{module_name} to #{output_path}."
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
