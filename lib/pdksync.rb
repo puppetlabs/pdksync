@@ -11,7 +11,6 @@ require 'json'
 # Initialization of running pdksync
 module PdkSync
   include Constants
-
   @access_token = Constants::ACCESS_TOKEN
   @namespace = Constants::NAMESPACE
   @pdksync_dir = Constants::PDKSYNC_DIR
@@ -36,14 +35,13 @@ module PdkSync
     @output_path = "#{@pdksync_dir}/#{module_name}"
     clean_env(@output_path) if Dir.exist?(@output_path)
     @git_repo = clone_directory(@namespace, module_name, @output_path)
-    move_to_output_path
+    pdk_update(@output_path)
     @template_ref = return_template_ref
+    checkout_branch(@git_repo, @template_ref)
     @pdk_version = return_pdk_version
-    checkout_branch(@git_repo)
-    pdk_update
     add_staged_files(@git_repo)
-    commit_staged_files(@git_repo)
-    push_staged_files(@git_repo)
+    commit_staged_files(@git_repo, @template_ref)
+    push_staged_files(@git_repo, @template_ref)
     create_pr(client, @repo_name)
   end
 
@@ -64,14 +62,15 @@ module PdkSync
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   end
 
-  def self.checkout_branch(git_repo)
+  def self.checkout_branch(git_repo, template_ref)
     puts '*************************************'
-    puts "Creating a branch called: pdksync_#{@template_ref}."
-    git_repo.branch("pdksync_#{@template_ref}".to_s).checkout
+    puts "Creating a branch called: pdksync_#{template_ref}."
+    git_repo.branch("pdksync_#{template_ref}".to_s).checkout
   end
 
-  def self.pdk_update
+  def self.pdk_update(output_path)
     # Runs the pdk update command
+    Dir.chdir(output_path) unless Dir.pwd == output_path
     stdout, stderr, status = Open3.capture3('pdk update --force')
     if status != 0 # rubocop:disable Style/GuardClause
       raise "Unable to run `pdk update`: #{stderr}: #{stdout}"
@@ -81,19 +80,14 @@ module PdkSync
     end
   end
 
-  def self.move_to_output_path
-    Dir.chdir(@output_path) unless Dir.pwd == @output_path
-  end
-
-  def self.return_template_ref
-    file = File.read('metadata.json')
+  def self.return_template_ref(metadata_file = 'metadata.json')
+    file = File.read(metadata_file)
     data_hash = JSON.parse(file)
     data_hash['template-ref']
   end
 
-  def self.return_pdk_version
-    # Dir.chdir(@output_path) unless Dir.pwd == @output_path
-    file = File.read('metadata.json')
+  def self.return_pdk_version(metadata_file = 'metadata.json')
+    file = File.read(metadata_file)
     data_hash = JSON.parse(file)
     data_hash['pdk-version']
   end
@@ -104,14 +98,14 @@ module PdkSync
     puts 'All files have been staged.'
   end
 
-  def self.commit_staged_files(git_repo)
-    git_repo.commit("pdksync_#{@template_ref}")
+  def self.commit_staged_files(git_repo, template_ref)
+    git_repo.commit("pdksync_#{template_ref}")
     puts '*************************************'
-    puts "The following commit has been created: pdksync_#{@template_ref}."
+    puts "The following commit has been created: pdksync_#{template_ref}."
   end
 
-  def self.push_staged_files(git_repo)
-    git_repo.push(@push_file_destination, "pdksync_#{@template_ref}")
+  def self.push_staged_files(git_repo, template_ref)
+    git_repo.push(@push_file_destination, "pdksync_#{template_ref}")
     puts '*************************************'
     puts 'All staged files have been pushed to the repo, bon voyage!'
   end
