@@ -114,6 +114,7 @@ module PdkSync
     git_repo.add(all: true)
     puts '*************************************'
     puts 'All files have been staged.'
+    return 'Files staged.' # rubocop:disable Style/RedundantReturn
   end
 
   def self.commit_staged_files(git_repo, template_ref)
