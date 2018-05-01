@@ -7,6 +7,7 @@ require 'pdk'
 require 'octokit'
 require 'pdksync/constants'
 require 'json'
+require 'yaml'
 
 # Initialization of running pdksync
 module PdkSync
@@ -16,24 +17,39 @@ module PdkSync
   @pdksync_dir = Constants::PDKSYNC_DIR
   @push_file_destination = Constants::PUSH_FILE_DESTINATION
   @create_pr_against = Constants::CREATE_PR_AGAINST
-
-  # Dynamic variables that will change (when iterating through module)
-  @module_name = ['puppetlabs-testing', 'puppetlabs-testing1', 'puppetlabs-testing2']
+  @managed_modules = Constants::MANAGED_MODULES
 
   def self.run_pdksync
     puts '*************************************'
     puts 'Running pdksync'
     create_filespace
     @client = setup_client
+    @module_names = return_modules
     # The current directory is saved for cleanup purposes
     @main_path = Dir.pwd
 
     # Run an iterative loop for each @module_name
-    @module_name.each do |module_name|
+    @module_names.each do |module_name|
       sync(module_name, @client)
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
     end
+  end
+
+  def self.create_filespace
+    FileUtils.mkdir @pdksync_dir unless Dir.exist?(@pdksync_dir)
+  end
+
+  def self.setup_client
+    client = Octokit::Client.new(access_token: @access_token.to_s)
+    client.user.login
+    puts '*************************************'
+    puts 'Client login has been successful.'
+    client
+  end
+
+  def self.return_modules
+    YAML.safe_load(File.open(@managed_modules))
   end
 
   def self.sync(module_name, client)
@@ -51,10 +67,6 @@ module PdkSync
     create_pr(client, @repo_name)
   end
 
-  def self.create_filespace
-    FileUtils.mkdir @pdksync_dir unless Dir.exist?(@pdksync_dir)
-  end
-
   def self.clean_env(output_path)
     puts '*************************************'
     puts 'Cleaning your environment.'
@@ -66,12 +78,6 @@ module PdkSync
     puts '*************************************'
     puts "Cloning to: #{module_name} to #{output_path}."
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
-  end
-
-  def self.checkout_branch(git_repo, template_ref)
-    puts '*************************************'
-    puts "Creating a branch called: pdksync_#{template_ref}."
-    git_repo.branch("pdksync_#{template_ref}".to_s).checkout
   end
 
   def self.pdk_update(output_path)
@@ -90,6 +96,12 @@ module PdkSync
     file = File.read(metadata_file)
     data_hash = JSON.parse(file)
     data_hash['template-ref']
+  end
+
+  def self.checkout_branch(git_repo, template_ref)
+    puts '*************************************'
+    puts "Creating a branch called: pdksync_#{template_ref}."
+    git_repo.branch("pdksync_#{template_ref}".to_s).checkout
   end
 
   def self.return_pdk_version(metadata_file = 'metadata.json')
@@ -114,14 +126,6 @@ module PdkSync
     git_repo.push(@push_file_destination, "pdksync_#{template_ref}")
     puts '*************************************'
     puts 'All staged files have been pushed to the repo, bon voyage!'
-  end
-
-  def self.setup_client
-    client = Octokit::Client.new(access_token: @access_token.to_s)
-    client.user.login
-    puts '*************************************'
-    puts 'Client login has been successful.'
-    client
   end
 
   def self.create_pr(client, repo_name)
