@@ -5,5 +5,6 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     PDKSYNC_DIR = 'modules_pdksync'.freeze
     PUSH_FILE_DESTINATION = 'origin'.freeze
     CREATE_PR_AGAINST = 'master'.freeze
+    MANAGED_MODULES = 'managed_modules.yml'.freeze
   end
 end
