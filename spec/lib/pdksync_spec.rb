@@ -43,7 +43,8 @@ describe PdkSync do
     end
 
     it 'The files should be staged' do
-      PdkSync.add_staged_files(@git_repo)
+      result = PdkSync.add_staged_files(@git_repo)
+      expect(result).to include('Files staged.')
     end
 
     it 'The staged files should be committed' do
