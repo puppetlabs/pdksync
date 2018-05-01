@@ -18,16 +18,22 @@ module PdkSync
   @create_pr_against = Constants::CREATE_PR_AGAINST
 
   # Dynamic variables that will change (when iterating through module)
-  @module_name = 'puppetlabs-testing'
+  @module_name = ['puppetlabs-testing', 'puppetlabs-testing1', 'puppetlabs-testing2']
 
   def self.run_pdksync
     puts '*************************************'
     puts 'Running pdksync'
     create_filespace
     @client = setup_client
+    # The current directory is saved for cleanup purposes
+    @main_path = Dir.pwd
 
     # Run an iterative loop for each @module_name
-    sync(@module_name, @client)
+    @module_name.each do |module_name|
+      sync(module_name, @client)
+      # Cleanup used to ensure that the current directory is reset after each run.
+      Dir.chdir(@main_path) unless Dir.pwd == @main_path
+    end
   end
 
   def self.sync(module_name, client)
