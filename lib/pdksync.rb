@@ -6,21 +6,16 @@ require 'rake'
 require 'pdk'
 require 'octokit'
 require 'pdksync/constants'
+require 'json'
 
 # Initialization of running pdksync
 module PdkSync
   include Constants
-
   @access_token = Constants::ACCESS_TOKEN
-  @timestamp = Constants::TIMESTAMP
   @namespace = Constants::NAMESPACE
   @pdksync_dir = Constants::PDKSYNC_DIR
   @push_file_destination = Constants::PUSH_FILE_DESTINATION
   @create_pr_against = Constants::CREATE_PR_AGAINST
-  @pr_body = Constants::PR_BODY
-  @pr_title = Constants::PR_TITLE
-  @branch_name = Constants::BRANCH_NAME
-  @commit_message = Constants::COMMIT_MESSAGE
 
   # Dynamic variables that will change (when iterating through module)
   @module_name = 'puppetlabs-testing'
@@ -40,11 +35,13 @@ module PdkSync
     @output_path = "#{@pdksync_dir}/#{module_name}"
     clean_env(@output_path) if Dir.exist?(@output_path)
     @git_repo = clone_directory(@namespace, module_name, @output_path)
-    checkout_branch(@git_repo)
     pdk_update(@output_path)
+    @template_ref = return_template_ref
+    checkout_branch(@git_repo, @template_ref)
+    @pdk_version = return_pdk_version
     add_staged_files(@git_repo)
-    commit_staged_files(@git_repo)
-    push_staged_files(@git_repo)
+    commit_staged_files(@git_repo, @template_ref)
+    push_staged_files(@git_repo, @template_ref)
     create_pr(client, @repo_name)
   end
 
@@ -65,16 +62,15 @@ module PdkSync
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   end
 
-  def self.checkout_branch(git_repo)
+  def self.checkout_branch(git_repo, template_ref)
     puts '*************************************'
-    puts "Creating a branch called: #{@branch_name}."
-    git_repo.branch(@branch_name.to_s).checkout
+    puts "Creating a branch called: pdksync_#{template_ref}."
+    git_repo.branch("pdksync_#{template_ref}".to_s).checkout
   end
 
   def self.pdk_update(output_path)
-    # Navigate into the correct directory
-    Dir.chdir(output_path)
     # Runs the pdk update command
+    Dir.chdir(output_path) unless Dir.pwd == output_path
     stdout, stderr, status = Open3.capture3('pdk update --force')
     if status != 0 # rubocop:disable Style/GuardClause
       raise "Unable to run `pdk update`: #{stderr}: #{stdout}"
@@ -84,20 +80,32 @@ module PdkSync
     end
   end
 
+  def self.return_template_ref(metadata_file = 'metadata.json')
+    file = File.read(metadata_file)
+    data_hash = JSON.parse(file)
+    data_hash['template-ref']
+  end
+
+  def self.return_pdk_version(metadata_file = 'metadata.json')
+    file = File.read(metadata_file)
+    data_hash = JSON.parse(file)
+    data_hash['pdk-version']
+  end
+
   def self.add_staged_files(git_repo)
     git_repo.add(all: true)
     puts '*************************************'
     puts 'All files have been staged.'
   end
 
-  def self.commit_staged_files(git_repo)
-    git_repo.commit(@commit_message)
+  def self.commit_staged_files(git_repo, template_ref)
+    git_repo.commit("pdksync_#{template_ref}")
     puts '*************************************'
-    puts "The following commit has been created: #{@commit_message}."
+    puts "The following commit has been created: pdksync_#{template_ref}."
   end
 
-  def self.push_staged_files(git_repo)
-    git_repo.push(@push_file_destination, @branch_name)
+  def self.push_staged_files(git_repo, template_ref)
+    git_repo.push(@push_file_destination, "pdksync_#{template_ref}")
     puts '*************************************'
     puts 'All staged files have been pushed to the repo, bon voyage!'
   end
@@ -111,7 +119,8 @@ module PdkSync
   end
 
   def self.create_pr(client, repo_name)
-    pr = client.create_pull_request(repo_name, @create_pr_against, @branch_name.to_s, @pr_title, @pr_body)
+    pr = client.create_pull_request(repo_name, @create_pr_against, "pdksync_#{@template_ref}".to_s, "pdksync - Update using #{@pdk_version}",
+      "pdk version: `#{@pdk_version}` \n pdk template ref: `#{@template_ref}`") # rubocop:disable Layout/AlignParameters
     puts '*************************************'
     puts 'The PR has been created.'
     pr
