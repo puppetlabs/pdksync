@@ -14,39 +14,42 @@ describe PdkSync do
     @repo_name = "#{@namespace}/#{@module_name}"
   end
 
-  context 'The environment is set up' do
-    it 'The filespace should exist' do
+  context 'env' do
+    it 'has a filespace' do
       FileUtils.rm_rf(@pdksync_dir)
       PdkSync.create_filespace
       expect(Dir.exist?(@pdksync_dir)).to be(true)
     end
 
-    it 'The repo should be cloned' do
+    it 'has cloned the repo' do
       PdkSync.clone_directory(@namespace, @module_name, @output_path)
       expect(Dir.exist?(@output_path)).to be(true)
     end
   end
 
-  context 'The changes are made and committed' do
+  context 'run' do
     before(:all) do
       @git_repo = Git.open(@output_path)
     end
 
-    it 'The repo should be branched' do
+    it 'has created a branch' do
       PdkSync.checkout_branch(@git_repo, @timestamp)
       expect(@git_repo.current_branch).to include(@timestamp.to_s)
     end
 
-    it 'There should be an update report' do
+    it 'has created a report' do
+      FileUtils.rm_rf('update_report.txt')
       PdkSync.pdk_update(@output_path)
       expect(File.exist?('update_report.txt')).to be(true)
     end
 
-    it 'The files should be staged' do
+    it 'has staged files' do
       PdkSync.add_staged_files(@git_repo)
+      result = Open3.capture3('git status')
+      expect(result).to include(%r{Changes to be committed})
     end
 
-    it 'The staged files should be committed' do
+    it 'has committed files' do
       pre_commit = @git_repo.log.last
       PdkSync.commit_staged_files(@git_repo, @template_ref)
       post_commit = @git_repo.log.last
