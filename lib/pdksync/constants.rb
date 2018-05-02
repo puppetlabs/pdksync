@@ -1,3 +1,5 @@
+# @summary
+#   A module used to contain a set of variables that are expected to remain constant across all iterations of the main pdksync module.
 module PdkSync # rubocop:disable Style/ClassAndModuleChildren
   module Constants
     ACCESS_TOKEN = ENV['GITHUB_TOKEN'].freeze
