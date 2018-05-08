@@ -67,6 +67,8 @@ module PdkSync
     puts '*************************************'
     puts 'Client login has been successful.'
     client
+  rescue ArgumentError
+    raise "Access Token not set up correctly - Use export 'GITHUB_TOKEN=<put your token here>' to set it."
   end
 
   # @summary
@@ -79,6 +81,8 @@ module PdkSync
 
   # @summary
   #   This method when called will take in a module name and an octokit client and use them to run the pdksync process on the given module.
+  #   If @git_repo is not set the clone will have failed, in which case we avoid further action. If the pdk update fails it will move to the
+  #   next module.
   # @param [String] module_name
   #   The name of the module to be put through the process
   # @param [Octokit::Client] client
@@ -88,14 +92,17 @@ module PdkSync
     @output_path = "#{@pdksync_dir}/#{module_name}"
     clean_env(@output_path) if Dir.exist?(@output_path)
     @git_repo = clone_directory(@namespace, module_name, @output_path)
-    pdk_update(@output_path)
-    @template_ref = return_template_ref
-    checkout_branch(@git_repo, @template_ref)
-    @pdk_version = return_pdk_version
-    add_staged_files(@git_repo)
-    commit_staged_files(@git_repo, @template_ref)
-    push_staged_files(@git_repo, @template_ref)
-    create_pr(client, @repo_name, @template_ref, @pdk_version)
+    unless @git_repo.nil? # rubocop:disable Style/GuardClause
+      if pdk_update(@output_path) == 0 # rubocop:disable Style/NumericPredicate
+        @template_ref = return_template_ref
+        checkout_branch(@git_repo, @template_ref)
+        @pdk_version = return_pdk_version
+        add_staged_files(@git_repo)
+        commit_staged_files(@git_repo, @template_ref)
+        push_staged_files(@git_repo, @template_ref, @repo_name)
+        create_pr(client, @repo_name, @template_ref, @pdk_version)
+      end
+    end
   end
 
   # @summary
@@ -123,22 +130,28 @@ module PdkSync
     puts '*************************************'
     puts "Cloning to: #{module_name} to #{output_path}."
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
+  rescue Git::GitExecuteError
+    puts '*************************************'
+    puts "(FAILURE) Cloning for #{module_name} failed - check the module name and namespace are correct."
   end
 
   # @summary
-  #   This method when called will run the 'pdk update --force' command at the given location, with an error message being thrown if it is now successful.
+  #   This method when called will run the 'pdk update --force' command at the given location, with an error message being thrown if it is not successful.
   # @param [String] output_path
   #   The location that the command is to be run from.
+  # @return [Integer]
+  #   The status code of the pdk update run.
   def self.pdk_update(output_path)
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    stdout, stderr, status = Open3.capture3('pdk update --force')
-    if status != 0 # rubocop:disable Style/GuardClause
-      raise "Unable to run `pdk update`: #{stderr}: #{stdout}"
+    puts '*************************************'
+    _stdout, stderr, status = Open3.capture3('pdk update --force')
+    if status != 0
+      puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
     else
-      puts '*************************************'
       puts 'PDK Update has ran.'
     end
+    status
   end
 
   # @summary
@@ -205,10 +218,15 @@ module PdkSync
   #   A git object representing the local repository againt which the push is to be made.
   # @param [String] template_ref
   #   The unique reference that that represents the template the update has ran against.
-  def self.push_staged_files(git_repo, template_ref)
+  # @param [String] repo_name
+  #   The name of the repository on which the commit is to be made.
+  def self.push_staged_files(git_repo, template_ref, repo_name)
     git_repo.push(@push_file_destination, "pdksync_#{template_ref}")
     puts '*************************************'
     puts 'All staged files have been pushed to the repo, bon voyage!'
+  rescue StandardError
+    puts '*************************************'
+    puts "(FAILURE) Pushing to #{@push_file_destination} has failed for #{repo_name}"
   end
 
   # @summary
@@ -229,5 +247,8 @@ module PdkSync
     puts '*************************************'
     puts 'The PR has been created.'
     pr
+  rescue StandardError
+    puts '*************************************'
+    puts "(FAILURE) PR creation has failed for #{repo_name}"
   end
 end
