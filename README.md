@@ -13,7 +13,7 @@ Table of Contents
 Overview
 --------
 
-Pdksync was first created in order to allow for a more efficient method o running a 'PDK Update' command against the various repositories that we manage, thus keeping them up to date with the changes made to the pdk.
+Pdksync was first created in order to allow for a more efficient method of running a `pdk update` command against the various repositories that we manage, keeping them up to date with the changes made to the `pdk`.
 
 Usage
 ----------
@@ -32,7 +32,7 @@ How It Works
 
 Pdksync is a gem that works to clone, update and push module repositories. It currently expects to be activated from within the pdksync module itself.
 
-The gem first takes in a file, 'managed_modules.yml', stored within the gem that list's out all of the repositories that need to be updated and then proceeds to, one after another, clone them down so that a local copy exists. This local copy then has the update command ran against it, the subsequent changes being promptly added into a commit, with it's own unique branch, that is then pushed back to the remote master from which the local copy was originally cloned. A pull request is then made to merge the commit to the master branch, thus finishing the process for this repo and causing the gem to begin to clone the next repository.
+The gem first takes in a file, `managed_modules.yml`, stored within the gem that list's out all of the repositories that need to be updated and then proceeds to, one after another, clone them down so that a local copy exists. This local copy then has the update command ran against it, the subsequent changes being promptly added into a commit, with it's own unique branch, that is then pushed back to the remote master from which the local copy was originally cloned. A pull request is then made to merge the commit to the master branch, thus finishing the process for this repo and causing the gem to begin to clone the next repository.
 
 Installing
 ----------
@@ -45,11 +45,11 @@ bundle install --path .bundle/gems/
 Workflow
 --------
 
-As it stands it currently runs with no additional arguments and if you wish to alter how it runs you must make alterations to either the 'constants.rb' or 'managed_modules.yml'.
+As it stands it currently runs with no additional arguments and if you wish to alter how it runs you must make alterations to either the `constants.rb` or `managed_modules.yml`.
 
 ### Managed Modules
 
-This module as it currently works, runs through a preset array of modules, this array being set within the 'managed_moudles.yml' file. This file utilises a simple yaml style format in order to set out the different module names, the format being as shown below:
+This module as it currently works, runs through a preset array of modules, this array being set within the `managed_modules.yml` file. This file makes use of a simple `yaml` style format in order to set out the different module names, the format is shown below:
 
 ```
 ---
@@ -57,7 +57,7 @@ This module as it currently works, runs through a preset array of modules, this 
 - puppetlabs-stdlib
 - puppetlabs-mysql
 ```
-In order to add a module one must simply place it on the list, and remove it from the list to accomplish the opposite.
+In order to add a module you must simply add it to the list, and remove it from the list to accomplish the opposite.
 
 Contributing
 --------
