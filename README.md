@@ -18,7 +18,7 @@ Pdksync was first created in order to allow for a more efficient method of runni
 Usage
 ----------
 
-To use pdksync you must first either clone down a copy of the module itself or install it as a gem. You must then set up the environment by exporting a github token, as shown below:
+To use pdksync you must first either clone the github repo or install it as a gem. You must then set up the environment by exporting a github token, as shown below:
 ```
 export GITHUB_TOKEN=<access_token>
 ```
