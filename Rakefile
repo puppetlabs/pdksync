@@ -6,3 +6,8 @@ task :pdksync do
   puts "Script has been ran."
 end
 
+desc 'Run pdksync cleanup'
+task :pdksync_cleanup do
+  PdkSync::clean_branches
+  puts "Script has been ran."
+end

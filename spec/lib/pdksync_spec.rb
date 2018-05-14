@@ -51,18 +51,20 @@ describe PdkSync do
 
     it 'has committed files' do
       pre_commit = @git_repo.log.last
-      PdkSync.commit_staged_files(@git_repo, @template_ref)
+      PdkSync.commit_staged_files(@git_repo, @timestamp)
       post_commit = @git_repo.log.last
       expect(pre_commit).not_to eq(post_commit)
     end
   end
   # rubocop:disable Layout/CommentIndentation
-    # Test fails if ran from travis due to lack of proper credentials
-    # it 'The committed files should be pushed and the PR created', unless: @access_token == '' do
-    #   @client = PdkSync.setup_client(@access_token)
-    #   PdkSync.push_staged_files(@git_repo, @branch_name)
-    #   pr = PdkSync.create_pr(@client, @repo_name, @branch_name)
-    #   expect(pr.title).to eq("pdksync - pdksync_#{@timestamp}")
-    # end
+  # # Test fails if ran from travis due to lack of proper credentials
+  # it 'The committed files should be pushed and the PR created', unless: @access_token == '' do
+  #   @client = PdkSync.setup_client
+  #   PdkSync.push_staged_files(@git_repo, @timestamp, @repo_name)
+  #   pr = PdkSync.create_pr(@client, @repo_name, @timestamp, @timstamp)
+  #   expect(pr.title).to eq("pdksync - pdksync_#{@timestamp}")
+  #   #Branch is now cleaned
+  #   PdkSync.delete_branch(@client, @repo_name, "pdksync_#{@timestamp}".to_s)
   # end
+
 end
