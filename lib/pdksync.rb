@@ -35,8 +35,7 @@ module PdkSync
   # @summary
   #   When a new instance of this module is called, this method will be run in order to start the pdksync process.
   def self.run_pdksync
-    puts '*************************************'
-    puts 'Running pdksync'
+    puts 'Beginning pdksync run'
     create_filespace
     @client = setup_client
     @module_names = return_modules
@@ -45,6 +44,8 @@ module PdkSync
 
     # Run an iterative loop for each @module_name
     @module_names.each do |module_name|
+      puts '*************************************'
+      puts "Syncing #{module_name}"
       sync(module_name, @client)
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
@@ -64,7 +65,6 @@ module PdkSync
   def self.setup_client
     client = Octokit::Client.new(access_token: @access_token.to_s)
     client.user.login
-    puts '*************************************'
     puts 'Client login has been successful.'
     client
   rescue ArgumentError
@@ -110,7 +110,6 @@ module PdkSync
   # @param [String] output_path
   #   The repository that is to be deleted.
   def self.clean_env(output_path)
-    puts '*************************************'
     puts 'Cleaning your environment.'
     # If a local copy already exists it is removed
     FileUtils.rm_rf(output_path)
@@ -127,11 +126,9 @@ module PdkSync
   # @return [Git::Base]
   #   A git object representing the local repository.
   def self.clone_directory(namespace, module_name, output_path)
-    puts '*************************************'
     puts "Cloning to: #{module_name} to #{output_path}."
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   rescue Git::GitExecuteError
-    puts '*************************************'
     puts "(FAILURE) Cloning for #{module_name} failed - check the module name and namespace are correct."
   end
 
@@ -144,7 +141,6 @@ module PdkSync
   def self.pdk_update(output_path)
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    puts '*************************************'
     _stdout, stderr, status = Open3.capture3('pdk update --force')
     if status != 0
       puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
@@ -173,7 +169,6 @@ module PdkSync
   # @param [String] template_ref
   #   The unique template_ref that is used as part of the branch name.
   def self.checkout_branch(git_repo, template_ref)
-    puts '*************************************'
     puts "Creating a branch called: pdksync_#{template_ref}."
     git_repo.branch("pdksync_#{template_ref}".to_s).checkout
   end
@@ -196,7 +191,6 @@ module PdkSync
   #   A git object representing the local repository to be staged.
   def self.add_staged_files(git_repo)
     git_repo.add(all: true)
-    puts '*************************************'
     puts 'All files have been staged.'
   end
 
@@ -208,7 +202,6 @@ module PdkSync
   #   The unique template_ref that is used as part of the commit name.
   def self.commit_staged_files(git_repo, template_ref)
     git_repo.commit("pdksync_#{template_ref}")
-    puts '*************************************'
     puts "The following commit has been created: pdksync_#{template_ref}."
   end
 
@@ -222,10 +215,8 @@ module PdkSync
   #   The name of the repository on which the commit is to be made.
   def self.push_staged_files(git_repo, template_ref, repo_name)
     git_repo.push(@push_file_destination, "pdksync_#{template_ref}")
-    puts '*************************************'
     puts 'All staged files have been pushed to the repo, bon voyage!'
   rescue StandardError
-    puts '*************************************'
     puts "(FAILURE) Pushing to #{@push_file_destination} has failed for #{repo_name}"
   end
 
@@ -244,11 +235,9 @@ module PdkSync
                                     "pdksync_#{template_ref}".to_s,
                                     "pdksync - Update using #{pdk_version}",
                                     "pdk version: `#{pdk_version}` \n pdk template ref: `#{template_ref}`")
-    puts '*************************************'
     puts 'The PR has been created.'
     pr
   rescue StandardError
-    puts '*************************************'
     puts "(FAILURE) PR creation has failed for #{repo_name}"
   end
 end
