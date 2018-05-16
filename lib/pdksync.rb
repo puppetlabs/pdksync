@@ -142,10 +142,11 @@ module PdkSync
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
     _stdout, stderr, status = Open3.capture3('pdk update --force')
+    #_stdout, stderr, status = Open3.capture3('pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates')
     if status != 0
       puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
     else
-      puts 'PDK Update has ran.'
+      puts 'PDK Update has run.'
     end
     status
   end
