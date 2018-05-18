@@ -94,6 +94,7 @@ module PdkSync
     @git_repo = clone_directory(@namespace, module_name, @output_path)
     unless @git_repo.nil? # rubocop:disable Style/GuardClause
       if pdk_update(@output_path) == 0 # rubocop:disable Style/NumericPredicate
+        rubocop_autofix(@output_path)
         @template_ref = return_template_ref
         checkout_branch(@git_repo, @template_ref)
         @pdk_version = return_pdk_version
@@ -147,6 +148,23 @@ module PdkSync
       puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
     else
       puts 'PDK Update has run.'
+    end
+    status
+  end
+
+  # @summary
+  #   This method when called will run the 'pdk validate -a' command at the given location, with an error message being thrown if it is not successful.
+  # @param [String] output_path
+  #   The location that the command is to be run from.
+  # @return [Integer]
+  #   The status code of the pdk validate run.
+  def self.rubocop_autofix(output_path)
+    # Runs the pdk validate command
+    _stdout, stderr, status = Open3.capture3('pdk validate -a')
+    if status != 0
+      puts "(FAILURE) Something went wrong with rubocop: #{stderr}"
+    else
+      puts 'Rubocop has run successfully.'
     end
     status
   end
