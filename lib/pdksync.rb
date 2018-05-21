@@ -149,7 +149,8 @@ module PdkSync
     else
       puts 'PDK Update has run.'
     end
-    status
+    return status unless status == 0 && _stdout.include?("No changes required.")
+    puts "No commits since last run."
   end
 
   # @summary
