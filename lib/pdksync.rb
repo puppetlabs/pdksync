@@ -147,7 +147,7 @@ module PdkSync
     if status != 0
       puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
     else
-      puts 'PDK Update has run.'
+      puts 'PDK Update has ran.'
     end
     return status unless status == 0 && _stdout.include?("No changes required.")
     puts "No commits since last run."
