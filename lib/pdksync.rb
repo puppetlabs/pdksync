@@ -259,4 +259,49 @@ module PdkSync
   rescue StandardError
     puts "(FAILURE) PR creation has failed for #{repo_name}"
   end
+
+  # @summary
+  #   This method when called will retrieve a list of module names and then proceed to iterate
+  #     through them, removing any branch that contains the word 'pdksync'.
+  def self.clean_branches
+    puts 'Beginning pdksync cleanup run'
+    @client = setup_client
+    @module_names = return_modules
+
+    @module_names.each do |module_name|
+      puts '*************************************'
+      puts "Cleaning #{module_name}"
+      @repo_name = "#{@namespace}/#{module_name}"
+      retrieve_branches(@client, @repo_name).each do |branch|
+        delete_branch(@client, @repo_name, branch.name) if branch.name.include? 'pdksync'
+      end
+    end
+
+  end
+
+  # @summary
+  #   This method when called will retrieve any and all branches from the given repository.
+  # @param [Octokit::Client] client
+  #   The octokit client used to gain access to and manipulate the repository.
+  # @param [String] repo_name
+  #   The name of the repository from which the branches are to be retrieved.
+  # @return [Array]
+  #   An array containing all existing branches
+  def self.retrieve_branches(client, repo_name)
+    puts "Retrieving branches from #{repo_name}"
+    client.branches(repo_name)
+  end
+
+  # @summary
+  #   This method when called will delete any preexisting branch on the given repository that matches the given name.
+  # @param [Octokit::Client] client
+  #   The octokit client used to gain access to and manipulate the repository.
+  # @param [String] repo_name
+  #   The name of the repository from which the branch is to be deleted.
+  # @param [String] branch_name
+  #   The name of the branch that is to be deleted.
+  def self.delete_branch(client, repo_name, branch_name)
+    puts "Removing '#{branch_name}' from '#{repo_name}'"
+    client.delete_branch(repo_name, branch_name)
+  end
 end
