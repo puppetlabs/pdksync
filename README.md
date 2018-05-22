@@ -11,12 +11,12 @@ Table of Contents
 6. [Migrating from modulesync to pdksync](#migrating-from-modulesync-to-pdksync)
 7. [Contributing](#contributing)
 
-Overview
+### Overview
 --------
 
 Pdksync was first created in order to allow for a more efficient method of running a `pdk update` command against the various repositories that we manage, keeping them up to date with the changes made to the `pdk`. Made as a solution for converted modules that can no longer run with modulesync.
 
-Usage
+### Usage
 ----------
 
 *Please Note:* This tool creates a 'live' pull request against the master branch of the module it's running against (which are defined in `managed_modules.yml`). If you wish to run this tool ensure this file properly reflects the modules you wish to run against before doing so. Also ensure `constants.rb` is up to date with the correct namespace your modules reside in.
@@ -34,19 +34,20 @@ Once this is done you may then call the built in rake task to run the module.
 bundle exec rake pdksync
 ```
 
-How It Works
+### How It Works
 ------------
 
 Pdksync is a gem that works to clone, update and push module repositories. It currently expects to be activated from within the pdksync module itself.
 
 The gem first takes in a file, `managed_modules.yml`, stored within the gem that list's out all of the repositories that need to be updated and then proceeds to, one after another, clone them down so that a local copy exists. This local copy then has the update command ran against it, the subsequent changes being promptly added into a commit, with it's own unique branch, that is then pushed back to the remote master from which the local copy was originally cloned. A pull request is then made to merge the commit to the master branch, thus finishing the process for this repo and causing the gem to begin to clone the next repository.
 
-Workflow
+### Workflow
 --------
 
 As it stands it currently runs with no additional arguments and if you wish to alter how it runs you must make alterations to either the `constants.rb` or `managed_modules.yml`.
 
 ### Managed Modules
+----------
 
 This module as it currently works, runs through a preset array of modules, this array being set within the `managed_modules.yml` file. This file makes use of a simple `yaml` style format in order to set out the different module names, the format is shown below:
 
@@ -60,6 +61,7 @@ In order to add a module you must simply add it to the list, and remove it from 
 
 ### Migrating from modulesync to pdksync
 --------
+
 If your modules are currently managed by modulesync and you are interested in using the `pdk` and also keep your modules up to date then this is the section that you will be interested in!
 
 #### Terminology:
@@ -126,6 +128,11 @@ Gemfile:
 7) Commit the changes that the `pdk convert` has made and create your PR.
 
 8) Remove your module from being managed via `modulesync` and you can start making use of `pdksync` going forward! Yay no more manual PR creation.
+
+### Compatibility
+----------
+
+Currently this tool has been ran and tested on OSX and linux. **It does not run on Windows.**
 
 ### Contributing
 --------

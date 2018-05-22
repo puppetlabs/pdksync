@@ -1,4 +1,31 @@
 ---
-- puppetlabs-testing
-- puppetlabs-testing1
-- puppetlabs-testing2
+- puppetlabs-accounts
+- puppetlabs-apache
+- puppetlabs-apt
+- puppetlabs-certregen
+- puppetlabs-firewall
+- puppetlabs-haproxy
+- puppetlabs-ibm_installation_manager
+- puppetlabs-java
+- puppetlabs-mysql
+- puppetlabs-ntp
+- puppetlabs-postgresql
+# - puppetlabs-satellite_pe_tools
+- puppetlabs-tagmail
+- puppetlabs-tomcat
+- puppetlabs-translate
+# - puppetlabs-vcsrepo
+- puppetlabs-websphere_application_server
+- puppetlabs-bootstrap
+- puppetlabs-concat
+- puppetlabs-execute
+- puppetlabs-facter_task
+- puppetlabs-hocon
+- puppetlabs-inifile
+# - puppetlabs-java_ks
+- puppetlabs-motd
+- puppetlabs-package
+- puppetlabs-puppet_conf
+- puppetlabs-resource
+- puppetlabs-service
+- puppetlabs-stdlib
