@@ -129,7 +129,7 @@ Gemfile:
 
 8) Remove your module from being managed via `modulesync` and you can start making use of `pdksync` going forward! Yay no more manual PR creation.
 
-For more information on keeping your module up to date with the PDK check out [Helens blog post](https://puppet.com/blog/keep-your-puppet-modules-up-to-date-pdk).
+For more information on keeping your module up to date with the PDK check out [Helens blog post](https://puppet.com/blog/guide-converting-module-pdk).
 
 ### Compatibility
 ----------
