@@ -132,7 +132,7 @@ Gemfile:
 ### Compatibility
 ----------
 
-Currently this tool has been ran and tested on OSX and linux. **It does not run on Windows.**
+This tool has been developed and tested on OSX and linux. **It currently does not run on Windows.**
 
 ### Contributing
 --------
