@@ -25,7 +25,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'pry'
 
   spec.add_runtime_dependency 'git', '~>1.3'
-  # Dependency removed as the inbuilt puppet dependency conflicts with the pdk
-  # spec.add_runtime_dependency 'puppet-blacksmith', '~>3.0'
-  spec.add_runtime_dependency 'pdk'
+  spec.add_runtime_dependency 'pdk', '>= 1.4.1'
 end
