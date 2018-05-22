@@ -94,7 +94,6 @@ module PdkSync
     @git_repo = clone_directory(@namespace, module_name, @output_path)
     unless @git_repo.nil? # rubocop:disable Style/GuardClause
       if pdk_update(@output_path) == 0 # rubocop:disable Style/NumericPredicate
-        rubocop_autofix(@output_path)
         @template_ref = return_template_ref
         checkout_branch(@git_repo, @template_ref)
         @pdk_version = return_pdk_version
@@ -134,6 +133,23 @@ module PdkSync
   end
 
   # @summary
+  #   This method when called will run the 'pdk convert' command at the given location, with an error message being thrown if it is not successful.
+  # @param [String] output_path
+  #   The location that the command is to be run from.
+  # @return [Integer]
+  #   The status code of the pdk converty run.
+  def self.pdk_convert(output_path)
+    Dir.chdir(output_path) unless Dir.pwd == output_path
+    _stdout, stderr, status = Open3.capture3('pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates')
+    if status != 0
+      puts "(FAILURE) Unable to run `pdk convert`: #{stderr}"
+    else
+      puts 'PDK Convert has run.'
+    end
+    status
+  end
+
+  # @summary
   #   This method when called will run the 'pdk update --force' command at the given location, with an error message being thrown if it is not successful.
   # @param [String] output_path
   #   The location that the command is to be run from.
@@ -143,7 +159,6 @@ module PdkSync
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
     _stdout, stderr, status = Open3.capture3('pdk update --force')
-    #_stdout, stderr, status = Open3.capture3('pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates')
     if status != 0
       puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
     else
@@ -159,13 +174,13 @@ module PdkSync
   #   The location that the command is to be run from.
   # @return [Integer]
   #   The status code of the pdk validate run.
-  def self.rubocop_autofix(output_path)
+  def self.validate_autofix(output_path)
     # Runs the pdk validate command
     _stdout, stderr, status = Open3.capture3('pdk validate -a')
     if status != 0
-      puts "(FAILURE) Something went wrong with rubocop: #{stderr}"
+      puts "(FAILURE) Something went wrong with the validate: #{stderr}"
     else
-      puts 'Rubocop has run successfully.'
+      puts 'Validate has run successfully.'
     end
     status
   end
