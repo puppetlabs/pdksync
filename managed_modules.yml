@@ -2,7 +2,6 @@
 - puppetlabs-accounts
 - puppetlabs-apache
 - puppetlabs-apt
-- puppetlabs-certregen
 - puppetlabs-firewall
 - puppetlabs-haproxy
 - puppetlabs-ibm_installation_manager
@@ -18,7 +17,7 @@
 - puppetlabs-websphere_application_server
 - puppetlabs-bootstrap
 - puppetlabs-concat
-- puppetlabs-execute
+- puppetlabs-exec
 - puppetlabs-facter_task
 - puppetlabs-hocon
 - puppetlabs-inifile
