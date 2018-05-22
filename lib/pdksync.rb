@@ -92,17 +92,17 @@ module PdkSync
     @output_path = "#{@pdksync_dir}/#{module_name}"
     clean_env(@output_path) if Dir.exist?(@output_path)
     @git_repo = clone_directory(@namespace, module_name, @output_path)
-    unless @git_repo.nil? # rubocop:disable Style/GuardClause
-      if pdk_update(@output_path) == 0 # rubocop:disable Style/NumericPredicate
-        @template_ref = return_template_ref
-        checkout_branch(@git_repo, @template_ref)
-        @pdk_version = return_pdk_version
-        add_staged_files(@git_repo)
-        commit_staged_files(@git_repo, @template_ref)
-        push_staged_files(@git_repo, @template_ref, @repo_name)
-        create_pr(client, @repo_name, @template_ref, @pdk_version)
-      end
-    end
+
+    return if @git_repo.nil?
+    return unless pdk_update(@output_path) == 0 # rubocop:disable Style/NumericPredicate
+
+    @template_ref = return_template_ref
+    checkout_branch(@git_repo, @template_ref)
+    @pdk_version = return_pdk_version
+    add_staged_files(@git_repo)
+    commit_staged_files(@git_repo, @template_ref)
+    push_staged_files(@git_repo, @template_ref, @repo_name)
+    create_pr(client, @repo_name, @template_ref, @pdk_version)
   end
 
   # @summary
@@ -158,14 +158,14 @@ module PdkSync
   def self.pdk_update(output_path)
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    _stdout, stderr, status = Open3.capture3('pdk update --force')
+    stdout, stderr, status = Open3.capture3('pdk update --force')
     if status != 0
       puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
     else
       puts 'PDK Update has run.'
     end
-    return status unless status == 0 && _stdout.include?("No changes required.")
-    puts "No commits since last run."
+    return status unless status == 0 && stdout.include?('No changes required.') # rubocop:disable Style/NumericPredicate
+    puts 'No commits since last run.'
   end
 
   # @summary
@@ -174,7 +174,7 @@ module PdkSync
   #   The location that the command is to be run from.
   # @return [Integer]
   #   The status code of the pdk validate run.
-  def self.validate_autofix(output_path)
+  def self.validate_autofix
     # Runs the pdk validate command
     _stdout, stderr, status = Open3.capture3('pdk validate -a')
     if status != 0
@@ -292,7 +292,6 @@ module PdkSync
         delete_branch(@client, @repo_name, branch.name) if branch.name.include? 'pdksync'
       end
     end
-
   end
 
   # @summary
