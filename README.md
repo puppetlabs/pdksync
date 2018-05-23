@@ -129,7 +129,7 @@ Gemfile:
 
 8) Remove your module from being managed via `modulesync`, and start using `pdksync` going forward — no more manually creating pull requests.
 
-For more information on keeping your module up-to-date with PDK, see [Helens blog post](https://puppet.com/blog/keep-your-puppet-modules-up-to-date-pdk).
+For more information on keeping your module up to date with the PDK check out [Helens blog post](https://puppet.com/blog/guide-converting-module-pdk).
 
 ### Compatibility
 ----------
