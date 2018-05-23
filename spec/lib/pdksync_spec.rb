@@ -56,7 +56,6 @@ describe PdkSync do
       expect(pre_commit).not_to eq(post_commit)
     end
   end
-  # rubocop:disable Layout/CommentIndentation
   # # Test fails if ran from travis due to lack of proper credentials
   # it 'The committed files should be pushed and the PR created', unless: @access_token == '' do
   #   @client = PdkSync.setup_client
@@ -66,5 +65,4 @@ describe PdkSync do
   #   #Branch is now cleaned
   #   PdkSync.delete_branch(@client, @repo_name, "pdksync_#{@timestamp}".to_s)
   # end
-
 end
