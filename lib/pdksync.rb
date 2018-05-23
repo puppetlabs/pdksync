@@ -126,10 +126,10 @@ module PdkSync
   # @return [Git::Base]
   #   A git object representing the local repository.
   def self.clone_directory(namespace, module_name, output_path)
-    puts "Cloning to: #{module_name} to #{output_path}."
+    puts "Cloning #{module_name} to #{output_path}."
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   rescue Git::GitExecuteError
-    puts "(FAILURE) Cloning for #{module_name} failed - check the module name and namespace are correct."
+    puts "(FAILURE) Cloning #{module_name} has failed - check the module name and namespace are correct."
   end
 
   # @summary
@@ -144,7 +144,7 @@ module PdkSync
     if status != 0
       puts "(FAILURE) Unable to run `pdk convert`: #{stderr}"
     else
-      puts 'PDK Convert has run.'
+      puts 'PDK convert has run.'
     end
     status
   end
@@ -162,7 +162,7 @@ module PdkSync
     if status != 0
       puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
     else
-      puts 'PDK Update has run.'
+      puts 'PDK update has run.'
     end
     return status unless status == 0 && stdout.include?('No changes required.') # rubocop:disable Style/NumericPredicate
     puts 'No commits since last run.'
@@ -204,7 +204,7 @@ module PdkSync
   # @param [String] template_ref
   #   The unique template_ref that is used as part of the branch name.
   def self.checkout_branch(git_repo, template_ref)
-    puts "Creating a branch called: pdksync_#{template_ref}."
+    puts "Creating the following branch: pdksync_#{template_ref}."
     git_repo.branch("pdksync_#{template_ref}".to_s).checkout
   end
 
@@ -237,7 +237,7 @@ module PdkSync
   #   The unique template_ref that is used as part of the commit name.
   def self.commit_staged_files(git_repo, template_ref)
     git_repo.commit("pdksync_#{template_ref}")
-    puts "The following commit has been created: pdksync_#{template_ref}."
+    puts "Creating the following commit: pdksync_#{template_ref}."
   end
 
   # @summary
@@ -252,7 +252,7 @@ module PdkSync
     git_repo.push(@push_file_destination, "pdksync_#{template_ref}")
     puts 'All staged files have been pushed to the repo, bon voyage!'
   rescue StandardError
-    puts "(FAILURE) Pushing to #{@push_file_destination} has failed for #{repo_name}"
+    puts "(FAILURE) Pushing to #{@push_file_destination} for #{repo_name} has failed."
   end
 
   # @summary
@@ -273,7 +273,7 @@ module PdkSync
     puts 'The PR has been created.'
     pr
   rescue StandardError
-    puts "(FAILURE) PR creation has failed for #{repo_name}"
+    puts "(FAILURE) PR creation for #{repo_name} has failed."
   end
 
   # @summary
