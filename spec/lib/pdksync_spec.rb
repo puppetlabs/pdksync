@@ -56,7 +56,7 @@ describe PdkSync do
       expect(pre_commit).not_to eq(post_commit)
     end
   end
-  # # Test fails if ran from travis due to lack of proper credentials
+  # Test fails if ran from travis due to lack of proper credentials
   # it 'The committed files should be pushed and the PR created', unless: @access_token == '' do
   #   @client = PdkSync.setup_client
   #   PdkSync.push_staged_files(@git_repo, @timestamp, @repo_name)
