@@ -127,7 +127,7 @@ module PdkSync
   #   A git object representing the local repository.
   def self.clone_directory(namespace, module_name, output_path)
     puts "Cloning #{module_name} to #{output_path}."
-    Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
+    Git.clone("https://github.com/#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   rescue Git::GitExecuteError
     puts "(FAILURE) Cloning #{module_name} has failed - check the module name and namespace are correct."
   end
