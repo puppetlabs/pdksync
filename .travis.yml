@@ -1,9 +1,9 @@
 language: ruby
 sudo: false
 before_install:
-  - gem install bundler
+  - gem install bundler -v 1.16.1
 script:
-  - "bundle exec $CHECK"
+  - "bundle _1.16.1_ exec $CHECK"
 notifications:
   email: false
 rvm:
