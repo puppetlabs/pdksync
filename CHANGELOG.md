@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
-## [0.1.0](https://github.com/puppetlabs/pdksync/tree/0.1.0) (2018-05-22)
+## [0.1.0](https://github.com/puppetlabs/pdksync/tree/0.1.0) (2018-05-23)
 
 [Full Changelog](https://github.com/puppetlabs/pdksync/compare/73bf282b297781bc26562bfb51b91b4f7b1632d1...0.1.0)
 
@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file. The format 
 
 ### Fixed
 
+- Update travis and change ssh to https for git clone [\#51](https://github.com/puppetlabs/pdksync/pull/51) ([HelenCampbell](https://github.com/HelenCampbell))
 - Change push command to use git ruby [\#13](https://github.com/puppetlabs/pdksync/pull/13) ([HelenCampbell](https://github.com/HelenCampbell))
 - PDK Update fix [\#8](https://github.com/puppetlabs/pdksync/pull/8) ([david22swan](https://github.com/david22swan))
 
