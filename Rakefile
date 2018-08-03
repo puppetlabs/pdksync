@@ -8,6 +8,12 @@ task :pdksync do
   puts "The script has run."
 end
 
+desc 'Clone managed modules'
+task :clone_managed_modules do
+  PdkSync::clone_managed_modules
+  puts "Cloned managed modules."
+end
+
 desc 'Run pdksync cleanup'
 task :pdksync_cleanup do
   PdkSync::clean_branches

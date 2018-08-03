@@ -3,3 +3,4 @@ modules/
 *.gem
 Gemfile.lock
 .bundle/
+modules_pdksync/

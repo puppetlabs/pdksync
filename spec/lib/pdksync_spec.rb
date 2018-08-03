@@ -9,12 +9,13 @@ describe PdkSync do
     @namespace = 'puppetlabs'
     @pdksync_dir = './modules_pdksync'
     @module_name = 'puppetlabs-testing'
+    @module_names = ['puppetlabs-testing']
     @output_path = "#{@pdksync_dir}/#{@module_name}"
     @access_token = ENV['GITHUB_TOKEN']
     @repo_name = "#{@namespace}/#{@module_name}"
   end
 
-  context 'env' do
+  context 'Create a filespace and clone a repo' do
     it 'has a filespace' do
       FileUtils.rm_rf(@pdksync_dir)
       PdkSync.create_filespace
@@ -27,7 +28,18 @@ describe PdkSync do
     end
   end
 
-  context 'run' do
+  context 'clone_managed_modules' do
+    it 'runs sucessfully' do
+      FileUtils.rm_rf(@pdksync_dir)
+      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
+      PdkSync.clone_managed_modules
+      expect(PdkSync.instance_variable_get(:@module_names)).to eq(['puppetlabs-testing'])
+      expect(Dir.exist?(@pdksync_dir)).to be(true)
+      expect(Dir.exist?(@output_path)).to be(true)
+    end
+  end
+
+  context 'run pdk_update' do
     before(:all) do
       @git_repo = Git.open(@output_path)
     end

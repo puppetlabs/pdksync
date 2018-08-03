@@ -42,11 +42,35 @@ module PdkSync
     # The current directory is saved for cleanup purposes
     @main_path = Dir.pwd
 
-    # Run an iterative loop for each @module_name
+    abort "No modules listed in #{@managed_modules}" if @module_names.nil?
     @module_names.each do |module_name|
       puts '*************************************'
       puts "Syncing #{module_name}"
       sync(module_name, @client)
+      # Cleanup used to ensure that the current directory is reset after each run.
+      Dir.chdir(@main_path) unless Dir.pwd == @main_path
+    end
+  end
+
+  # @summary
+  #   Clones the modules listed managed_modules.yml
+  def self.clone_managed_modules
+    puts 'Cloning managed modules'
+    create_filespace
+    @module_names = return_modules
+    # The current directory is saved for cleanup purposes
+    @main_path = Dir.pwd
+
+    abort "No modules listed in #{@managed_modules}" if @module_names.nil?
+    @module_names.each do |module_name|
+      puts '*************************************'
+      puts "Cloning #{module_name}"
+      @repo_name = "#{@namespace}/#{module_name}"
+      @output_path = "#{@pdksync_dir}/#{module_name}"
+      clean_env(@output_path) if Dir.exist?(@output_path)
+      @git_repo = clone_directory(@namespace, module_name, @output_path)
+
+      next if @git_repo.nil?
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
     end
@@ -67,7 +91,7 @@ module PdkSync
     client.user.login
     puts 'Client login has been successful.'
     client
-  rescue ArgumentError
+  rescue ArgumentError, Octokit::Unauthorized
     raise "Access Token not set up correctly - Use export 'GITHUB_TOKEN=<put your token here>' to set it."
   end
 
