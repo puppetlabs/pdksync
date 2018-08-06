@@ -1,25 +1,27 @@
----
 sudo: false
 dist: trusty
 language: ruby
 cache: bundler
 before_install:
-  - bundle -v
-  - rm -f Gemfile.lock
-  - gem update --system
-  - gem --version
-  - bundle -v
+- bundle -v
+- rm -f Gemfile.lock
+- gem update --system
+- gem --version
+- bundle -v
 script:
-  - 'bundle exec $CHECK'
+- bundle exec $CHECK
 rvm:
-  - 2.4.1
+- 2.4.1
 matrix:
   fast_finish: true
   include:
-    - env: CHECK='rubocop'
-    - env: CHECK='rspec spec'
+  - env: CHECK='rubocop'
+  - env: CHECK='rspec spec'
 branches:
   only:
-    - master
-    - /^v\d/
-    - release
+  - master
+  - "/^v\\d/"
+  - release
+env:
+  global:
+    secure: Hk8cxtIHM6kyRBSmcWWUSXUV50E/yo3MGJf3mPphb3ORUfzqjB8FGZLSn1VCIP81y++U6pZAg8/AkvcDNME0at1wWh/ONiOwYKxAyyVfr0/5/i7a+dIj/9MX2kUT6MBKZXipbln/u5brdwBAHJccFHz7doq30Nd108KE5ucqf0ZbptJyDbpsrIturK9Hx+mde9sYd6MyNlzGJkQOhSL22Zd+ppBSf/GDpk2+yWN171oGwHDPWPE47q4nkIrWjnWy0kLCqxoM0zHIPxPES6lhudso4ofbumnRiHcr7DldReC8Rq1CUe/fhG7udGEdPN26JAREyUeD8MOwo2uQohQluHvjOMx9leF7Sbu+tk5E2bqVz5ofm0bksZUIBahUtGP+REvwVruFOH8RsvO3pQBndDKG11691UY55L9qZNaQ82cNOWbfG1nNuglH0GIpJgdhjvWuGw1he4c18u1fgQGM01xO7JEDIpYHrrjBboD3mL/iXMmvxwg35eIrlkfdgl9DTBWqKOoLi79WpkDajI+2B/ABXW4L/WKWlM041UjAs5/r3jgkbcZz1nZVbU4Wa5r/6RvIfrM/FXnaGuZcwx7VdPBmfyhV4rgM4siyJDdhqudTRsq1+Al9q3MhZcyKQLmad8ShEx+dfG9WRBoayE+piD/9xkfriqdMk5YEjH02grE=
