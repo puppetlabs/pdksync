@@ -28,17 +28,25 @@ describe PdkSync do
     end
   end
 
-  context 'clone_managed_modules' do
-    it 'runs sucessfully' do
-      FileUtils.rm_rf(@pdksync_dir)
-      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
-      PdkSync.clone_managed_modules
-      expect(PdkSync.instance_variable_get(:@module_names)).to eq(['puppetlabs-testing'])
-      expect(Dir.exist?(@pdksync_dir)).to be(true)
-      expect(Dir.exist?(@output_path)).to be(true)
-    end
-  end
-
+  #  context 'clone_managed_modules' do
+  #    it 'runs sucessfully' do
+  #      FileUtils.rm_rf(@pdksync_dir)
+  #      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
+  #      PdkSync.main(steps: [:clone])
+  #      expect(PdkSync.instance_variable_get(:@module_names)).to eq(['puppetlabs-testing'])
+  #      expect(Dir.exist?(@pdksync_dir)).to be(true)
+  #      expect(Dir.exist?(@output_path)).to be(true)
+  #    end
+  #  end
+  #
+  #  context 'pdk convert' do
+  #    it 'files are changed' do
+  #      PdkSync.main(steps: [:pdk_validate])
+  #      result = Open3.capture3('git status')
+  #      expect(result).to include(%r{modified})
+  #    end
+  #  end
+  #
   context 'run pdk_update' do
     before(:all) do
       @git_repo = Git.open(@output_path)

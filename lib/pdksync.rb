@@ -52,27 +52,52 @@ module PdkSync
     end
   end
 
-  # @summary
-  #   Clones the modules listed managed_modules.yml
-  def self.clone_managed_modules
-    puts 'Cloning managed modules'
+  def self.main(steps: [:clone, :pdksync, :createpr], args: nil)
     create_filespace
+    @client = setup_client
     @module_names = return_modules
     # The current directory is saved for cleanup purposes
     @main_path = Dir.pwd
+    exit 'No command passed' if args.nil? && (steps.first == :run_a_command)
+    puts "Running '#{args}'" if !args.nil? && (steps.first == :run_a_command)
 
     abort "No modules listed in #{@managed_modules}" if @module_names.nil?
     @module_names.each do |module_name|
-      puts '*************************************'
-      puts "Cloning #{module_name}"
+      print "#{module_name}, "
       @repo_name = "#{@namespace}/#{module_name}"
       @output_path = "#{@pdksync_dir}/#{module_name}"
-      clean_env(@output_path) if Dir.exist?(@output_path)
-      @git_repo = clone_directory(@namespace, module_name, @output_path)
-
-      next if @git_repo.nil?
+      if steps.include?(:clone)
+        print 'delete module directory, '
+        clean_env(@output_path) if Dir.exist?(@output_path)
+        print 'cloned, '
+        @git_repo = clone_directory(@namespace, module_name, @output_path)
+        puts "(WARNING) Unable to clone repo for #{module_name}" if @git_repo.nil?
+        next if @git_repo.nil?
+      end
+      puts '(WARNING) @output_path does not exist, skipping module' unless File.directory?(@output_path)
+      next unless File.directory?(@output_path)
+      if steps.include?(:pdk_convert)
+        print 'converted, '
+        next unless run_command(@output_path, 'pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates').zero?
+      end
+      if steps.include?(:pdk_validate)
+        print 'validated, '
+        next unless run_command(@output_path, 'pdk validate -a').zero?
+      end
+      if steps.include?(:run_a_command)
+        print 'running a command, '
+        next unless run_command(@output_path, args).zero?
+      end
+      if steps.include?(:pdk_update)
+        print 'updated, '
+        next unless pdk_update(@output_path).exitstatus.zero?
+      end
+      if steps.include?(:create_pr)
+        print 'PR, '
+      end
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
+      puts 'done.'
     end
   end
 
@@ -89,7 +114,6 @@ module PdkSync
   def self.setup_client
     client = Octokit::Client.new(access_token: @access_token.to_s)
     client.user.login
-    puts 'Client login has been successful.'
     client
   rescue ArgumentError, Octokit::Unauthorized
     raise "Access Token not set up correctly - Use export 'GITHUB_TOKEN=<put your token here>' to set it."
@@ -134,7 +158,6 @@ module PdkSync
   # @param [String] output_path
   #   The repository that is to be deleted.
   def self.clean_env(output_path)
-    puts 'Cleaning your environment.'
     # If a local copy already exists it is removed
     FileUtils.rm_rf(output_path)
   end
@@ -150,27 +173,24 @@ module PdkSync
   # @return [Git::Base]
   #   A git object representing the local repository.
   def self.clone_directory(namespace, module_name, output_path)
-    puts "Cloning #{module_name} to #{output_path}."
     Git.clone("https://github.com/#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   rescue Git::GitExecuteError
     puts "(FAILURE) Cloning #{module_name} has failed - check the module name and namespace are correct."
   end
 
   # @summary
-  #   This method when called will run the 'pdk convert' command at the given location, with an error message being thrown if it is not successful.
+  #   This method when called will run a command command at the given location, with an error message being thrown if it is not successful.
   # @param [String] output_path
   #   The location that the command is to be run from.
+  # @param [String] command
+  #   The command to be run.
   # @return [Integer]
-  #   The status code of the pdk converty run.
-  def self.pdk_convert(output_path)
+  #   The status code of the command run.
+  def self.run_command(output_path, command)
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    _stdout, stderr, status = Open3.capture3('pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates')
-    if status != 0
-      puts "(FAILURE) Unable to run `pdk convert`: #{stderr}"
-    else
-      puts 'PDK convert has run.'
-    end
-    status
+    _stdout, stderr, status = Open3.capture3(command)
+    puts "(FAILURE) Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
+    status.exitstatus
   end
 
   # @summary
@@ -190,23 +210,6 @@ module PdkSync
     end
     return status unless status == 0 && stdout.include?('No changes required.') # rubocop:disable Style/NumericPredicate
     puts 'No commits since last run.'
-  end
-
-  # @summary
-  #   This method when called will run the 'pdk validate -a' command at the given location, with an error message being thrown if it is not successful.
-  # @param [String] output_path
-  #   The location that the command is to be run from.
-  # @return [Integer]
-  #   The status code of the pdk validate run.
-  def self.validate_autofix
-    # Runs the pdk validate command
-    _stdout, stderr, status = Open3.capture3('pdk validate -a')
-    if status != 0
-      puts "(FAILURE) Something went wrong with the validate: #{stderr}"
-    else
-      puts 'Validate has run successfully.'
-    end
-    status
   end
 
   # @summary
