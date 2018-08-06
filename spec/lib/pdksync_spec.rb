@@ -43,6 +43,11 @@ describe PdkSync do
       PdkSync.main(steps: [:pdk_convert])
       File.exist?("#{@output_path}/convert_report.txt")
     end
+    it 'runs a command "touch cat.meow"' do
+      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
+      PdkSync.main(steps: [:run_a_command], args: 'touch cat.meow')
+      File.exist?("#{@output_path}/cat.meow")
+    end
   end
 
   context 'run pdk_update' do
