@@ -2,22 +2,34 @@ require_relative 'lib/pdksync'
 require 'github_changelog_generator/task'
 
 
-desc 'Run pdk update'
+desc 'Run full pdksync process, clone repo, pdk update, create pr.'
 task :pdksync do
   PdkSync::run_pdksync
-  puts "The script has run."
 end
 
 desc 'Clone managed modules'
 task :clone_managed_modules do
-  PdkSync::clone_managed_modules
-  puts "Cloned managed modules."
+  PdkSync::main(steps: [:clone])
 end
 
-desc 'Run pdksync cleanup'
+desc 'PDK convert against modules'
+task :pdk_convert do
+  PdkSync::main(steps: [:pdk_convert])
+end
+
+desc 'PDK validate against modules'
+task :pdk_validate do
+  PdkSync::main(steps: [:pdk_validate])
+end
+
+desc "Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'"
+task :run_a_command, [:command] do |task, args|
+  PdkSync::main(steps: [:run_a_command], args: args[:command])
+end
+
+desc 'Run pdksync cleanup branches'
 task :pdksync_cleanup do
   PdkSync::clean_branches
-  puts "The script has run."
 end
 
 GitHubChangelogGenerator::RakeTask.new :changelog do |config|
