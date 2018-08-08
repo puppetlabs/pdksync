@@ -60,11 +60,15 @@ module PdkSync
     @main_path = Dir.pwd
 
     # validation run_a_command
-    raise 'No command passed' if args.nil? && (steps.first == :run_a_command)
-    puts "Running '#{args}'" if !args.nil? && (steps.first == :run_a_command)
+    if steps.first == :run_a_command
+      raise 'No command passed' if args.nil?
+      puts "Command '#{args}'"
+    end
     # validation create_commit
-    raise 'Need branch and commit message' if (args.nil? || args[:commit_message].nil? || args[:branch_name].nil?) && (steps.first == :create_commit)
-    puts "Commiting branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}" if !args.nil? && (steps.first == :create_commit)
+    if steps.first == :create_commit
+      raise 'Need branch_name and commit_message' if args.nil? || args[:commit_message].nil? || args[:branch_name].nil?
+      puts "Commit branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}"
+    end
 
     abort "No modules listed in #{@managed_modules}" if @module_names.nil?
     @module_names.each do |module_name|
@@ -278,12 +282,14 @@ module PdkSync
   #   A git object representing the local repository against which the commit is to be made.
   # @param [String] template_ref
   #   The unique template_ref that is used as part of the commit name.
+  # @param [String] commit_message
+  #   If sepecified it will be the message for the commit.
   def self.commit_staged_files(git_repo, template_ref, commit_message = nil)
-    if commit_message.nil?
-      message = "pdksync_#{template_ref}"
-    else
-      message = commit_message
-    end
+    message = if commit_message.nil?
+                "pdksync_#{template_ref}"
+              else
+                commit_message
+              end
     git_repo.commit(message)
     puts "Creating the following commit: #{message}."
   end

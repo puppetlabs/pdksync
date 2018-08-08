@@ -24,7 +24,7 @@ namespace :git do
     PdkSync::main(steps: [:clone])
   end
 
-  desc 'Stage commits for modules, branchname and commit message'
+  desc "Stage commits for modules, branchname and commit message eg rake 'git:create_commit[flippity, commit messagez]'"
   task :create_commit, [:branch_name, :commit_message] do |task, args|
     PdkSync::main(steps: [:create_commit], args: args)
   end

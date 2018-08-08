@@ -15,19 +15,6 @@ describe PdkSync do
     @repo_name = "#{@namespace}/#{@module_name}"
   end
 
-  context 'Create a filespace and clone a repo' do
-    it 'has a filespace' do
-      FileUtils.rm_rf(@pdksync_dir)
-      PdkSync.create_filespace
-      expect(Dir.exist?(@pdksync_dir)).to be(true)
-    end
-
-    it 'has cloned the repo' do
-      PdkSync.clone_directory(@namespace, @module_name, @output_path)
-      expect(Dir.exist?(@output_path)).to be(true)
-    end
-  end
-
   context 'main method' do
     it 'runs clone sucessfully' do
       FileUtils.rm_rf(@pdksync_dir)
@@ -43,10 +30,37 @@ describe PdkSync do
       PdkSync.main(steps: [:pdk_convert])
       File.exist?("#{@output_path}/convert_report.txt")
     end
+    it 'raise when running a command with no argument' do
+      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
+      expect { PdkSync.main(steps: [:run_a_command]) }.to raise_error(RuntimeError, %r{No command passed})
+    end
     it 'runs a command "touch cat.meow"' do
       expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
       PdkSync.main(steps: [:run_a_command], args: 'touch cat.meow')
       File.exist?("#{@output_path}/cat.meow")
+    end
+    it 'raise when create_commit with no arguments' do
+      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
+      expect { PdkSync.main(steps: [:create_commit]) }.to raise_error(RuntimeError, %r{Need branch_name and commit_message})
+    end
+    it 'create_commit runs, and contains the "kittens in mittens"' do
+      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
+      PdkSync.main(steps: [:create_commit], args: { branch_name: 'temp_branch', commit_message: 'kittens in mittens' })
+      git_repo = Git.open(@output_path)
+      expect(git_repo.show).to include('kittens in mittens')
+    end
+  end
+
+  context 'Create a filespace and clone a repo' do
+    it 'has a filespace' do
+      FileUtils.rm_rf(@pdksync_dir)
+      PdkSync.create_filespace
+      expect(Dir.exist?(@pdksync_dir)).to be(true)
+    end
+
+    it 'has cloned the repo' do
+      PdkSync.clone_directory(@namespace, @module_name, @output_path)
+      expect(Dir.exist?(@output_path)).to be(true)
     end
   end
 
