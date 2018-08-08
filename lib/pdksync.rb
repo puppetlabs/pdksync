@@ -58,8 +58,17 @@ module PdkSync
     @module_names = return_modules
     # The current directory is saved for cleanup purposes
     @main_path = Dir.pwd
-    exit 'No command passed' if args.nil? && (steps.first == :run_a_command)
-    puts "Running '#{args}'" if !args.nil? && (steps.first == :run_a_command)
+
+    # validation run_a_command
+    if steps.first == :run_a_command
+      raise 'No command passed' if args.nil?
+      puts "Command '#{args}'"
+    end
+    # validation create_commit
+    if steps.first == :create_commit
+      raise 'Need branch_name and commit_message' if args.nil? || args[:commit_message].nil? || args[:branch_name].nil?
+      puts "Commit branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}"
+    end
 
     abort "No modules listed in #{@managed_modules}" if @module_names.nil?
     @module_names.each do |module_name|
@@ -92,8 +101,13 @@ module PdkSync
         print 'updated, '
         next unless pdk_update(@output_path).exitstatus.zero?
       end
-      if steps.include?(:create_pr)
-        print 'PR, '
+      if steps.include?(:create_commit)
+        print 'commit created, '
+        git_repo = Git.open(@output_path)
+        create_commit(git_repo, args[:branch_name], args[:commit_message])
+      end
+      if steps.include?(:push_create_pr)
+        print 'push and create pr, '
       end
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
@@ -151,6 +165,12 @@ module PdkSync
     commit_staged_files(@git_repo, @template_ref)
     push_staged_files(@git_repo, @template_ref, @repo_name)
     create_pr(client, @repo_name, @template_ref, @pdk_version)
+  end
+
+  def self.create_commit(git_repo, branch_name, commit_message)
+    checkout_branch(git_repo, branch_name)
+    add_staged_files(git_repo)
+    commit_staged_files(git_repo, branch_name, commit_message)
   end
 
   # @summary
@@ -228,11 +248,11 @@ module PdkSync
   #   This method when called will checkout a new local branch of the given repository.
   # @param [Git::Base] git_repo
   #   A git object representing the local repository to be branched.
-  # @param [String] template_ref
-  #   The unique template_ref that is used as part of the branch name.
-  def self.checkout_branch(git_repo, template_ref)
-    puts "Creating the following branch: pdksync_#{template_ref}."
-    git_repo.branch("pdksync_#{template_ref}".to_s).checkout
+  # @param [String] branch_suffix
+  #   The string that is appended on the branch name. eg template_ref or a friendly name
+  def self.checkout_branch(git_repo, branch_suffix)
+    puts "Creating the following branch: pdksync_#{branch_suffix}."
+    git_repo.branch("pdksync_#{branch_suffix}").checkout
   end
 
   # @summary
@@ -262,9 +282,16 @@ module PdkSync
   #   A git object representing the local repository against which the commit is to be made.
   # @param [String] template_ref
   #   The unique template_ref that is used as part of the commit name.
-  def self.commit_staged_files(git_repo, template_ref)
-    git_repo.commit("pdksync_#{template_ref}")
-    puts "Creating the following commit: pdksync_#{template_ref}."
+  # @param [String] commit_message
+  #   If sepecified it will be the message for the commit.
+  def self.commit_staged_files(git_repo, template_ref, commit_message = nil)
+    message = if commit_message.nil?
+                "pdksync_#{template_ref}"
+              else
+                commit_message
+              end
+    git_repo.commit(message)
+    puts "Creating the following commit: #{message}."
   end
 
   # @summary

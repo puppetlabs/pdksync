@@ -1,35 +1,48 @@
 require_relative 'lib/pdksync'
 require 'github_changelog_generator/task'
 
-
-desc 'Run full pdksync process, clone repo, pdk update, create pr.'
+desc 'Run full pdksync process, clone repository, pdk update, create pr.'
 task :pdksync do
   PdkSync::run_pdksync
 end
 
-desc 'Clone managed modules'
-task :clone_managed_modules do
-  PdkSync::main(steps: [:clone])
+namespace :pdk do 
+  desc 'Runs PDK convert against modules'
+  task :pdk_convert do
+    PdkSync::main(steps: [:pdk_convert])
+  end
+
+  desc 'Runs PDK validate against modules'
+  task :pdk_validate do
+    PdkSync::main(steps: [:pdk_validate])
+  end
 end
 
-desc 'PDK convert against modules'
-task :pdk_convert do
-  PdkSync::main(steps: [:pdk_convert])
-end
+namespace :git do
+  desc 'Clone managed modules'
+  task :clone_managed_modules do
+    PdkSync::main(steps: [:clone])
+  end
 
-desc 'PDK validate against modules'
-task :pdk_validate do
-  PdkSync::main(steps: [:pdk_validate])
+  desc "Stage commits for modules, branchname and commit message eg rake 'git:create_commit[flippity, commit messagez]'"
+  task :create_commit, [:branch_name, :commit_message] do |task, args|
+    PdkSync::main(steps: [:create_commit], args: args)
+  end
+
+  desc 'Push commit, and create PR for modules'
+  task :push_and_create_pr do
+    PdkSync::main(steps: [:push_and_create_pr])
+  end
+
+  desc 'Run pdksync cleanup origin branches'
+  task :pdksync_cleanup do
+    PdkSync::clean_branches
+  end
 end
 
 desc "Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'"
 task :run_a_command, [:command] do |task, args|
   PdkSync::main(steps: [:run_a_command], args: args[:command])
-end
-
-desc 'Run pdksync cleanup branches'
-task :pdksync_cleanup do
-  PdkSync::clean_branches
 end
 
 GitHubChangelogGenerator::RakeTask.new :changelog do |config|
