@@ -21,7 +21,6 @@ describe PdkSync do
       PdkSync.create_filespace
       expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
       PdkSync.main(steps: [:clone])
-      expect(PdkSync.instance_variable_get(:@module_names)).to eq(['puppetlabs-testing'])
       expect(Dir.exist?(@pdksync_dir)).to be(true)
       expect(Dir.exist?(@output_path)).to be(true)
     end
@@ -32,7 +31,7 @@ describe PdkSync do
     end
     it 'raise when running a command with no argument' do
       expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
-      expect { PdkSync.main(steps: [:run_a_command]) }.to raise_error(RuntimeError, %r{No command passed})
+      expect { PdkSync.main(steps: [:run_a_command]) }.to raise_error(RuntimeError, %r{"run_a_command" requires an argument to run.})
     end
     it 'runs a command "touch cat.meow"' do
       expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])

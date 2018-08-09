@@ -55,13 +55,13 @@ module PdkSync
   def self.main(steps: [:clone, :pdksync, :createpr], args: nil)
     create_filespace
     @client = setup_client
-    @module_names = return_modules
+    module_names = return_modules
     # The current directory is saved for cleanup purposes
     @main_path = Dir.pwd
 
     # validation run_a_command
     if steps.first == :run_a_command
-      raise 'No command passed' if args.nil?
+      raise '"run_a_command" requires an argument to run.' if args.nil?
       puts "Command '#{args}'"
     end
     # validation create_commit
@@ -70,44 +70,48 @@ module PdkSync
       puts "Commit branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}"
     end
 
-    abort "No modules listed in #{@managed_modules}" if @module_names.nil?
-    @module_names.each do |module_name|
+    abort "No modules listed in #{@managed_modules}" if module_names.nil?
+    module_names.each do |module_name|
       print "#{module_name}, "
-      @repo_name = "#{@namespace}/#{module_name}"
-      @output_path = "#{@pdksync_dir}/#{module_name}"
+      repo_name = "#{@namespace}/#{module_name}"
+      output_path = "#{@pdksync_dir}/#{module_name}"
       if steps.include?(:clone)
+        clean_env(output_path) if Dir.exist?(output_path)
         print 'delete module directory, '
-        clean_env(@output_path) if Dir.exist?(@output_path)
+        @git_repo = clone_directory(@namespace, module_name, output_path)
         print 'cloned, '
-        @git_repo = clone_directory(@namespace, module_name, @output_path)
         puts "(WARNING) Unable to clone repo for #{module_name}" if @git_repo.nil?
         next if @git_repo.nil?
       end
-      puts '(WARNING) @output_path does not exist, skipping module' unless File.directory?(@output_path)
-      next unless File.directory?(@output_path)
+      puts '(WARNING) @output_path does not exist, skipping module' unless File.directory?(output_path)
+      next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
         print 'converted, '
-        next unless run_command(@output_path, 'pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates').zero?
+        next unless run_command(output_path, 'pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates').zero?
       end
       if steps.include?(:pdk_validate)
         print 'validated, '
-        next unless run_command(@output_path, 'pdk validate -a').zero?
+        next unless run_command(output_path, 'pdk validate -a').zero?
       end
       if steps.include?(:run_a_command)
         print 'running a command, '
-        next unless run_command(@output_path, args).zero?
+        next unless run_command(output_path, args).zero?
       end
       if steps.include?(:pdk_update)
         print 'updated, '
-        next unless pdk_update(@output_path).exitstatus.zero?
+        next unless pdk_update(output_path).exitstatus.zero?
       end
       if steps.include?(:create_commit)
+        git_instance = Git.open(output_path)
+        create_commit(git_instance, args[:branch_name], args[:commit_message])
         print 'commit created, '
-        git_repo = Git.open(@output_path)
-        create_commit(git_repo, args[:branch_name], args[:commit_message])
       end
-      if steps.include?(:push_create_pr)
-        print 'push and create pr, '
+      if steps.include?(:push_and_create_pr)
+        git_instance = Git.open(output_path)
+        push_staged_files(git_instance, git_instance.current_branch, repo_name)
+        print 'push, '
+        # create_pr(client, @repo_name, @template_ref, @pdk_version)
+        print 'create pr, '
       end
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
@@ -163,7 +167,7 @@ module PdkSync
     @pdk_version = return_pdk_version
     add_staged_files(@git_repo)
     commit_staged_files(@git_repo, @template_ref)
-    push_staged_files(@git_repo, @template_ref, @repo_name)
+    push_staged_files(@git_repo, "pdksync_#{@template_ref}", @repo_name)
     create_pr(client, @repo_name, @template_ref, @pdk_version)
   end
 
@@ -193,9 +197,9 @@ module PdkSync
   # @return [Git::Base]
   #   A git object representing the local repository.
   def self.clone_directory(namespace, module_name, output_path)
-    Git.clone("https://github.com/#{namespace}/#{module_name}.git", output_path.to_s) # is returned
-  rescue Git::GitExecuteError
-    puts "(FAILURE) Cloning #{module_name} has failed - check the module name and namespace are correct."
+    Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
+  rescue Git::GitExecuteError => error
+    puts "(FAILURE) Cloning #{module_name} has failed. #{error}"
   end
 
   # @summary
@@ -302,11 +306,10 @@ module PdkSync
   #   The unique reference that that represents the template the update has ran against.
   # @param [String] repo_name
   #   The name of the repository on which the commit is to be made.
-  def self.push_staged_files(git_repo, template_ref, repo_name)
-    git_repo.push(@push_file_destination, "pdksync_#{template_ref}")
-    puts 'All staged files have been pushed to the repo, bon voyage!'
-  rescue StandardError
-    puts "(FAILURE) Pushing to #{@push_file_destination} for #{repo_name} has failed."
+  def self.push_staged_files(git_repo, current_branch, repo_name)
+    git_repo.push(@push_file_destination, current_branch)
+  rescue StandardError => error
+    puts "(FAILURE) Pushing to #{@push_file_destination} for #{repo_name} has failed. #{error}"
   end
 
   # @summary
