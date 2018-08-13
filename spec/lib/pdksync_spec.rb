@@ -40,13 +40,17 @@ describe PdkSync do
     end
     it 'raise when create_commit with no arguments' do
       expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
-      expect { PdkSync.main(steps: [:create_commit]) }.to raise_error(RuntimeError, %r{Need branch_name and commit_message})
+      expect { PdkSync.main(steps: [:create_commit]) }.to raise_error(RuntimeError, %r{Needs a branch_name and commit_message})
     end
     it 'create_commit runs, and contains the "kittens in mittens"' do
       expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
       PdkSync.main(steps: [:create_commit], args: { branch_name: 'temp_branch', commit_message: 'kittens in mittens' })
       git_repo = Git.open(@output_path)
       expect(git_repo.show).to include('kittens in mittens')
+    end
+    it 'raise when push_and_create_pr with no arguments' do
+      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
+      expect { PdkSync.main(steps: [:push_and_create_pr]) }.to raise_error(RuntimeError, %r{Needs a pr_title})
     end
   end
 

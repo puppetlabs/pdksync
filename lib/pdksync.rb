@@ -37,7 +37,7 @@ module PdkSync
   def self.run_pdksync
     puts 'Beginning pdksync run'
     create_filespace
-    @client = setup_client
+    client = setup_client
     @module_names = return_modules
     # The current directory is saved for cleanup purposes
     @main_path = Dir.pwd
@@ -46,7 +46,7 @@ module PdkSync
     @module_names.each do |module_name|
       puts '*************************************'
       puts "Syncing #{module_name}"
-      sync(module_name, @client)
+      sync(module_name, client)
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
     end
@@ -54,7 +54,7 @@ module PdkSync
 
   def self.main(steps: [:clone, :pdksync, :createpr], args: nil)
     create_filespace
-    @client = setup_client
+    client = setup_client
     module_names = return_modules
     # The current directory is saved for cleanup purposes
     @main_path = Dir.pwd
@@ -66,8 +66,13 @@ module PdkSync
     end
     # validation create_commit
     if steps.first == :create_commit
-      raise 'Need branch_name and commit_message' if args.nil? || args[:commit_message].nil? || args[:branch_name].nil?
+      raise 'Needs a branch_name and commit_message' if args.nil? || args[:commit_message].nil? || args[:branch_name].nil?
       puts "Commit branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}"
+    end
+    # validation push_and_create_pr
+    if steps.first == :push_and_create_pr
+      raise 'Needs a pr_title' if args.nil? || args[:pr_title].nil?
+      puts "PR title =#{args[:pr_title]}"
     end
 
     abort "No modules listed in #{@managed_modules}" if module_names.nil?
@@ -110,7 +115,8 @@ module PdkSync
         git_instance = Git.open(output_path)
         push_staged_files(git_instance, git_instance.current_branch, repo_name)
         print 'push, '
-        # create_pr(client, @repo_name, @template_ref, @pdk_version)
+        pdk_version = return_pdk_version("#{output_path}/metadata.json")
+        create_pr(client, repo_name, git_instance.current_branch, pdk_version, args[:pr_title])
         print 'create pr, '
       end
       # Cleanup used to ensure that the current directory is reset after each run.
@@ -322,15 +328,24 @@ module PdkSync
   #   The unique reference that that represents the template the update has ran against.
   # @param [String] pdk_version
   #   The current version of the pdk on which the update is run.
-  def self.create_pr(client, repo_name, template_ref, pdk_version)
+  def self.create_pr(client, repo_name, template_ref, pdk_version, pr_title = nil)
+    if pr_title.nil?
+      title = "pdksync - Update using #{pdk_version}"
+      message = "pdk version: `#{pdk_version}` \n pdk template ref: `#{template_ref}`"
+      head = "pdksync_#{template_ref}"
+    else
+      title = "pdksync - #{pr_title}"
+      message = "#{pr_title}\npdk version: `#{pdk_version}` \n"
+      head = template_ref
+    end
     pr = client.create_pull_request(repo_name, @create_pr_against,
-                                    "pdksync_#{template_ref}".to_s,
-                                    "pdksync - Update using #{pdk_version}",
-                                    "pdk version: `#{pdk_version}` \n pdk template ref: `#{template_ref}`")
+                                    head,
+                                    title,
+                                    message)
     puts 'The PR has been created.'
     pr
-  rescue StandardError
-    puts "(FAILURE) PR creation for #{repo_name} has failed."
+  rescue StandardError => error
+    puts "(FAILURE) PR creation for #{repo_name} has failed. #{error}"
   end
 
   # @summary

@@ -29,9 +29,9 @@ namespace :git do
     PdkSync::main(steps: [:create_commit], args: args)
   end
 
-  desc 'Push commit, and create PR for modules'
-  task :push_and_create_pr do
-    PdkSync::main(steps: [:push_and_create_pr])
+  desc "Push commit, and create PR for modules eg rake 'git:push_and_create_pr[pr title goes here]'"
+  task :push_and_create_pr, [:pr_title]  do |task, args|
+    PdkSync::main(steps: [:push_and_create_pr], args: args)
   end
 
   desc 'Run pdksync cleanup origin branches'
