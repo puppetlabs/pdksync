@@ -140,7 +140,7 @@ This tool has been developed and tested on OSX and Linux. **It currently does no
 --------
 
 1. Fork the repo
-2. Create your feature branch: 
+2. Create your feature branch:
 ```
 git checkout -b my-new-feature
 ```
