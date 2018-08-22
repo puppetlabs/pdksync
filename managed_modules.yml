@@ -1,4 +1,18 @@
 ---
+## windows team
+#- puppetlabs-acl
+#- puppetlabs-chocolatey
+#- puppetlabs-dsc
+#- puppetlabs-dsc_lite
+#- puppetlabs-iis
+#- puppetlabs-powershell
+#- puppetlabs-registry
+#- puppetlabs-reboot
+#- puppetlabs-scheduled_task
+#- puppetlabs-sqlserver
+#- puppetlabs-windows
+#- puppetlabs-wsus_client
+## modules team
 #- puppetlabs-accounts
 #- puppetlabs-apache
 #- puppetlabs-apt
@@ -24,7 +38,12 @@
 #- puppetlabs-tagmail
 #- puppetlabs-tomcat
 #- puppetlabs-translate
-## - puppetlabs-java_ks
-## - puppetlabs-satellite_pe_tools
-## - puppetlabs-vcsrepo
-## - puppetlabs-websphere_application_server
+## pdk update does not run well
+#- puppetlabs-java_ks
+#- puppetlabs-satellite_pe_tools
+#- puppetlabs-vcsrepo
+#- puppetlabs-websphere_application_server
+# testing only
+# - puppetlabs-testing
+# - puppetlabs-testing1
+# - puppetlabs-testing2
