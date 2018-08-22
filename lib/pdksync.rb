@@ -56,6 +56,7 @@ module PdkSync
     create_filespace
     client = setup_client
     module_names = return_modules
+    pr_list = []
     # The current directory is saved for cleanup purposes
     @main_path = Dir.pwd
 
@@ -116,12 +117,18 @@ module PdkSync
         push_staged_files(git_instance, git_instance.current_branch, repo_name)
         print 'push, '
         pdk_version = return_pdk_version("#{output_path}/metadata.json")
-        create_pr(client, repo_name, git_instance.current_branch, pdk_version, args[:pr_title])
-        print 'create pr, '
+        pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, args[:pr_title])
+        pr_list.push(pr.html_url)
+        print 'created pr, '
       end
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
       puts 'done.'
+    end
+    return if pr_list.size.zero?
+    puts "\nPRs created:\n"
+    pr_list.each do |pr|
+      puts pr
     end
   end
 
