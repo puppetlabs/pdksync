@@ -52,7 +52,7 @@ module PdkSync
     end
   end
 
-  def self.main(steps: [:clone, :pdksync, :createpr], args: nil)
+  def self.main(steps: [:clone], args: nil)
     create_filespace
     client = setup_client
     module_names = return_modules
@@ -74,6 +74,11 @@ module PdkSync
     if steps.first == :push_and_create_pr
       raise 'Needs a pr_title' if args.nil? || args[:pr_title].nil?
       puts "PR title =#{args[:pr_title]}"
+    end
+    # validation clean_branches
+    if steps.first == :clean_branches
+      raise 'Needs a branch_name, and the branch name contains the string pdksync' if args.nil? || args[:branch_name].nil? || !args[:branch_name].include?('pdksync')
+      puts "Removing branch_name =#{args[:branch_name]}"
     end
 
     abort "No modules listed in #{@managed_modules}" if module_names.nil?
@@ -121,6 +126,11 @@ module PdkSync
         pr_list.push(pr.html_url)
         print 'created pr, '
       end
+      if steps.include?(:clean_branches)
+        delete_branch(client, repo_name, args[:branch_name])
+        print 'branch deleted, '
+      end
+
       # Cleanup used to ensure that the current directory is reset after each run.
       Dir.chdir(@main_path) unless Dir.pwd == @main_path
       puts 'done.'
@@ -356,37 +366,6 @@ module PdkSync
   end
 
   # @summary
-  #   This method when called will retrieve a list of module names and then proceed to iterate
-  #     through them, removing any branch that contains the word 'pdksync'.
-  def self.clean_branches
-    puts 'Beginning pdksync cleanup run'
-    @client = setup_client
-    @module_names = return_modules
-
-    @module_names.each do |module_name|
-      puts '*************************************'
-      puts "Cleaning #{module_name}"
-      @repo_name = "#{@namespace}/#{module_name}"
-      retrieve_branches(@client, @repo_name).each do |branch|
-        delete_branch(@client, @repo_name, branch.name) if branch.name.include? 'pdksync'
-      end
-    end
-  end
-
-  # @summary
-  #   This method when called will retrieve any and all branches from the given repository.
-  # @param [Octokit::Client] client
-  #   The octokit client used to gain access to and manipulate the repository.
-  # @param [String] repo_name
-  #   The name of the repository from which the branches are to be retrieved.
-  # @return [Array]
-  #   An array containing all existing branches
-  def self.retrieve_branches(client, repo_name)
-    puts "Retrieving branches from #{repo_name}"
-    client.branches(repo_name)
-  end
-
-  # @summary
   #   This method when called will delete any preexisting branch on the given repository that matches the given name.
   # @param [Octokit::Client] client
   #   The octokit client used to gain access to and manipulate the repository.
@@ -395,7 +374,8 @@ module PdkSync
   # @param [String] branch_name
   #   The name of the branch that is to be deleted.
   def self.delete_branch(client, repo_name, branch_name)
-    puts "Removing '#{branch_name}' from '#{repo_name}'"
     client.delete_branch(repo_name, branch_name)
+  rescue StandardError => error
+    puts "(FAILURE) Deleting #{branch_name} in #{repo_name} failed. #{error}"
   end
 end

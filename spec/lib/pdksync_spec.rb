@@ -52,6 +52,11 @@ describe PdkSync do
       expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
       expect { PdkSync.main(steps: [:push_and_create_pr]) }.to raise_error(RuntimeError, %r{Needs a pr_title})
     end
+    it 'raise when clean_branches with no arguments' do
+      expect(PdkSync).to receive(:return_modules).and_return(['puppetlabs-testing'])
+      expect { PdkSync.main(steps: [:clean_branches]) }.to raise_error(RuntimeError, %r{Needs a branch_name, and the branch name contains the string pdksync})
+    end
+
   end
 
   context 'Create a filespace and clone a repo' do

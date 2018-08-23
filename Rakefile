@@ -34,9 +34,9 @@ namespace :git do
     PdkSync::main(steps: [:push_and_create_pr], args: args)
   end
 
-  desc 'Run pdksync cleanup origin branches'
-  task :pdksync_cleanup do
-    PdkSync::clean_branches
+  desc "Clean up origin branches, (branches must include pdksync in their name) eg rake 'git:clean[pdksync_origin_branch]'"
+  task :clean_branches, [:branch_name]  do |task, args|
+    PdkSync::main(steps: [:clean_branches], args: args)
   end
 end
 
