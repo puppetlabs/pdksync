@@ -32,57 +32,38 @@ module PdkSync
   @create_pr_against = Constants::CREATE_PR_AGAINST
   @managed_modules = Constants::MANAGED_MODULES
 
-  # @summary
-  #   When a new instance of this module is called, this method will be run in order to start the pdksync process.
-  def self.run_pdksync
-    puts 'Beginning pdksync run'
-    create_filespace
-    client = setup_client
-    @module_names = return_modules
-    # The current directory is saved for cleanup purposes
-    @main_path = Dir.pwd
-
-    abort "No modules listed in #{@managed_modules}" if @module_names.nil?
-    @module_names.each do |module_name|
-      puts '*************************************'
-      puts "Syncing #{module_name}"
-      sync(module_name, client)
-      # Cleanup used to ensure that the current directory is reset after each run.
-      Dir.chdir(@main_path) unless Dir.pwd == @main_path
-    end
-  end
-
   def self.main(steps: [:clone], args: nil)
     create_filespace
     client = setup_client
     module_names = return_modules
     pr_list = []
     # The current directory is saved for cleanup purposes
-    @main_path = Dir.pwd
+    main_path = Dir.pwd
 
     # validation run_a_command
-    if steps.first == :run_a_command
+    if steps.include?(:run_a_command)
       raise '"run_a_command" requires an argument to run.' if args.nil?
       puts "Command '#{args}'"
     end
     # validation create_commit
-    if steps.first == :create_commit
+    if steps.include?(:create_commit)
       raise 'Needs a branch_name and commit_message' if args.nil? || args[:commit_message].nil? || args[:branch_name].nil?
       puts "Commit branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}"
     end
     # validation push_and_create_pr
-    if steps.first == :push_and_create_pr
+    if steps.include?(:push_and_create_pr)
       raise 'Needs a pr_title' if args.nil? || args[:pr_title].nil?
       puts "PR title =#{args[:pr_title]}"
     end
     # validation clean_branches
-    if steps.first == :clean_branches
+    if steps.include?(:clean_branches)
       raise 'Needs a branch_name, and the branch name contains the string pdksync' if args.nil? || args[:branch_name].nil? || !args[:branch_name].include?('pdksync')
       puts "Removing branch_name =#{args[:branch_name]}"
     end
 
     abort "No modules listed in #{@managed_modules}" if module_names.nil?
     module_names.each do |module_name|
+      Dir.chdir(main_path) unless Dir.pwd == main_path
       print "#{module_name}, "
       repo_name = "#{@namespace}/#{module_name}"
       output_path = "#{@pdksync_dir}/#{module_name}"
@@ -92,32 +73,48 @@ module PdkSync
         @git_repo = clone_directory(@namespace, module_name, output_path)
         print 'cloned, '
         puts "(WARNING) Unable to clone repo for #{module_name}" if @git_repo.nil?
+        Dir.chdir(main_path) unless Dir.pwd == main_path
         next if @git_repo.nil?
       end
       puts '(WARNING) @output_path does not exist, skipping module' unless File.directory?(output_path)
       next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        exit_status = run_command(output_path, 'pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates')
         print 'converted, '
-        next unless run_command(output_path, 'pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates').zero?
+        next unless exit_status.zero?
       end
       if steps.include?(:pdk_validate)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        exit_status = run_command(output_path, 'pdk validate -a')
         print 'validated, '
-        next unless run_command(output_path, 'pdk validate -a').zero?
+        next unless exit_status.zero?
       end
       if steps.include?(:run_a_command)
-        print 'running a command, '
-        next unless run_command(output_path, args).zero?
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        print 'run command, '
+        exit_status = run_command(output_path, args)
+        next unless exit_status.zero?
       end
       if steps.include?(:pdk_update)
-        print 'updated, '
-        next unless pdk_update(output_path).exitstatus.zero?
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        next unless pdk_update(output_path).zero?
+        if steps.include?(:use_pdk_ref)
+          ref = return_template_ref
+          args = { branch_name: "pdksync_#{ref}",
+                   commit_message: "pdksync_#{ref}",
+                   pr_title: "pdksync_#{ref}" }
+        end
+        print 'pdk update, '
       end
       if steps.include?(:create_commit)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
         create_commit(git_instance, args[:branch_name], args[:commit_message])
         print 'commit created, '
       end
       if steps.include?(:push_and_create_pr)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
         push_staged_files(git_instance, git_instance.current_branch, repo_name)
         print 'push, '
@@ -127,12 +124,10 @@ module PdkSync
         print 'created pr, '
       end
       if steps.include?(:clean_branches)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
         delete_branch(client, repo_name, args[:branch_name])
         print 'branch deleted, '
       end
-
-      # Cleanup used to ensure that the current directory is reset after each run.
-      Dir.chdir(@main_path) unless Dir.pwd == @main_path
       puts 'done.'
     end
     return if pr_list.size.zero?
@@ -166,32 +161,6 @@ module PdkSync
   #   An array of different module names.
   def self.return_modules
     YAML.safe_load(File.open(@managed_modules))
-  end
-
-  # @summary
-  #   This method when called will take in a module name and an octokit client and use them to run the pdksync process on the given module.
-  #   If @git_repo is not set the clone will have failed, in which case we avoid further action. If the pdk update fails it will move to the
-  #   next module.
-  # @param [String] module_name
-  #   The name of the module to be put through the process
-  # @param [Octokit::Client] client
-  #   The client used to access github.
-  def self.sync(module_name, client)
-    @repo_name = "#{@namespace}/#{module_name}"
-    @output_path = "#{@pdksync_dir}/#{module_name}"
-    clean_env(@output_path) if Dir.exist?(@output_path)
-    @git_repo = clone_directory(@namespace, module_name, @output_path)
-
-    return if @git_repo.nil?
-    return unless pdk_update(@output_path) == 0 # rubocop:disable Style/NumericPredicate
-
-    @template_ref = return_template_ref
-    checkout_branch(@git_repo, @template_ref)
-    @pdk_version = return_pdk_version
-    add_staged_files(@git_repo)
-    commit_staged_files(@git_repo, @template_ref)
-    push_staged_files(@git_repo, "pdksync_#{@template_ref}", @repo_name)
-    create_pr(client, @repo_name, @template_ref, @pdk_version)
   end
 
   def self.create_commit(git_repo, branch_name, commit_message)
@@ -250,13 +219,8 @@ module PdkSync
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
     stdout, stderr, status = Open3.capture3('pdk update --force')
-    if status != 0
-      puts "(FAILURE) Unable to run `pdk update`: #{stderr}"
-    else
-      puts 'PDK update has run.'
-    end
-    return status unless status == 0 && stdout.include?('No changes required.') # rubocop:disable Style/NumericPredicate
-    puts 'No commits since last run.'
+    puts "(FAILURE) Unable to run `pdk update`: #{stderr}" unless status.exitstatus.zero?
+    return status.exitstatus
   end
 
   # @summary
@@ -278,7 +242,6 @@ module PdkSync
   # @param [String] branch_suffix
   #   The string that is appended on the branch name. eg template_ref or a friendly name
   def self.checkout_branch(git_repo, branch_suffix)
-    puts "Creating the following branch: pdksync_#{branch_suffix}."
     git_repo.branch("pdksync_#{branch_suffix}").checkout
   end
 
@@ -300,7 +263,6 @@ module PdkSync
   #   A git object representing the local repository to be staged.
   def self.add_staged_files(git_repo)
     git_repo.add(all: true)
-    puts 'All files have been staged.'
   end
 
   # @summary
@@ -318,7 +280,6 @@ module PdkSync
                 commit_message
               end
     git_repo.commit(message)
-    puts "Creating the following commit: #{message}."
   end
 
   # @summary
@@ -359,7 +320,6 @@ module PdkSync
                                     head,
                                     title,
                                     message)
-    puts 'The PR has been created.'
     pr
   rescue StandardError => error
     puts "(FAILURE) PR creation for #{repo_name} has failed. #{error}"

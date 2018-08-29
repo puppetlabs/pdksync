@@ -3,7 +3,10 @@ require 'github_changelog_generator/task'
 
 desc 'Run full pdksync process, clone repository, pdk update, create pr.'
 task :pdksync do
-  PdkSync::run_pdksync
+  args = {:branch_name => "pdksync_{ref}",
+        :commit_message => "pdksync_{ref}",
+        :pr_title => "pdksync_{ref}"}
+  PdkSync::main(steps: [:use_pdk_ref, :clone, :pdk_update, :create_commit, :push_and_create_pr], args: args)
 end
 
 namespace :pdk do 
