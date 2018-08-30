@@ -218,9 +218,9 @@ module PdkSync
   def self.pdk_update(output_path)
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    stdout, stderr, status = Open3.capture3('pdk update --force')
+    _stdout, stderr, status = Open3.capture3('pdk update --force')
     puts "(FAILURE) Unable to run `pdk update`: #{stderr}" unless status.exitstatus.zero?
-    return status.exitstatus
+    status.exitstatus
   end
 
   # @summary
