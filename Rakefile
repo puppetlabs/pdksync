@@ -3,7 +3,10 @@ require 'github_changelog_generator/task'
 
 desc 'Run full pdksync process, clone repository, pdk update, create pr.'
 task :pdksync do
-  PdkSync::run_pdksync
+  args = {:branch_name => "pdksync_{ref}",
+        :commit_message => "pdksync_{ref}",
+        :pr_title => "pdksync_{ref}"}
+  PdkSync::main(steps: [:use_pdk_ref, :clone, :pdk_update, :create_commit, :push_and_create_pr], args: args)
 end
 
 namespace :pdk do 
@@ -34,9 +37,9 @@ namespace :git do
     PdkSync::main(steps: [:push_and_create_pr], args: args)
   end
 
-  desc 'Run pdksync cleanup origin branches'
-  task :pdksync_cleanup do
-    PdkSync::clean_branches
+  desc "Clean up origin branches, (branches must include pdksync in their name) eg rake 'git:clean[pdksync_origin_branch]'"
+  task :clean_branches, [:branch_name]  do |task, args|
+    PdkSync::main(steps: [:clean_branches], args: args)
   end
 end
 
