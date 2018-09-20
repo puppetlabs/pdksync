@@ -262,7 +262,12 @@ module PdkSync
   # @param [Git::Base] git_repo
   #   A git object representing the local repository to be staged.
   def self.add_staged_files(git_repo)
-    git_repo.add(all: true)
+    if git_repo.status.changed != {}
+      git_repo.add(all: true)
+      puts 'All files have been staged.'
+    else
+      puts 'Nothing to commit.'
+    end
   end
 
   # @summary
