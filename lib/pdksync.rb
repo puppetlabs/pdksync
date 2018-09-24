@@ -8,6 +8,7 @@ require 'octokit'
 require 'pdksync/constants'
 require 'json'
 require 'yaml'
+require 'colorize'
 
 # @summary
 #   This module set's out and controls the pdksync process
@@ -72,21 +73,20 @@ module PdkSync
         print 'delete module directory, '
         @git_repo = clone_directory(@namespace, module_name, output_path)
         print 'cloned, '
-        puts "(WARNING) Unable to clone repo for #{module_name}" if @git_repo.nil?
+        puts "(WARNING) Unable to clone repo for #{module_name}".red if @git_repo.nil?
         Dir.chdir(main_path) unless Dir.pwd == main_path
         next if @git_repo.nil?
       end
-      puts '(WARNING) @output_path does not exist, skipping module' unless File.directory?(output_path)
+      puts '(WARNING) @output_path does not exist, skipping module'.red unless File.directory?(output_path)
       next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
-        Dir.chdir(main_path) unless Dir.pwd == main_path
-        exit_status = run_command(output_path, 'pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates')
+        exit_status = run_command(output_path, "#{return_pdk_path} convert --force --template-url https://github.com/puppetlabs/pdk-templates")
         print 'converted, '
         next unless exit_status.zero?
       end
       if steps.include?(:pdk_validate)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        exit_status = run_command(output_path, 'pdk validate -a')
+        exit_status = run_command(output_path, "#{return_pdk_path} validate -a")
         print 'validated, '
         next unless exit_status.zero?
       end
@@ -128,10 +128,10 @@ module PdkSync
         delete_branch(client, repo_name, args[:branch_name])
         print 'branch deleted, '
       end
-      puts 'done.'
+      puts 'done.'.green
     end
     return if pr_list.size.zero?
-    puts "\nPRs created:\n"
+    puts "\nPRs created:\n".blue
     pr_list.each do |pr|
       puts pr
     end
@@ -163,6 +163,21 @@ module PdkSync
     YAML.safe_load(File.open(@managed_modules))
   end
 
+  # @summary
+  #   Try to use a fully installed pdk, otherwise fall back to the bundled pdk gem.
+  # @return String
+  #   Path to the pdk executable
+  def self.return_pdk_path
+    full_path = '/opt/puppetlabs/pdk/bin/pdk'
+    path = if File.executable?(full_path)
+             full_path
+           else
+             puts "(WARNING) Using pdk on PATH not '#{full_path}'".red
+             'pdk'
+           end
+    path
+  end
+
   def self.create_commit(git_repo, branch_name, commit_message)
     checkout_branch(git_repo, branch_name)
     add_staged_files(git_repo)
@@ -191,7 +206,7 @@ module PdkSync
   def self.clone_directory(namespace, module_name, output_path)
     Git.clone("git@github.com:#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   rescue Git::GitExecuteError => error
-    puts "(FAILURE) Cloning #{module_name} has failed. #{error}"
+    puts "(FAILURE) Cloning #{module_name} has failed. #{error}".red
   end
 
   # @summary
@@ -204,8 +219,9 @@ module PdkSync
   #   The status code of the command run.
   def self.run_command(output_path, command)
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    _stdout, stderr, status = Open3.capture3(command)
-    puts "(FAILURE) Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
+    stdout, stderr, status = Open3.capture3(command)
+    puts "\n#{stdout}\n".yellow
+    puts "(FAILURE) Unable to run command '#{command}': #{stderr}".red unless status.exitstatus.zero?
     status.exitstatus
   end
 
@@ -218,8 +234,8 @@ module PdkSync
   def self.pdk_update(output_path)
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    _stdout, stderr, status = Open3.capture3('pdk update --force')
-    puts "(FAILURE) Unable to run `pdk update`: #{stderr}" unless status.exitstatus.zero?
+    _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force")
+    puts "(FAILURE) Unable to run `pdk update`: #{stderr}".red unless status.exitstatus.zero?
     status.exitstatus
   end
 
@@ -298,7 +314,7 @@ module PdkSync
   def self.push_staged_files(git_repo, current_branch, repo_name)
     git_repo.push(@push_file_destination, current_branch)
   rescue StandardError => error
-    puts "(FAILURE) Pushing to #{@push_file_destination} for #{repo_name} has failed. #{error}"
+    puts "(FAILURE) Pushing to #{@push_file_destination} for #{repo_name} has failed. #{error}".red
   end
 
   # @summary
@@ -327,7 +343,7 @@ module PdkSync
                                     message)
     pr
   rescue StandardError => error
-    puts "(FAILURE) PR creation for #{repo_name} has failed. #{error}"
+    puts "(FAILURE) PR creation for #{repo_name} has failed. #{error}".red
   end
 
   # @summary
@@ -341,6 +357,6 @@ module PdkSync
   def self.delete_branch(client, repo_name, branch_name)
     client.delete_branch(repo_name, branch_name)
   rescue StandardError => error
-    puts "(FAILURE) Deleting #{branch_name} in #{repo_name} failed. #{error}"
+    puts "(FAILURE) Deleting #{branch_name} in #{repo_name} failed. #{error}".red
   end
 end
