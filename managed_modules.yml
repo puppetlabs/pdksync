@@ -25,6 +25,7 @@
 #- puppetlabs-ibm_installation_manager
 #- puppetlabs-inifile
 #- puppetlabs-java
+#- puppetlabs-java_ks
 #- puppetlabs-motd
 #- puppetlabs-mysql
 #- puppetlabs-ntp
@@ -32,17 +33,15 @@
 #- puppetlabs-postgresql
 #- puppetlabs-puppet_conf
 #- puppetlabs-resource
+#- puppetlabs-satellite_pe_tools
 #- puppetlabs-service
 #- puppetlabs-stdlib
 #- puppetlabs-tagmail
 #- puppetlabs-tomcat
 #- puppetlabs-translate
-## pdk update does not run well
-#- puppetlabs-java_ks
-#- puppetlabs-satellite_pe_tools
 #- puppetlabs-vcsrepo
 #- puppetlabs-websphere_application_server
-# testing only
+## testing only
 # - puppetlabs-testing
 # - puppetlabs-testing1
 # - puppetlabs-testing2
