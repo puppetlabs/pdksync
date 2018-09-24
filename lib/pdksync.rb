@@ -80,13 +80,13 @@ module PdkSync
       puts '(WARNING) @output_path does not exist, skipping module'.red unless File.directory?(output_path)
       next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
-        exit_status = run_command(output_path, '/opt/puppetlabs/pdk/bin/pdk convert --force --template-url https://github.com/puppetlabs/pdk-templates')
+        exit_status = run_command(output_path, "#{return_pdk_path} convert --force --template-url https://github.com/puppetlabs/pdk-templates")
         print 'converted, '
         next unless exit_status.zero?
       end
       if steps.include?(:pdk_validate)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        exit_status = run_command(output_path, '/opt/puppetlabs/pdk/bin/pdk validate -a')
+        exit_status = run_command(output_path, "#{return_pdk_path} validate -a")
         print 'validated, '
         next unless exit_status.zero?
       end
@@ -163,6 +163,21 @@ module PdkSync
     YAML.safe_load(File.open(@managed_modules))
   end
 
+  # @summary
+  #   Try to use a fully installed pdk, otherwise fall back to the bundled pdk gem.
+  # @return String
+  #   Path to the pdk executable
+  def self.return_pdk_path
+    full_path = '/opt/puppetlabs/pdk/bin/pdk'
+    path = if File.executable?(full_path)
+             full_path
+           else
+             puts "(WARNING) Using pdk on PATH not '#{full_path}'".red
+             'pdk'
+           end
+    path
+  end
+
   def self.create_commit(git_repo, branch_name, commit_message)
     checkout_branch(git_repo, branch_name)
     add_staged_files(git_repo)
@@ -219,7 +234,7 @@ module PdkSync
   def self.pdk_update(output_path)
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    _stdout, stderr, status = Open3.capture3('/opt/puppetlabs/pdk/bin/pdk update --force')
+    _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force")
     puts "(FAILURE) Unable to run `pdk update`: #{stderr}".red unless status.exitstatus.zero?
     status.exitstatus
   end
