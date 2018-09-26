@@ -44,8 +44,8 @@
 # networking team
 #- cisco_ios
 #- device_manager
-#- puppetlabs-resource_api
 #- puppetlabs-panos
+#- puppetlabs-resource_api
 ## testing only
 # - puppetlabs-testing
 # - puppetlabs-testing1
