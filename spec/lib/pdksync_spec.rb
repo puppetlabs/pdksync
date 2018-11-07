@@ -47,6 +47,9 @@ describe PdkSync do
     it 'raise when push_and_create_pr with no arguments' do
       expect { PdkSync.main(steps: [:push_and_create_pr]) }.to raise_error(RuntimeError, %r{Needs a pr_title})
     end
+    it 'raise when push_and_create_pr with invalid label' do
+      expect { PdkSync.main(steps: [:push_and_create_pr], args: { pr_title: 'My amazing PR', label: 'doot doot' }) }.to raise_error(RuntimeError, %r{Ensure label is valid})
+    end
     it 'raise when clean_branches with no arguments' do
       expect { PdkSync.main(steps: [:clean_branches]) }.to raise_error(RuntimeError, %r{Needs a branch_name, and the branch name contains the string pdksync})
     end
