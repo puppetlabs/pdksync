@@ -32,6 +32,7 @@ module PdkSync
   @push_file_destination = Constants::PUSH_FILE_DESTINATION
   @create_pr_against = Constants::CREATE_PR_AGAINST
   @managed_modules = Constants::MANAGED_MODULES
+  @default_pdksync_label = Constants::PDKSYNC_LABEL
 
   def self.main(steps: [:clone], args: nil)
     create_filespace
@@ -103,7 +104,8 @@ module PdkSync
           ref = return_template_ref
           args = { branch_name: "pdksync_#{ref}",
                    commit_message: "pdksync_#{ref}",
-                   pr_title: "pdksync_#{ref}" }
+                   pr_title: "pdksync_#{ref}",
+                   pdksync_label: @default_pdksync_label }
         end
         print 'pdk update, '
       end
@@ -119,9 +121,30 @@ module PdkSync
         push_staged_files(git_instance, git_instance.current_branch, repo_name)
         print 'push, '
         pdk_version = return_pdk_version("#{output_path}/metadata.json")
+
+        # If a label is supplied, verify that it is available in the repo
+        label = args[:pdksync_label] ? args[:pdksync_label] : args[:label]
+        label_valid = (label.is_a?(String) && !label.to_str.empty?) ? check_for_label(client, repo_name, label) : nil
+
+        # Exit current iteration if an error occured retrieving a label
+        if label_valid == false
+          raise 'Ensure label is valid'
+        end
+
+        # Create the PR and add link to pr list
         pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, args[:pr_title])
+        if pr.nil?
+          break
+        end
+
         pr_list.push(pr.html_url)
         print 'created pr, '
+
+        # If a valid label is supplied, add this to the PR
+        if label_valid == true
+          add_label(client, repo_name, pr.number, label)
+          print "added label '#{label}' "
+        end
       end
       if steps.include?(:clean_branches)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -344,6 +367,53 @@ module PdkSync
     pr
   rescue StandardError => error
     puts "(FAILURE) PR creation for #{repo_name} has failed. #{error}".red
+  end
+
+  # @summary
+  #   This method when called will check on the given repository for the existence of the supplied label
+  # @param [Octokit::Client] client
+  #   The octokit client used to gain access to and manipulate the repository.
+  # @param [String] repo_name
+  #   The name of the repository on which the commit is to be made.
+  # @param [String] label
+  #   The label to check for.
+  # @return [Boolean]
+  #   A boolean stating whether the label was found.
+  def self.check_for_label(client, repo_name, label)
+    # Get labels from repository
+    repo_labels = client.labels(repo_name)
+
+    # Look for label in the repository's labels
+    match = false
+    repo_labels.each do |repo_label|
+      if repo_label.name == label
+        match = true
+        break
+      end
+    end
+
+    # Raise error if a match was not found else return true
+    (match == false) ? (raise StandardError, "Label '#{label}' not found in #{repo_name}") : (return true)
+  rescue StandardError => error
+    puts "(FAILURE) Retrieving labels for #{repo_name} has failed. #{error}".red
+    return false
+  end
+
+  # @summary
+  #   This method when called will add a given label to a given repository
+  # @param [Octokit::Client] client
+  #   The octokit client used to gain access to and manipulate the repository.
+  # @param [String] repo_name
+  #   The name of the repository on which the commit is to be made.
+  # @param [Integer] issue_number
+  #   The id of the issue (i.e. pull request) to add the label to.
+  # @param [String] label
+  #   The label to add.
+  def self.add_label(client, repo_name, issue_number, label)
+    client.update_issue(repo_name, issue_number, labels: [label])
+  rescue StandardError => error
+    puts "(FAILURE) Adding label to #{repo_name} issue #{issue_number} has failed. #{error}".red
+    return false
   end
 
   # @summary

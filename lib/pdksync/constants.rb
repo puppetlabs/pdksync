@@ -8,5 +8,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     PUSH_FILE_DESTINATION = 'origin'.freeze
     CREATE_PR_AGAINST = 'master'.freeze
     MANAGED_MODULES = 'managed_modules.yml'.freeze
+    # Set PDKSYNC_LABEL to '' to disable adding a label during pdksync runs
+    PDKSYNC_LABEL = 'maintenance'.freeze
   end
 end
