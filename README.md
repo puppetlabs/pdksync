@@ -41,7 +41,7 @@ Pdksync is a gem that works to clone, update, and push module repositories. It i
 
 The gem takes in a file, `managed_modules.yml`, stored within the gem that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The update command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. The commit is merged to the master via a pull request, causing the gem to begin to clone the next repository.
 
-By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by opening `lib/pdksync/constants.rb` and modifying the `PDKSYNC_LABEL` constant. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, simply change `PDKSYNC_LABEL` to an empty string i.e. ''.
+By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by opening `lib/pdksync/constants.rb` and modifying the `PDKSYNC_LABEL` constant. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, simply change `PDKSYNC_LABEL` to an empty string i.e. ''. Similarly, when supplying a label using the `git:push_and_create_pr` rake task, the label must exist on each of the managed modules to run successfully.
 
 The following rake tasks are available with pdksync:
 - `git:clone_managed_modules` Clone managed modules.
@@ -52,7 +52,6 @@ The following rake tasks are available with pdksync:
 - `pdk:pdk_validate` Runs PDK validate against modules.
 - `pdksync` Run full pdksync process, clone repository, pdk update, create pr.
 - `run_a_command[:command]` Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'
-
 
 ### Workflow
 --------
