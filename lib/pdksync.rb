@@ -102,9 +102,10 @@ module PdkSync
         next unless pdk_update(output_path).zero?
         if steps.include?(:use_pdk_ref)
           ref = return_template_ref
+          pr_title = args[:additional_title] ? "#{args[:additional_title]} - pdksync_#{ref}" : "pdksync_#{ref}"
           args = { branch_name: "pdksync_#{ref}",
                    commit_message: "pdksync_#{ref}",
-                   pr_title: "pdksync_#{ref}",
+                   pr_title: pr_title,
                    pdksync_label: @default_pdksync_label }
         end
         print 'pdk update, '

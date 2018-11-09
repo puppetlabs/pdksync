@@ -1,11 +1,12 @@
 require_relative 'lib/pdksync'
 require 'github_changelog_generator/task'
 
-desc 'Run full pdksync process, clone repository, pdk update, create pr.'
-task :pdksync do
+desc 'Run full pdksync process, clone repository, pdk update, create pr. Additional title information can be added to the title, which will be appended before the reference section.'
+task :pdksync, [:additional_title] do |task, args|
   args = {:branch_name    => "pdksync_{ref}",
           :commit_message => "pdksync_{ref}",
-          :pr_title       => "pdksync_{ref}"}
+          :pr_title       => "pdksync_{ref}",
+          :additional_title => args[:additional_title]}
   PdkSync::main(steps: [:use_pdk_ref, :clone, :pdk_update, :create_commit, :push_and_create_pr], args: args)
 end
 

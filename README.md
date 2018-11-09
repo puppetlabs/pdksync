@@ -50,7 +50,9 @@ The following rake tasks are available with pdksync:
 - `git:clean[:branch_name]` Clean up origin branches, (branches must include pdksync in their name) eg rake 'git:clean[pdksync_origin_branch]'.
 - `pdk:pdk_convert` Runs PDK convert against modules.
 - `pdk:pdk_validate` Runs PDK validate against modules.
-- `pdksync` Run full pdksync process, clone repository, pdk update, create pr.
+- `pdksync[:additional_title]` Run full pdksync process, clone repository, pdk update, create pr. Additional information can be added to the title, which will be appended before the reference section.
+  - `rake pdksync` PR title outputs as `pdksync - pdksync_heads/master-0-gabccfb1`
+  - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
 - `run_a_command[:command]` Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'
 
 ### Workflow
