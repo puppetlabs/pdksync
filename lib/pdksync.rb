@@ -38,6 +38,7 @@ module PdkSync
     create_filespace
     client = setup_client
     module_names = return_modules
+    raise "No modules found in '#{@managed_modules}'" if module_names.nil?
     pr_list = []
     # The current directory is saved for cleanup purposes
     main_path = Dir.pwd
@@ -184,6 +185,7 @@ module PdkSync
   # @return [Array]
   #   An array of different module names.
   def self.return_modules
+    raise "File '#{@managed_modules}' is empty/does not exist" if File.size?(@managed_modules).nil?
     YAML.safe_load(File.open(@managed_modules))
   end
 
