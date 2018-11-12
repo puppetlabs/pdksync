@@ -9,6 +9,7 @@ require 'pdksync/constants'
 require 'json'
 require 'yaml'
 require 'colorize'
+require 'bundler'
 
 # @summary
 #   This module set's out and controls the pdksync process
@@ -263,8 +264,21 @@ module PdkSync
   # @return [Integer]
   #   The status code of the command run.
   def self.run_command(output_path, command)
+    stdout = ''
+    stderr = ''
+    status = Process::Status
+
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    stdout, stderr, status = Open3.capture3(command)
+
+    # Environment cleanup required due to Ruby subshells using current Bundler environment
+    if command =~ %r{^bundle}
+      Bundler.with_clean_env do
+        stdout, stderr, status = Open3.capture3(command)
+      end
+    else
+      stdout, stderr, status = Open3.capture3(command)
+    end
+
     puts "\n#{stdout}\n".yellow
     puts "(FAILURE) Unable to run command '#{command}': #{stderr}".red unless status.exitstatus.zero?
     status.exitstatus
