@@ -39,7 +39,9 @@ module PdkSync
     client = setup_client
     module_names = return_modules
     raise "No modules found in '#{@managed_modules}'" if module_names.nil?
+    validate_modules_exist(module_names)
     pr_list = []
+
     # The current directory is saved for cleanup purposes
     main_path = Dir.pwd
 
@@ -187,6 +189,23 @@ module PdkSync
   def self.return_modules
     raise "File '#{@managed_modules}' is empty/does not exist" if File.size?(@managed_modules).nil?
     YAML.safe_load(File.open(@managed_modules))
+  end
+
+  # @summary
+  #   This method when called will parse an array of module names and verify whether they are valid GitHub repo names
+  # @param [Array] module_names
+  #   String array of the names of GitHub repos
+  def self.validate_modules_exist(module_names)
+    invalid_names = []
+    module_names.each do |module_name|
+      # If module name is invalid, push it to invalid names array
+      unless Octokit.repository?("#{@namespace}/#{module_name}")
+        invalid_names.push(module_name)
+        next
+      end
+    end
+    # Raise error if any invalid matches were found
+    raise "Could not find the following repositories: #{invalid_names}" unless invalid_names.empty?
   end
 
   # @summary
