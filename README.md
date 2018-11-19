@@ -55,6 +55,21 @@ The following rake tasks are available with pdksync:
   - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
 - `run_a_command[:command]` Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'
 
+### Configuration File
+
+By default pdksync will use hardcoded values for configuring itself however if you wish to supply your own configuration, simply create `$HOME/.pdksync.yml` and use the following format:
+```
+---
+namespace: 'puppetlabs'
+pdksync_dir: 'modules_pdksync'
+push_file_destination: 'origin'
+create_pr_against: 'master'
+managed_modules: 'managed_modules.yml'
+pdksync_label: 'maintenance'
+```
+
+Ensure all the stated fields are present with values.
+
 ### Workflow
 --------
 
