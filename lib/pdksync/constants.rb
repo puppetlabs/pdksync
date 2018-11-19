@@ -7,20 +7,19 @@ require 'yaml'
 #   Set PDKSYNC_LABEL to '' to disable adding a label during pdksync runs.
 module PdkSync # rubocop:disable Style/ClassAndModuleChildren
   module Constants
-
     default_config = {
-      :namespace => 'puppetlabs',
-      :pdksync_dir => 'modules_pdksync',
-      :push_file_destination => 'origin',
-      :create_pr_against => 'master',
-      :managed_modules => 'managed_modules.yml',
-      :pdksync_label => 'maintenance',
+      namespace: 'puppetlabs',
+      pdksync_dir: 'modules_pdksync',
+      push_file_destination: 'origin',
+      create_pr_against: 'master',
+      managed_modules: 'managed_modules.yml',
+      pdksync_label: 'maintenance'
     }
 
     config = {}
 
     config_path = "#{ENV['HOME']}/.pdksync.yml"
-    if File.exists?(config_path)
+    if File.exist?(config_path)
       config = YAML.load_file(config_path)
     else
       puts "Could not load configuration file '#{config_path}'\nUsing default configuration..."
@@ -34,6 +33,5 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     CREATE_PR_AGAINST = config[:create_pr_against].freeze
     MANAGED_MODULES = config[:managed_modules].freeze
     PDKSYNC_LABEL = config[:pdksync_label].freeze
-
   end
 end
