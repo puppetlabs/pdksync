@@ -22,13 +22,13 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     config_path = "#{ENV['HOME']}/.pdksync.yml"
 
     if File.exist?(config_path)
-      customConfig = YAML.load_file(config_path)
-      config[:namespace] = customConfig['namespace'] ||= default_config[:namespace]
-      config[:pdksync_dir] = customConfig['pdksync_dir'] ||= default_config[:pdksync_dir]
-      config[:push_file_destination] = customConfig['push_file_destination'] ||= default_config[:push_file_destination]
-      config[:create_pr_against] = customConfig['create_pr_against'] ||= default_config[:create_pr_against]
-      config[:managed_modules] = customConfig['managed_modules'] ||= default_config[:managed_modules]
-      config[:pdksync_label] = customConfig['pdksync_label'] ||= default_config[:pdksync_label]
+      custom_config = YAML.load_file(config_path)
+      config[:namespace] = custom_config['namespace'] ||= default_config[:namespace]
+      config[:pdksync_dir] = custom_config['pdksync_dir'] ||= default_config[:pdksync_dir]
+      config[:push_file_destination] = custom_config['push_file_destination'] ||= default_config[:push_file_destination]
+      config[:create_pr_against] = custom_config['create_pr_against'] ||= default_config[:create_pr_against]
+      config[:managed_modules] = custom_config['managed_modules'] ||= default_config[:managed_modules]
+      config[:pdksync_label] = custom_config['pdksync_label'] ||= default_config[:pdksync_label]
     else
       config = default_config
     end
