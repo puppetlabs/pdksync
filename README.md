@@ -88,7 +88,7 @@ This module runs through a pre-set array of modules, with this array set within 
 - puppetlabs-mysql
 ```
 
-To add a module, add it to the list. To remove a module, remove it from the list. If you wish to specify a managed modules file outside of the repo, use the `managed_modules` property in your configuration file to specify the path.
+To add a module, add it to the list. To remove a module, remove it from the list. If you wish to specify a custom managed modules file, use the `managed_modules` property in your configuration file to specify the path to the file.
 
 ### Migrating from modulesync to pdksync
 --------
