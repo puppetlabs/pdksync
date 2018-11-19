@@ -6,6 +6,7 @@ require 'yaml'
 #   Configuration is loaded from `$HOME/.pdksync.yml`. If $HOME is not set, the config_path will use the current directory.
 #   Set PDKSYNC_LABEL to '' to disable adding a label during pdksync runs.
 module PdkSync # rubocop:disable Style/ClassAndModuleChildren
+  # Constants contains the configuration for pdksync to use
   module Constants
     default_config = {
       namespace: 'puppetlabs',
