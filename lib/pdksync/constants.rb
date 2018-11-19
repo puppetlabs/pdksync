@@ -20,19 +20,25 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     config = {}
 
     config_path = "#{ENV['HOME']}/.pdksync.yml"
+
     if File.exist?(config_path)
       config = YAML.load_file(config_path)
+      config["namespace"] ||= default_config[:namespace]
+      config["pdksync_dir"] ||= default_config[:pdksync_dir]
+      config["push_file_destination"] ||= default_config[:push_file_destination]
+      config["create_pr_against"] ||= default_config[:create_pr_against]
+      config["managed_modules"] ||= default_config[:managed_modules]
+      config["pdksync_label"] ||= default_config[:pdksync_label]
     else
-      puts "Could not load configuration file '#{config_path}'\nUsing default configuration..."
       config = default_config
     end
 
     ACCESS_TOKEN = ENV['GITHUB_TOKEN'].freeze
-    NAMESPACE = config[:namespace].freeze
-    PDKSYNC_DIR = config[:pdksync_dir].freeze
-    PUSH_FILE_DESTINATION = config[:push_file_destination].freeze
-    CREATE_PR_AGAINST = config[:create_pr_against].freeze
-    MANAGED_MODULES = config[:managed_modules].freeze
-    PDKSYNC_LABEL = config[:pdksync_label].freeze
+    NAMESPACE = config["namespace"].freeze
+    PDKSYNC_DIR = config["pdksync_dir"].freeze
+    PUSH_FILE_DESTINATION = config["push_file_destination"].freeze
+    CREATE_PR_AGAINST = config["create_pr_against"].freeze
+    MANAGED_MODULES = config["managed_modules"].freeze
+    PDKSYNC_LABEL = config["pdksync_label"].freeze
   end
 end

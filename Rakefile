@@ -1,5 +1,18 @@
 require_relative 'lib/pdksync'
+require 'colorize'
 require 'github_changelog_generator/task'
+
+desc 'Display the configuration of pdksync'
+task :show_config do
+  include PdkSync::Constants
+  puts 'PDKSync Configuration'.bold.yellow
+  puts '- Namespace: '.bold + "#{PdkSync::Constants::NAMESPACE}".cyan
+  puts '- PDKSync Dir: '.bold + "#{PdkSync::Constants::PDKSYNC_DIR}".cyan
+  puts '- Push File Destination: '.bold + "#{PdkSync::Constants::PUSH_FILE_DESTINATION}".cyan
+  puts '- Create PR Against: '.bold + "#{PdkSync::Constants::CREATE_PR_AGAINST}".cyan
+  puts '- Managed Modules: '.bold + "#{PdkSync::Constants::MANAGED_MODULES}".cyan
+  puts '- Default PDKSync Label: '.bold + "#{PdkSync::Constants::PDKSYNC_LABEL}".cyan
+end
 
 desc 'Run full pdksync process, clone repository, pdk update, create pr. Additional title information can be added to the title, which will be appended before the reference section.'
 task :pdksync, [:additional_title] do |task, args|
