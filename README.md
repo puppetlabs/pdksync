@@ -6,7 +6,7 @@ Table of Contents
 1. [Overview](#overview)
 2. [Usage](#usage)
 3. [How it works](#how-it-works)
-4. [Installing](#installing)
+4. [Configuration](#configuration)
 5. [Workflow](#workflow)
 6. [Migrating from modulesync to pdksync](#migrating-from-modulesync-to-pdksync)
 7. [Contributing](#contributing)
@@ -44,6 +44,7 @@ The gem takes in a file, `managed_modules.yml`, stored within the gem that lists
 By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by opening `lib/pdksync/constants.rb` and modifying the `PDKSYNC_LABEL` constant. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, simply change `PDKSYNC_LABEL` to an empty string i.e. ''. Similarly, when supplying a label using the `git:push_and_create_pr` rake task, the label must exist on each of the managed modules to run successfully.
 
 The following rake tasks are available with pdksync:
+- `show_config` Display the current configuration of pdksync
 - `git:clone_managed_modules` Clone managed modules.
 - `git:create_commit[:branch_name, :commit_message]` Stage commits for modules, branchname and commit message eg rake 'git:create_commit[flippity, commit messagez]'.
 - `git:push_and_create_pr[:pr_title, :label]` Push commit, and create PR for modules. Label is optional eg rake 'git:push_and_create_pr[pr title goes here, optional label right here]'.
@@ -54,6 +55,21 @@ The following rake tasks are available with pdksync:
   - `rake pdksync` PR title outputs as `pdksync - pdksync_heads/master-0-gabccfb1`
   - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
 - `run_a_command[:command]` Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'
+
+### Configuration
+
+By default pdksync will use hardcoded values for configuring itself however if you wish to override these values, simply create `$HOME/.pdksync.yml` and use the following format:
+```
+---
+namespace: 'puppetlabs'
+pdksync_dir: 'modules_pdksync'
+push_file_destination: 'origin'
+create_pr_against: 'master'
+managed_modules: 'managed_modules.yml'
+pdksync_label: 'maintenance'
+```
+
+You may override any property. Those that are not specified in your config file will use their corresponding default value from `constants.rb`.
 
 ### Workflow
 --------
@@ -71,7 +87,8 @@ This module runs through a pre-set array of modules, with this array set within 
 - puppetlabs-stdlib
 - puppetlabs-mysql
 ```
-To add a module, add it to the list. To remove a module, remove it from the list.
+
+To add a module, add it to the list. To remove a module, remove it from the list. If you wish to specify a custom managed modules file, use the `managed_modules` property in your configuration file to specify the path to the file.
 
 ### Migrating from modulesync to pdksync
 --------
