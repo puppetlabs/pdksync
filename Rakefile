@@ -2,7 +2,7 @@ require_relative 'lib/pdksync'
 require 'colorize'
 require 'github_changelog_generator/task'
 
-desc 'Display the configuration of pdksync'
+desc 'Display the current configuration of pdksync'
 task :show_config do
   include PdkSync::Constants
   puts 'PDKSync Configuration'.bold.yellow
