@@ -198,6 +198,7 @@ module PdkSync
   #   String array of the names of GitHub repos
   def self.validate_modules_exist(module_names)
     invalid_names = []
+    raise "Error reading in modules. Check syntax of '#{@managed_modules}'." unless module_names.nil? && module_names.is_a?(Array)
     module_names.each do |module_name|
       # If module name is invalid, push it to invalid names array
       unless Octokit.repository?("#{@namespace}/#{module_name}")

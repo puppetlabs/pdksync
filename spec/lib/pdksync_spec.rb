@@ -14,6 +14,7 @@ describe PdkSync do
 
   before(:each) do
     allow(PdkSync).to receive(:return_modules).and_return(@module_names)
+    allow(PdkSync).to receive(:validate_modules_exist).and_return(@module_names)
     Dir.chdir(@folder)
   end
 
