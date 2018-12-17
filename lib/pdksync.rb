@@ -59,7 +59,7 @@ module PdkSync
     # validation push_and_create_pr
     if steps.include?(:push_and_create_pr)
       raise 'Needs a pr_title' if args.nil? || args[:pr_title].nil?
-      puts "PR title =#{args[:pr_title]}"
+      puts "PR title =#{args[:additional_title]} #{args[:pr_title]}"
     end
     # validation clean_branches
     if steps.include?(:clean_branches)
@@ -69,6 +69,7 @@ module PdkSync
 
     abort "No modules listed in #{@managed_modules}" if module_names.nil?
     module_names.each do |module_name|
+      module_args = args.clone
       Dir.chdir(main_path) unless Dir.pwd == main_path
       print "#{module_name}, "
       repo_name = "#{@namespace}/#{module_name}"
@@ -98,7 +99,7 @@ module PdkSync
       if steps.include?(:run_a_command)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         print 'run command, '
-        exit_status = run_command(output_path, args)
+        exit_status = run_command(output_path, module_args)
         next unless exit_status.zero?
       end
       if steps.include?(:pdk_update)
@@ -106,18 +107,18 @@ module PdkSync
         next unless pdk_update(output_path).zero?
         if steps.include?(:use_pdk_ref)
           ref = return_template_ref
-          pr_title = args[:additional_title] ? "#{args[:additional_title]} - pdksync_#{ref}" : "pdksync_#{ref}"
-          args = { branch_name: "pdksync_#{ref}",
-                   commit_message: "pdksync_#{ref}",
-                   pr_title: pr_title,
-                   pdksync_label: @default_pdksync_label }
+          pr_title = module_args[:additional_title] ? "#{module_args[:additional_title]} - pdksync_#{ref}" : "pdksync_#{ref}"
+          module_args = module_args.merge(branch_name: "pdksync_#{ref}",
+                                          commit_message: pr_title,
+                                          pr_title: pr_title,
+                                          pdksync_label: @default_pdksync_label)
         end
         print 'pdk update, '
       end
       if steps.include?(:create_commit)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
-        create_commit(git_instance, args[:branch_name], args[:commit_message])
+        create_commit(git_instance, module_args[:branch_name], module_args[:commit_message])
         print 'commit created, '
       end
       if steps.include?(:push_and_create_pr)
@@ -128,7 +129,7 @@ module PdkSync
         pdk_version = return_pdk_version("#{output_path}/metadata.json")
 
         # If a label is supplied, verify that it is available in the repo
-        label = args[:pdksync_label] ? args[:pdksync_label] : args[:label]
+        label = module_args[:pdksync_label] ? module_args[:pdksync_label] : module_args[:label]
         label_valid = (label.is_a?(String) && !label.to_str.empty?) ? check_for_label(client, repo_name, label) : nil
 
         # Exit current iteration if an error occured retrieving a label
@@ -137,7 +138,7 @@ module PdkSync
         end
 
         # Create the PR and add link to pr list
-        pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, args[:pr_title])
+        pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, module_args[:pr_title])
         if pr.nil?
           break
         end
@@ -153,7 +154,7 @@ module PdkSync
       end
       if steps.include?(:clean_branches)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        delete_branch(client, repo_name, args[:branch_name])
+        delete_branch(client, repo_name, module_args[:branch_name])
         print 'branch deleted, '
       end
       puts 'done.'.green
@@ -200,7 +201,7 @@ module PdkSync
   #   String array of the names of GitHub repos
   def self.validate_modules_exist(client, module_names)
     invalid_names = []
-    raise "Error reading in modules. Check syntax of '#{@managed_modules}'." unless module_names.nil? && module_names.is_a?(Array)
+    raise "Error reading in modules. Check syntax of '#{@managed_modules}'." unless !module_names.nil? && module_names.is_a?(Array)
     module_names.each do |module_name|
       # If module name is invalid, push it to invalid names array
       unless client.repository?("#{@namespace}/#{module_name}")
