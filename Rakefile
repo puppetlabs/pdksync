@@ -6,6 +6,11 @@ desc 'Display the current configuration of pdksync'
 task :show_config do
   include PdkSync::Constants
   puts 'PDKSync Configuration'.bold.yellow
+  puts '- Git hosting platform: '.bold + "#{PdkSync::Constants::GIT_PLATFORM}".cyan
+  puts '- Git base URI: '.bold + "#{PdkSync::Constants::GIT_BASE_URI}".cyan
+  if PdkSync::Constants::GIT_PLATFORM == :gitlab
+    puts '- Gitlab API endpoint: '.bold + "#{PdkSync::Constants::GITLAB_API_ENDPOINT}".cyan
+  end
   puts '- Namespace: '.bold + "#{PdkSync::Constants::NAMESPACE}".cyan
   puts '- PDKSync Dir: '.bold + "#{PdkSync::Constants::PDKSYNC_DIR}".cyan
   puts '- Push File Destination: '.bold + "#{PdkSync::Constants::PUSH_FILE_DESTINATION}".cyan
@@ -23,7 +28,7 @@ task :pdksync, [:additional_title] do |task, args|
   PdkSync::main(steps: [:use_pdk_ref, :clone, :pdk_update, :create_commit, :push_and_create_pr], args: args)
 end
 
-namespace :pdk do 
+namespace :pdk do
   desc 'Runs PDK convert against modules'
   task :pdk_convert do
     PdkSync::main(steps: [:pdk_convert])
