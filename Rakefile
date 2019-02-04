@@ -67,6 +67,11 @@ task :run_a_command, [:command] do |task, args|
   PdkSync::main(steps: [:run_a_command], args: args[:command])
 end
 
+desc "Check if a pdksync run is needed"
+task :check_run_needed do |task, args|
+  PdkSync::main(steps: [:check_run_needed], args: args[:command])
+end
+
 GitHubChangelogGenerator::RakeTask.new :changelog do |config|
   config.user = 'puppetlabs'
   config.project = 'pdksync'

@@ -84,7 +84,7 @@ module PdkSync
     module_names.each do |module_name|
       module_args = args.clone
       Dir.chdir(main_path) unless Dir.pwd == main_path
-      print "#{module_name}, "
+      puts "#{module_name}, ".bold
       repo_name = "#{@namespace}/#{module_name}"
       output_path = "#{@pdksync_dir}/#{module_name}"
       if steps.include?(:clone)
@@ -114,6 +114,10 @@ module PdkSync
         print 'run command, '
         exit_status = run_command(output_path, module_args)
         next unless exit_status.zero?
+      end
+      if steps.include?(:check_run_needed)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        abort 'A pdk run should be made' if check_run_needed(module_name, client)
       end
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -316,6 +320,52 @@ module PdkSync
   end
 
   # @summary
+  #   This method when called will check to see if a template update has been released since the last time the given module was updated
+  # @param [String] module_name
+  #   The module that is to be checked.
+  # @param [Octokit::Client] client
+  #   The octokit client used to gain access to and manipulate the repository.
+  # @return [Boolean]
+  #   Returns whether or not an update is required.
+  def self.check_run_needed(module_name, client)
+    url = "https://raw.githubusercontent.com/puppetlabs/#{module_name}/master/metadata.json"
+    res = Net::HTTP.get_response(URI(url))
+    if res.code == '404'
+      private_url = retrieve_ci_file_url("puppetlabs/#{module_name}", 'metadata.json') # rubocop:disable Lint/UselessAssignment
+      ci_config = client.contents(repo, path: path, query: { ref: 'master' })
+      private_url = ci_config['download_url']
+      res = Net::HTTP.get_response(URI(private_url))
+    end
+    if res.code == '200'
+      meta = JSON.parse(res.body)
+
+      template_url = meta['template-url']
+      template_ref = meta['template-ref']
+      current_version = meta['pdk-version']
+
+      target = template_url[%r{(\w*\/\w*-\w*)}]
+      sha_latest_commit = client.ref(target, 'heads/master').object.sha
+      stripped_ref = template_ref[%r{(\w*$)}]
+      if sha_latest_commit[%r{(^#{stripped_ref})}]
+        latest_version = `curl https://rubygems.org/api/v1/versions/pdk/latest.json`
+        if Gem::Version.new(JSON.parse(latest_version)['version']) < Gem::Version.new(current_version)
+          puts 'Module is up to date'.green
+          false
+        else
+          puts 'A new pdk version has been released'.red
+          return true
+        end
+      else
+        puts 'Template is out of date'.red
+        return true
+      end
+    else
+      puts "Unable to fetch the metadata file: #{res.body}"
+      return true
+    end
+  end
+
+  # @summary
   #   This method when called will retrieve the template ref of the current module, i.e. the one that was navigated into in the 'pdk_update' method.
   # @param [String] metadata_file
   #   An optional input that can be used to set the location of the metadata file.
@@ -325,6 +375,18 @@ module PdkSync
     file = File.read(metadata_file)
     data_hash = JSON.parse(file)
     data_hash['template-ref']
+  end
+
+  # @summary
+  #   This method when called will retrieve the template url of the current module, i.e. the one that was navigated into in the 'pdk_update' method.
+  # @param [String] metadata_file
+  #   An optional input that can be used to set the location of the metadata file.
+  # @return [String]
+  #   A url that that directs to the current pdk template.
+  def self.return_template_url(metadata_file = 'metadata.json')
+    file = File.read(metadata_file)
+    data_hash = JSON.parse(file)
+    data_hash['template-url']
   end
 
   # @summary

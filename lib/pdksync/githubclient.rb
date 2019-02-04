@@ -72,4 +72,15 @@ class PdkSync::GithubClient
   def delete_branch(repo_name, branch_name)
     @client.delete_branch(repo_name, branch_name)
   end
+
+  # @summary Returns the current ref of a given branches head in the repository
+  # @param [String] repo_name
+  #   The full repository name, i.e. "namespace/repo_name"
+  # @param [String] branch_name
+  #   The name of the branch whose ref is to be retrieved
+  # @return [Octokit::Refs]
+  #   The ref object that has been retrieved
+  def ref(repo_name, branch_name)
+    @client.ref(repo_name, branch_name)
+  end
 end
