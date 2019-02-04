@@ -14,17 +14,26 @@ Table of Contents
 ### Overview
 --------
 
-Pdksync is an efficient way to run a `pdk update` command against the various repositories that we manage — keeping them up-to-date with the changes made to PDK. It is a solution for converted modules that no longer run with modulesync.
+Pdksync is an efficient way to run a `pdk update` command against the various Puppet module repositories that you manage — keeping them up-to-date with the changes made to PDK. It is a solution for converted modules that no longer run with modulesync.
+
+Pdksync by default expects that your Puppet module repositories live on GitHub and will behave accordingly. It also supports GitLab as an alternative Git hosting platform.
 
 ### Usage
 ----------
 
-> Note: This tool creates a 'live' pull request against the master branch of the module it is running against — defined in `managed_modules.yml`. Before running this tool, ensure this file  reflects the modules you wish it to run against, and that `constants.rb` is up-to-date with the correct namespace your modules reside in.
+> Note: This tool creates a 'live' pull (merge) request against the master branch of the module it is running against — defined in `managed_modules.yml`. Before running this tool, ensure this file reflects the modules you wish it to run against. Additionally make sure that the Pdksync configuration file `$HOME/.pdksync.yml` sets the correct namespace, Git platform and Git base URI for your modules. See section [Configuration](#configuration) for details.
 
 1. To use pdksync, clone the GitHub repo or install it as a gem. Set up the environment by exporting a GitHub token:
-```
-export GITHUB_TOKEN=<access_token>
-```
+
+   ```
+   export GITHUB_TOKEN=<access_token>
+   ```
+
+   If you use GitLab instead of GitHub export your GitLab access token:
+
+   ```
+   export GITLAB_TOKEN=<access_token>
+   ```
 2. Before the script will run, you need to install the gems:
 ```
 bundle install --path .bundle/gems/
@@ -41,7 +50,7 @@ Pdksync is a gem that works to clone, update, and push module repositories. It i
 
 The gem takes in a file, `managed_modules.yml`, stored within the gem that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The update command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. The commit is merged to the master via a pull request, causing the gem to begin to clone the next repository.
 
-By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by opening `lib/pdksync/constants.rb` and modifying the `PDKSYNC_LABEL` constant. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, simply change `PDKSYNC_LABEL` to an empty string i.e. ''. Similarly, when supplying a label using the `git:push_and_create_pr` rake task, the label must exist on each of the managed modules to run successfully.
+By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `$HOME/.pdksync.yml` and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, simply change `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:push_and_create_pr` rake task, the label must exist on each of the managed modules to run successfully.
 
 The following rake tasks are available with pdksync:
 - `show_config` Display the current configuration of pdksync
@@ -58,7 +67,7 @@ The following rake tasks are available with pdksync:
 
 ### Configuration
 
-By default pdksync will use hardcoded values for configuring itself however if you wish to override these values, simply create `$HOME/.pdksync.yml` and use the following format:
+By default pdksync will use hardcoded values for configuring itself. However, if you wish to override these values, simply create `$HOME/.pdksync.yml` and use the following format:
 ```
 ---
 namespace: 'puppetlabs'
@@ -67,14 +76,69 @@ push_file_destination: 'origin'
 create_pr_against: 'master'
 managed_modules: 'managed_modules.yml'
 pdksync_label: 'maintenance'
+git_platform: :github
+git_base_uri: 'https://github.com'
+# Only used when git_platform is set to :gitlab
+gitlab_api_endpoint: 'https://gitlab.com/api/v4'
 ```
 
-You may override any property. Those that are not specified in your config file will use their corresponding default value from `constants.rb`.
+You may override any property. Those that are not specified in your config file will use their corresponding default value from `lib/pdksync/constants.rb`.
+
+#### Git platform support
+
+By default pdksync assumes you are hosting your Puppet modules on GitHub, and GitHub is the only platform officially supported by Puppetlabs in pdksync.
+
+Pdksync also supports the GitLab platform, but without official support by Puppetlabs.
+
+##### GitHub
+
+To use GitHub you only need to export your GitHub access token as the
+environment variable `GITHUB_TOKEN` and configure the namespace in which your
+modules are hosted in `$HOME/.pdksync.yml` as described above.
+
+##### GitLab
+
+To use GitLab at `https://gitlab.com` you need to set `git_platform: :gitlab`
+and configure the namespace of your modules in `$HOME/.pdksync.yml`. You also
+need to export your GitLab access token as the environment variable
+`GITLAB_TOKEN`.
+
+Your `$HOME/.pdksync.yml` then looks like this:
+
+```
+# ~/pdksync.yml
+---
+namespace: 'acme'
+git_platform: :gitlab
+```
+
+Export your GitLab access token:
+
+```
+$ export GITLAB_TOKEN=<your GitLab access token here>
+```
+
+If you are running your own GitLab instance on premise or use a GitLab instance
+other than the official one at `https://gitlab.com` you also need to configure
+`git_base_uri` and `gitlab_api_endpoint` in `$HOME/.pdksync.yml` so that
+pdksync knows from where to clone your modules and where to access to GitLab
+API to create the live merge requests:
+
+```
+# ~/pdksync.yml
+---
+namespace: 'puppetmodules'
+git_platform: :gitlab
+git_base_uri: 'https://gitlab.example.com'
+# alternatively use SSH:
+#git_base_uri: 'ssh://git@gitlab.example.com:2222'
+gitlab_api_endpoint: 'https://gitlab.example.com/api/v4'
+```
 
 ### Workflow
 --------
 
-It currently runs without additional arguments. To alter how it runs, make alterations to either the `constants.rb` or `managed_modules.yml`.
+It currently runs without additional arguments. To alter how it runs, make alterations to either `HOME/.pdksync.yml` or `managed_modules.yml`.
 
 ### Managed modules
 ----------

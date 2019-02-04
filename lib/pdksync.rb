@@ -4,8 +4,8 @@ require 'open3'
 require 'fileutils'
 require 'rake'
 require 'pdk'
-require 'octokit'
 require 'pdksync/constants'
+require 'pdksync/gitplatformclient'
 require 'json'
 require 'yaml'
 require 'colorize'
@@ -13,8 +13,6 @@ require 'bundler'
 
 # @summary
 #   This module set's out and controls the pdksync process
-# @param [String] @access_token
-#   The token used to access github, must be exported locally.
 # @param [String] @namspace
 #   The namespace of the repositories we are updating.
 # @param [String] @pdksync_dir
@@ -25,15 +23,30 @@ require 'bundler'
 #   The branch the the pull requests are to be made against.
 # @param [String] @managed_modules
 #   The file that the array of managed modules is to be retrieved from.
+# @param [Symbol] @git_platform
+#   The Git hosting platform to use for pull requests
+# @param [String] @git_base_uri
+#   The base URI for Git repository access, for example 'https://github.com' or
+#   'ssh://git@repo.example.com:2222'
+# @param [Hash] @git_platform_access_settings
+#   Hash of access settings required to access the configured Git hosting
+#   platform API. Must always contain the key :access_token set to the exported
+#   GITHUB_TOKEN or GITLAB_TOKEN. In case of Gitlab it also must contain the
+#   key :gitlab_api_endpoint with an appropriate value.
 module PdkSync
   include Constants
-  @access_token = Constants::ACCESS_TOKEN
   @namespace = Constants::NAMESPACE
   @pdksync_dir = Constants::PDKSYNC_DIR
   @push_file_destination = Constants::PUSH_FILE_DESTINATION
   @create_pr_against = Constants::CREATE_PR_AGAINST
   @managed_modules = Constants::MANAGED_MODULES
   @default_pdksync_label = Constants::PDKSYNC_LABEL
+  @git_platform = Constants::GIT_PLATFORM
+  @git_base_uri = Constants::GIT_BASE_URI
+  @git_platform_access_settings = {
+    access_token: Constants::ACCESS_TOKEN,
+    gitlab_api_endpoint: Constants::GITLAB_API_ENDPOINT
+  }
 
   def self.main(steps: [:clone], args: nil)
     create_filespace
@@ -174,14 +187,12 @@ module PdkSync
 
   # @summary
   #   This method when called will create and return an octokit client with access to the upstream git repositories.
-  # @return [Octokit::Client] client
-  #   The octokit client that has been created.
+  # @return [PdkSync::GitPlatformClient] client
+  #   The Git platform client that has been created.
   def self.setup_client
-    client = Octokit::Client.new(access_token: @access_token.to_s)
-    client.user.login
-    client
-  rescue ArgumentError, Octokit::Unauthorized
-    raise "Access Token not set up correctly - Use export 'GITHUB_TOKEN=<put your token here>' to set it."
+    PdkSync::GitPlatformClient.new(@git_platform, @git_platform_access_settings)
+  rescue StandardError => error
+    raise "Git platform access not set up correctly: #{error}"
   end
 
   # @summary
@@ -194,11 +205,13 @@ module PdkSync
   end
 
   # @summary
-  #   This method when called will parse an array of module names and verify whether they are valid GitHub repo names
-  # @param [Octokit::Client] client
-  #   The octokit client used to get a repository.
+  #   This method when called will parse an array of module names and verify
+  #   whether they are valid repo or project names on the configured Git
+  #   hosting platform.
+  # @param [PdkSync::GitPlatformClient] client
+  #   The Git platform client used to get a repository.
   # @param [Array] module_names
-  #   String array of the names of GitHub repos
+  #   String array of the names of Git platform repos
   def self.validate_modules_exist(client, module_names)
     invalid_names = []
     raise "Error reading in modules. Check syntax of '#{@managed_modules}'." unless !module_names.nil? && module_names.is_a?(Array)
@@ -254,7 +267,7 @@ module PdkSync
   # @return [Git::Base]
   #   A git object representing the local repository.
   def self.clone_directory(namespace, module_name, output_path)
-    Git.clone("https://github.com/#{namespace}/#{module_name}.git", output_path.to_s) # is returned
+    Git.clone("#{@git_base_uri}/#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   rescue Git::GitExecuteError => error
     puts "(FAILURE) Cloning #{module_name} has failed. #{error}".red
   end
@@ -356,7 +369,7 @@ module PdkSync
   # @param [String] template_ref
   #   The unique template_ref that is used as part of the commit name.
   # @param [String] commit_message
-  #   If sepecified it will be the message for the commit.
+  #   If specified it will be the message for the commit.
   def self.commit_staged_files(git_repo, template_ref, commit_message = nil)
     message = if commit_message.nil?
                 "pdksync_#{template_ref}"
@@ -382,8 +395,8 @@ module PdkSync
 
   # @summary
   #   This method when called will create a pr on the given repository that will create a pr to merge the given commit into the master with the pdk version as an identifier.
-  # @param [Octokit::Client] client
-  #   The octokit client used to gain access to and manipulate the repository.
+  # @param [PdkSync::GitPlatformClient] client
+  #   The Git platform client used to gain access to and manipulate the repository.
   # @param [String] repo_name
   #   The name of the repository on which the commit is to be made.
   # @param [String] template_ref
@@ -411,8 +424,8 @@ module PdkSync
 
   # @summary
   #   This method when called will check on the given repository for the existence of the supplied label
-  # @param [Octokit::Client] client
-  #   The octokit client used to gain access to and manipulate the repository.
+  # @param [PdkSync::GitPlatformClient] client
+  #   The Git platform client used to gain access to and manipulate the repository.
   # @param [String] repo_name
   #   The name of the repository on which the commit is to be made.
   # @param [String] label
@@ -441,8 +454,8 @@ module PdkSync
 
   # @summary
   #   This method when called will add a given label to a given repository
-  # @param [Octokit::Client] client
-  #   The octokit client used to gain access to and manipulate the repository.
+  # @param [PdkSync::GitPlatformClient] client
+  #   The Git Platform client used to gain access to and manipulate the repository.
   # @param [String] repo_name
   #   The name of the repository on which the commit is to be made.
   # @param [Integer] issue_number
@@ -458,8 +471,8 @@ module PdkSync
 
   # @summary
   #   This method when called will delete any preexisting branch on the given repository that matches the given name.
-  # @param [Octokit::Client] client
-  #   The octokit client used to gain access to and manipulate the repository.
+  # @param [PdkSync::GitPlatformClient] client
+  #   The Git platform client used to gain access to and manipulate the repository.
   # @param [String] repo_name
   #   The name of the repository from which the branch is to be deleted.
   # @param [String] branch_name
