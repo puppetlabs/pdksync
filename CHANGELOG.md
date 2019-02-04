@@ -2,9 +2,23 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
-## [0.3.0](https://github.com/puppetlabs/pdksync/tree/0.3.0) (2018-11-15)
+## [0.4.0](https://github.com/puppetlabs/pdksync/tree/0.4.0) (2019-02-04)
 
-[Full Changelog](https://github.com/puppetlabs/pdksync/compare/0.2.0...0.3.0)
+[Full Changelog](https://github.com/puppetlabs/pdksync/compare/v0.3.0...0.4.0)
+
+### Added
+
+- \(MODULES-8419\) Refactor to add support for GitLab [\#85](https://github.com/puppetlabs/pdksync/pull/85) ([antaflos](https://github.com/antaflos))
+- \(MODULES-7233\) - Add configurable file option [\#81](https://github.com/puppetlabs/pdksync/pull/81) ([eimlav](https://github.com/eimlav))
+
+### Fixed
+
+- \(MODULES-8283\) - Fix PR title overwritten in pdksync runs [\#84](https://github.com/puppetlabs/pdksync/pull/84) ([eimlav](https://github.com/eimlav))
+- \(MODULES-8382\) - Fix API rate limit false positive [\#83](https://github.com/puppetlabs/pdksync/pull/83) ([eimlav](https://github.com/eimlav))
+
+## [v0.3.0](https://github.com/puppetlabs/pdksync/tree/v0.3.0) (2018-11-15)
+
+[Full Changelog](https://github.com/puppetlabs/pdksync/compare/0.2.0...v0.3.0)
 
 ### Added
 
