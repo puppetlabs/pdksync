@@ -10,7 +10,13 @@ class PdkSync::GithubClient
   #   supplied access token
   # @param access_token
   #   The Github access token, required to access the Github API
-  def initialize(access_token)
+  # @param api_endpoint
+  #   The Github REST API endpoint url
+  def initialize(access_token, api_endpoint)
+    Octokit.configure do |c|
+      c.api_endpoint = api_endpoint
+    end
+
     @client = Octokit::Client.new(access_token: access_token.to_s)
     @client.user.login
   end

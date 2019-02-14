@@ -80,6 +80,8 @@ git_platform: :github
 git_base_uri: 'https://github.com'
 # Only used when git_platform is set to :gitlab
 gitlab_api_endpoint: 'https://gitlab.com/api/v4'
+# Only used when git_platform is set to :github
+github_api_endpoint: 'https://api.github.com'
 ```
 
 You may override any property. Those that are not specified in your config file will use their corresponding default value from `lib/pdksync/constants.rb`.
@@ -95,6 +97,10 @@ Pdksync also supports the GitLab platform, but without official support by Puppe
 To use GitHub you only need to export your GitHub access token as the
 environment variable `GITHUB_TOKEN` and configure the namespace in which your
 modules are hosted in `$HOME/.pdksync.yml` as described above.
+
+##### GitHub Enterprise
+
+To use GitHub Enterprise you only need to define your custom endpoint in `github_api_endpoint`
 
 ##### GitLab
 

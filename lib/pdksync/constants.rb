@@ -17,7 +17,8 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
       pdksync_label: 'maintenance',
       git_platform: :github,
       git_base_uri: 'https://github.com',
-      gitlab_api_endpoint: 'https://gitlab.com/api/v4'
+      gitlab_api_endpoint: 'https://gitlab.com/api/v4',
+      github_api_endpoint: 'https://api.github.com'
     }
 
     supported_git_platforms = [:github, :gitlab]
@@ -43,6 +44,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
                                                                   default_config[:git_base_uri]
                                                                 end
       config[:gitlab_api_endpoint] = custom_config['gitlab_api_endpoint'] ||= default_config[:gitlab_api_endpoint]
+      config[:github_api_endpoint] = custom_config['github_api_endpoint'] ||= default_config[:github_api_endpoint]
     else
       config = default_config
     end
@@ -62,6 +64,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
                    when :gitlab
                      ENV['GITLAB_TOKEN'].freeze
                    end
+    GITHUB_API_ENDPOINT = config[:github_api_endpoint].freeze
 
     # Sanity checks
 

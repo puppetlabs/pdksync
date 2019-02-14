@@ -26,7 +26,9 @@ class PdkSync::GitPlatformClient
               when :github
                 require 'pdksync/githubclient'
 
-                PdkSync::GithubClient.new(access_token)
+                github_api_endpoint = git_platform_access_settings[:github_api_endpoint]
+                PdkSync::GithubClient.new(access_token,
+                                          github_api_endpoint)
               when :gitlab
                 require 'pdksync/gitlabclient'
 

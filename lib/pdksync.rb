@@ -45,7 +45,8 @@ module PdkSync
   @git_base_uri = Constants::GIT_BASE_URI
   @git_platform_access_settings = {
     access_token: Constants::ACCESS_TOKEN,
-    gitlab_api_endpoint: Constants::GITLAB_API_ENDPOINT
+    gitlab_api_endpoint: Constants::GITLAB_API_ENDPOINT,
+    github_api_endpoint: Constants::GITHUB_API_ENDPOINT
   }
 
   def self.main(steps: [:clone], args: nil)
