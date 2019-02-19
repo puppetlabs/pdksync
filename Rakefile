@@ -30,6 +30,7 @@ namespace :pdksync do
  desc 'Display the current configuration of pdksync'
   task :show_config do
     include PdkSync::Constants
+    puts 'Please note that you can override any of the configuration by using an additional file at `$HOME/.pdksync.yml`.'.bold.red
     puts 'PDKSync Configuration'.bold.yellow
     puts '- Git hosting platform: '.bold + "#{PdkSync::Constants::GIT_PLATFORM}".cyan
     puts '- Git base URI: '.bold + "#{PdkSync::Constants::GIT_BASE_URI}".cyan
