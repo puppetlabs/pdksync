@@ -184,14 +184,14 @@ module PdkSync
   # @summary
   #   Check the local pdk version against the most recent tagged release on GitHub
   def self.check_pdk_version
-    _stdout, stderr, status = Open3.capture3("#{return_pdk_path} --version")
+    stdout, _stderr, status = Open3.capture3("#{return_pdk_path} --version")
     raise "(FAILURE) Unable to find pdk at '#{return_pdk_path}'.".red unless status.exitstatus
 
-    local_version = _stdout.strip
+    local_version = stdout.strip
     remote_version = Octokit.tags('puppetlabs/pdk').first[:name][1..-1]
-    
+
     unless Gem::Version.new(remote_version) <= Gem::Version.new(local_version)
-      puts "(WARNING) The current version of pdk is #{remote_version} however you are using #{local_version}".red 
+      puts "(WARNING) The current version of pdk is #{remote_version} however you are using #{local_version}".red
     end
   rescue StandardError => error
     puts "(WARNING) Unable to check latest pdk version. #{error}".red
