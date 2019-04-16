@@ -53,17 +53,17 @@ The gem takes in a file, `managed_modules.yml`, stored within the gem that lists
 By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `$HOME/.pdksync.yml` and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, simply change `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:push_and_create_pr` rake task, the label must exist on each of the managed modules to run successfully.
 
 The following rake tasks are available with pdksync:
-- `show_config` Display the current configuration of pdksync
+- `pdksync:show_config` Display the current configuration of pdksync
 - `git:clone_managed_modules` Clone managed modules.
 - `git:create_commit[:branch_name, :commit_message]` Stage commits for modules, branchname and commit message eg rake 'git:create_commit[flippity, commit messagez]'.
 - `git:push_and_create_pr[:pr_title, :label]` Push commit, and create PR for modules. Label is optional eg rake 'git:push_and_create_pr[pr title goes here, optional label right here]'.
 - `git:clean[:branch_name]` Clean up origin branches, (branches must include pdksync in their name) eg rake 'git:clean[pdksync_origin_branch]'.
-- `pdk:pdk_convert` Runs PDK convert against modules.
-- `pdk:pdk_validate` Runs PDK validate against modules.
+- `pdksync:pdk_convert` Runs PDK convert against modules.
+- `pdksync:pdk_validate` Runs PDK validate against modules.
 - `pdksync[:additional_title]` Run full pdksync process, clone repository, pdk update, create pr. Additional information can be added to the title, which will be appended before the reference section.
   - `rake pdksync` PR title outputs as `pdksync - pdksync_heads/master-0-gabccfb1`
   - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
-- `run_a_command[:command]` Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'
+- `pdksync:run_a_command[:command]` Run a command against modules eg rake 'pdksync:run_a_command[complex command here -f -gx]'
 
 ### Configuration
 
