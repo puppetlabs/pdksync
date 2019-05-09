@@ -1,5 +1,10 @@
 require 'pdksync/rake_tasks'
 require 'github_changelog_generator/task'
+require 'rubocop/rake_task'
+
+RuboCop::RakeTask.new(:rubocop) do |t|
+  t.options = ['--display-cop-names']
+end
 
 GitHubChangelogGenerator::RakeTask.new :changelog do |config|
   config.user = 'puppetlabs'
