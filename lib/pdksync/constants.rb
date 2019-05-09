@@ -24,7 +24,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
 
     config = {}
 
-    config_path = "#{ENV['HOME']}/.pdksync.yml"
+    config_path = File.exist?('pdksync.yml') ? 'pdksync.yml' : "#{ENV['HOME']}/.pdksync.yml"
 
     # pdksync config file must exist, not be empty and not be an empty YAML file
     if File.exist?(config_path) && YAML.load_file(config_path) && !YAML.load_file(config_path).nil?
