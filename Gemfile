@@ -7,4 +7,3 @@ gemspec
 
 gem 'github_changelog_generator', git: 'https://github.com/skywinder/github-changelog-generator', ref: 'master'
 gem 'travis'
-gem 'colorize'
