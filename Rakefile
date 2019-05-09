@@ -1,4 +1,4 @@
-require_relative 'lib/pdksync'
+require 'pdksync'
 require 'colorize'
 require 'github_changelog_generator/task'
 
