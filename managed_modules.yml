@@ -41,15 +41,15 @@
 #- puppetlabs-translate
 #- puppetlabs-vcsrepo
 #- puppetlabs-websphere_application_server
-# networking team
+## networking team
 #- cisco_ios
 #- device_manager
 #- puppetlabs-panos
 #- puppetlabs-resource_api
 ## testing only
-# - puppetlabs-testing
-# - puppetlabs-testing1
-# - puppetlabs-testing2
+#- puppetlabs-testing
+#- puppetlabs-testing1
+#- puppetlabs-testing2
 ## cloud and containers team
-# - puppetlabs-kubernetes
-# - puppetlabs-rook
+#- puppetlabs-kubernetes
+#- puppetlabs-rook
