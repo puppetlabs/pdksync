@@ -52,4 +52,5 @@
 #- puppetlabs-testing2
 ## cloud and containers team
 #- puppetlabs-kubernetes
+#- puppetlabs-helm
 #- puppetlabs-rook
