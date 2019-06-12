@@ -25,32 +25,74 @@ Pdksync by default expects that your Puppet module repositories live on GitHub a
 
 1. To use pdksync, clone the GitHub repo or install it as a gem. Set up the environment by exporting a GitHub token:
 
-   ```
+   ```shell
    export GITHUB_TOKEN=<access_token>
    ```
 
    If you use GitLab instead of GitHub export your GitLab access token:
 
-   ```
+   ```shell
    export GITLAB_TOKEN=<access_token>
    ```
 2. Before the script will run, you need to install the gems:
-```
+```shell
 bundle install --path .bundle/gems/
 ```
 3. Once this is complete, call the built-in rake task to run the module:
-```
+```shell
 bundle exec rake pdksync
 ```
 
 ### How it works
 ------------
 
-Pdksync is a gem that works to clone, update, and push module repositories. It is activated from within the pdksync module.
+Pdksync is a gem that works to clone, update, and push module repositories. Create a new git repository to store your working config. You need the following files in there:
 
-The gem takes in a file, `managed_modules.yml`, stored within the gem that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The update command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. The commit is merged to the master via a pull request, causing the gem to begin to clone the next repository.
+Rakefile:
+```ruby
+require 'pdksync/rake_tasks'
+```
 
-By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `$HOME/.pdksync.yml` and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, simply change `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:push_and_create_pr` rake task, the label must exist on each of the managed modules to run successfully.
+Gemfile:
+```ruby
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
+
+gem 'pdksync', github: 'puppetlabs/pdksync', ref: 'pdksync-externalisation-fixes'
+gem 'rake'
+```
+
+managed_modules.yml:
+```yaml
+---
+- repo1
+- repo2
+- repo3
+- repo4
+```
+
+pdksync.yml:
+```yaml
+---
+namespace: 'YOUR GITHUB NAME'
+git_base_uri: 'git@github.com:'
+```
+
+
+Run the following commands to check that everything is working as expected:
+
+```shell
+bundle install --path .bundle/gems/
+bundle exec rake -T
+bundle exec rake git:clone_managed_modules
+```
+
+The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. A pull request against master is opened, and pdksync begins to clone the next repository.
+
+By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `pdksync.yml` in the local directory and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, set `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:push_and_create_pr` rake task, the label must exist on each of the managed modules to run successfully.
 
 The following rake tasks are available with pdksync:
 - `pdksync:show_config` Display the current configuration of pdksync
@@ -67,8 +109,8 @@ The following rake tasks are available with pdksync:
 
 ### Configuration
 
-By default pdksync will use hardcoded values for configuring itself. However, if you wish to override these values, simply create `$HOME/.pdksync.yml` and use the following format:
-```
+By default pdksync will use hardcoded values for configuring itself. However, if you wish to override these values, create a `pdksync.yml` in your working directory and use the following format:
+```yaml
 ---
 namespace: 'puppetlabs'
 pdksync_dir: 'modules_pdksync'
@@ -105,7 +147,7 @@ need to export your GitLab access token as the environment variable
 
 Your `$HOME/.pdksync.yml` then looks like this:
 
-```
+```yaml
 # ~/pdksync.yml
 ---
 namespace: 'acme'
@@ -114,8 +156,8 @@ git_platform: :gitlab
 
 Export your GitLab access token:
 
-```
-$ export GITLAB_TOKEN=<your GitLab access token here>
+```shell
+export GITLAB_TOKEN=<your GitLab access token here>
 ```
 
 If you are running your own GitLab instance on premise or use a GitLab instance
@@ -124,7 +166,7 @@ other than the official one at `https://gitlab.com` you also need to configure
 pdksync knows from where to clone your modules and where to access to GitLab
 API to create the live merge requests:
 
-```
+```yaml
 # ~/pdksync.yml
 ---
 namespace: 'puppetmodules'
@@ -145,7 +187,7 @@ It currently runs without additional arguments. To alter how it runs, make alter
 
 This module runs through a pre-set array of modules, with this array set within the `managed_modules.yml` file. This file makes use of a simple `yaml` style format to set out the different module names, for example:
 
-```
+```yaml
 ---
 - puppetlabs-motd
 - puppetlabs-stdlib
@@ -185,7 +227,7 @@ When you're confident everything is in good shape, you can start converting your
 Useful commands via the .sync.yml:
 
 - Add additional gem dependencies:
-```
+```yaml
 Gemfile:
   required:
     ':system_tests':
@@ -193,18 +235,18 @@ Gemfile:
         platforms: ruby
 ```
 - Make changes to your travis configuration:
-```
+```yaml
 .travis.yml:
   branches:
     - release
 ```
 - Delete files that you don't want to exist in the repo:
-```
+```yaml
 .gitlab-ci.yml:
   delete: true
 ```
 - Unmanage files that you don't want to be managed:
-```
+```yaml
 .gitlab-ci.yml:
   unmanaged: true
 ```
@@ -236,15 +278,15 @@ This tool has been developed and tested on OSX and Linux. **It currently does no
 
 1. Fork the repo
 2. Create your feature branch:
-```
+```shell
 git checkout -b my-new-feature
 ```
 3. Commit your changes:
-```
+```shell
 git commit -am 'Add some feature'
 ```
 4. Push to the branch:
-```
+```shell
 git push origin my-new-feature
 ```
 5. Create a new pull request
