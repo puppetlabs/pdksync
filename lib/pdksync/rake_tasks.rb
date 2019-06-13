@@ -7,7 +7,7 @@ task :pdksync, [:additional_title] do |_task, args|
            commit_message: 'pdksync_{ref}',
            pr_title: 'pdksync_{ref}',
            additional_title: args[:additional_title] }
-  PdkSync.main(steps: [:use_pdk_ref, :clone, :pdk_update, :create_commit, :push_and_create_pr], args: args)
+  PdkSync.main(steps: [:use_pdk_ref, :clone, :pdk_update, :create_commit, :push, :create_pr], args: args)
 end
 
 namespace :pdksync do
@@ -56,9 +56,14 @@ namespace :git do
     PdkSync.main(steps: [:create_commit], args: args)
   end
 
-  desc "Push commit, and create PR for modules eg rake 'git:push_and_create_pr[pr title goes here, optional label right here]'"
-  task :push_and_create_pr, [:pr_title, :label] do |_task, args|
-    PdkSync.main(steps: [:push_and_create_pr], args: args)
+  desc "Push commits for the module eg rake 'git:push'"
+  task :push do |_task|
+    PdkSync.main(steps: [:push], args: nil)
+  end
+
+  desc "Create PR for modules eg rake 'git:create_pr[pr title goes here, optional label right here]'"
+  task :create_pr, [:pr_title, :label] do |_task, args|
+    PdkSync.main(steps: [:create_pr], args: args)
   end
 
   desc "Clean up origin branches, (branches must include pdksync in their name) eg rake 'git:clean[pdksync_origin_branch]'"
