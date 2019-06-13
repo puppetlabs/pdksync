@@ -92,13 +92,14 @@ bundle exec rake git:clone_managed_modules
 
 The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. A pull request against master is opened, and pdksync begins to clone the next repository.
 
-By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `pdksync.yml` in the local directory and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, set `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:push_and_create_pr` rake task, the label must exist on each of the managed modules to run successfully.
+By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `pdksync.yml` in the local directory and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, set `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:create_pr` rake task, the label must exist on each of the managed modules to run successfully.
 
 The following rake tasks are available with pdksync:
 - `pdksync:show_config` Display the current configuration of pdksync
 - `git:clone_managed_modules` Clone managed modules.
 - `git:create_commit[:branch_name, :commit_message]` Stage commits for modules, branchname and commit message eg rake 'git:create_commit[flippity, commit messagez]'.
-- `git:push_and_create_pr[:pr_title, :label]` Push commit, and create PR for modules. Label is optional eg rake 'git:push_and_create_pr[pr title goes here, optional label right here]'.
+- `git:push` Push staged commits eg rake 'git:push'.
+- `git:create_pr[:pr_title, :label]` Create PR for modules. Label is optional eg rake 'git:create_pr[pr title goes here, optional label right here]'.
 - `git:clean[:branch_name]` Clean up origin branches, (branches must include pdksync in their name) eg rake 'git:clean[pdksync_origin_branch]'.
 - `pdksync:pdk_convert` Runs PDK convert against modules.
 - `pdksync:pdk_validate` Runs PDK validate against modules.

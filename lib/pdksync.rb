@@ -71,8 +71,8 @@ module PdkSync
       raise 'Needs a branch_name and commit_message' if args.nil? || args[:commit_message].nil? || args[:branch_name].nil?
       puts "Commit branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}"
     end
-    # validation push_and_create_pr
-    if steps.include?(:push_and_create_pr)
+    # validation create_pr
+    if steps.include?(:create_pr)
       raise 'Needs a pr_title' if args.nil? || args[:pr_title].nil?
       puts "PR title =#{args[:additional_title]} #{args[:pr_title]}"
     end
@@ -136,11 +136,15 @@ module PdkSync
         create_commit(git_instance, module_args[:branch_name], module_args[:commit_message])
         print 'commit created, '
       end
-      if steps.include?(:push_and_create_pr)
+      if steps.include?(:push)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
         push_staged_files(git_instance, git_instance.current_branch, repo_name)
         print 'push, '
+      end
+      if steps.include?(:create_pr)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        git_instance = Git.open(output_path)
         pdk_version = return_pdk_version("#{output_path}/metadata.json")
 
         # If a label is supplied, verify that it is available in the repo
