@@ -265,8 +265,9 @@ module PdkSync
 
   def self.create_commit(git_repo, branch_name, commit_message)
     checkout_branch(git_repo, branch_name)
-    add_staged_files(git_repo)
-    commit_staged_files(git_repo, branch_name, commit_message)
+    if add_staged_files(git_repo) # ignore rubocop for clarity on side effect ordering # rubocop:disable Style/GuardClause
+      commit_staged_files(git_repo, branch_name, commit_message)
+    end
   end
 
   # @summary
@@ -379,8 +380,10 @@ module PdkSync
     if git_repo.status.changed != {}
       git_repo.add(all: true)
       puts 'All files have been staged.'
+      true
     else
       puts 'Nothing to commit.'
+      false
     end
   end
 
