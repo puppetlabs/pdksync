@@ -139,36 +139,46 @@ module PdkSync
       if steps.include?(:push)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
-        push_staged_files(git_instance, git_instance.current_branch, repo_name)
-        print 'push, '
+        # replace 'origin/master' with proper upstream default branch when https://github.com/ruby-git/ruby-git/issues/414 gets fixed
+        if git_instance.diff(git_instance.current_branch, 'origin/master').size != 0 # doesn't have a empty? method # rubocop:disable Style/ZeroLengthPredicate
+          push_staged_files(git_instance, git_instance.current_branch, repo_name)
+          print 'push, '
+        else
+          print 'skipped push, '
+        end
       end
       if steps.include?(:create_pr)
-        Dir.chdir(main_path) unless Dir.pwd == main_path
-        git_instance = Git.open(output_path)
-        pdk_version = return_pdk_version("#{output_path}/metadata.json")
+        # replace 'origin/master' with proper upstream default branch when https://github.com/ruby-git/ruby-git/issues/414 gets fixed
+        if git_instance.diff(git_instance.current_branch, 'origin/master').size != 0 # doesn't have a empty? method # rubocop:disable Style/ZeroLengthPredicate
+          Dir.chdir(main_path) unless Dir.pwd == main_path
+          git_instance = Git.open(output_path)
+          pdk_version = return_pdk_version("#{output_path}/metadata.json")
 
-        # If a label is supplied, verify that it is available in the repo
-        label = module_args[:pdksync_label] ? module_args[:pdksync_label] : module_args[:label]
-        label_valid = (label.is_a?(String) && !label.to_str.empty?) ? check_for_label(client, repo_name, label) : nil
+          # If a label is supplied, verify that it is available in the repo
+          label = module_args[:pdksync_label] ? module_args[:pdksync_label] : module_args[:label]
+          label_valid = (label.is_a?(String) && !label.to_str.empty?) ? check_for_label(client, repo_name, label) : nil
 
-        # Exit current iteration if an error occured retrieving a label
-        if label_valid == false
-          raise 'Ensure label is valid'
-        end
+          # Exit current iteration if an error occured retrieving a label
+          if label_valid == false
+            raise 'Ensure label is valid'
+          end
 
-        # Create the PR and add link to pr list
-        pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, module_args[:pr_title])
-        if pr.nil?
-          break
-        end
+          # Create the PR and add link to pr list
+          pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, module_args[:pr_title])
+          if pr.nil?
+            break
+          end
 
-        pr_list.push(pr.html_url)
-        print 'created pr, '
+          pr_list.push(pr.html_url)
+          print 'created pr, '
 
-        # If a valid label is supplied, add this to the PR
-        if label_valid == true
-          add_label(client, repo_name, pr.number, label)
-          print "added label '#{label}' "
+          # If a valid label is supplied, add this to the PR
+          if label_valid == true
+            add_label(client, repo_name, pr.number, label)
+            print "added label '#{label}' "
+          end
+        else
+          print 'skipped pr, '
         end
       end
       if steps.include?(:clean_branches)
