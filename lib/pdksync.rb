@@ -139,36 +139,44 @@ module PdkSync
       if steps.include?(:push)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
-        push_staged_files(git_instance, git_instance.current_branch, repo_name)
-        print 'push, '
+        if git_instance.diff(git_instance.current_branch, "#{@push_file_destination}/#{@create_pr_against}").size != 0 # Git::Diff doesn't have empty? # rubocop:disable Style/ZeroLengthPredicate
+          push_staged_files(git_instance, git_instance.current_branch, repo_name)
+          print 'push, '
+        else
+          print 'skipped push, '
+        end
       end
       if steps.include?(:create_pr)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
-        pdk_version = return_pdk_version("#{output_path}/metadata.json")
+        if git_instance.diff(git_instance.current_branch, "#{@push_file_destination}/#{@create_pr_against}").size != 0 # Git::Diff doesn't have empty? # rubocop:disable Style/ZeroLengthPredicate
+          pdk_version = return_pdk_version("#{output_path}/metadata.json")
 
-        # If a label is supplied, verify that it is available in the repo
-        label = module_args[:pdksync_label] ? module_args[:pdksync_label] : module_args[:label]
-        label_valid = (label.is_a?(String) && !label.to_str.empty?) ? check_for_label(client, repo_name, label) : nil
+          # If a label is supplied, verify that it is available in the repo
+          label = module_args[:pdksync_label] ? module_args[:pdksync_label] : module_args[:label]
+          label_valid = (label.is_a?(String) && !label.to_str.empty?) ? check_for_label(client, repo_name, label) : nil
 
-        # Exit current iteration if an error occured retrieving a label
-        if label_valid == false
-          raise 'Ensure label is valid'
-        end
+          # Exit current iteration if an error occured retrieving a label
+          if label_valid == false
+            raise 'Ensure label is valid'
+          end
 
-        # Create the PR and add link to pr list
-        pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, module_args[:pr_title])
-        if pr.nil?
-          break
-        end
+          # Create the PR and add link to pr list
+          pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, module_args[:pr_title])
+          if pr.nil?
+            break
+          end
 
-        pr_list.push(pr.html_url)
-        print 'created pr, '
+          pr_list.push(pr.html_url)
+          print 'created pr, '
 
-        # If a valid label is supplied, add this to the PR
-        if label_valid == true
-          add_label(client, repo_name, pr.number, label)
-          print "added label '#{label}' "
+          # If a valid label is supplied, add this to the PR
+          if label_valid == true
+            add_label(client, repo_name, pr.number, label)
+            print "added label '#{label}' "
+          end
+        else
+          print 'skipped pr, '
         end
       end
       if steps.include?(:clean_branches)
@@ -265,8 +273,9 @@ module PdkSync
 
   def self.create_commit(git_repo, branch_name, commit_message)
     checkout_branch(git_repo, branch_name)
-    add_staged_files(git_repo)
-    commit_staged_files(git_repo, branch_name, commit_message)
+    if add_staged_files(git_repo) # ignore rubocop for clarity on side effect ordering # rubocop:disable Style/GuardClause
+      commit_staged_files(git_repo, branch_name, commit_message)
+    end
   end
 
   # @summary
@@ -379,8 +388,10 @@ module PdkSync
     if git_repo.status.changed != {}
       git_repo.add(all: true)
       puts 'All files have been staged.'
+      true
     else
       puts 'Nothing to commit.'
+      false
     end
   end
 
