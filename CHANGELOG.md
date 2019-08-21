@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
+## [0.5.0](https://github.com/puppetlabs/pdksync/tree/0.5.0) (2019-08-21)
+
+[Full Changelog](https://github.com/puppetlabs/pdksync/compare/0.4.0...0.5.0)
+
+### Added
+
+- pdksync externalisation fixes [\#95](https://github.com/puppetlabs/pdksync/pull/95) ([DavidS](https://github.com/DavidS))
+- \(MODULES-8730\) Display warning on outdated pdk version [\#92](https://github.com/puppetlabs/pdksync/pull/92) ([eimlav](https://github.com/eimlav))
+
+### Fixed
+
+- \(MODULES-9011\) deal with modules that do not need updating [\#101](https://github.com/puppetlabs/pdksync/pull/101) ([DavidS](https://github.com/DavidS))
+
 ## [0.4.0](https://github.com/puppetlabs/pdksync/tree/0.4.0) (2019-02-04)
 
 [Full Changelog](https://github.com/puppetlabs/pdksync/compare/v0.3.0...0.4.0)
