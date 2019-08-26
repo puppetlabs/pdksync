@@ -268,7 +268,10 @@ module PdkSync
   # @return [Git::Base]
   #   A git object representing the local repository.
   def self.clone_directory(namespace, module_name, output_path)
-    Git.clone("#{configuration.git_base_uri}/#{namespace}/#{module_name}.git", output_path.to_s) # is returned
+    # not all urls are public facing so we need to conditionally use the correct separator
+    sep = @git_base_uri.start_with?('git@') ? ':' : '/'
+    clone_url = "#{configuration.git_base_uri}#{sep}#{namespace}/#{module_name}.git"
+    Git.clone(clone_url, output_path.to_s) # is returned
   rescue Git::GitExecuteError => error
     puts "(FAILURE) Cloning #{module_name} has failed. #{error}".red
   end
