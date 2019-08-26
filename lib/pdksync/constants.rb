@@ -18,6 +18,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
       git_platform: :github,
       git_base_uri: 'https://github.com',
       gitlab_api_endpoint: 'https://gitlab.com/api/v4'
+      api_endpoint: nil
     }
 
     supported_git_platforms = [:github, :gitlab]
@@ -29,6 +30,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     # pdksync config file must exist, not be empty and not be an empty YAML file
     if File.exist?(config_path) && YAML.load_file(config_path) && !YAML.load_file(config_path).nil?
       custom_config = YAML.load_file(config_path)
+      config[:api_endpoint] = custom_config['api_endpoint'] || default_config[:api_endpoint]
       config[:namespace] = custom_config['namespace'] ||= default_config[:namespace]
       config[:pdksync_dir] = custom_config['pdksync_dir'] ||= default_config[:pdksync_dir]
       config[:push_file_destination] = custom_config['push_file_destination'] ||= default_config[:push_file_destination]
@@ -56,6 +58,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     GIT_PLATFORM = config[:git_platform].downcase.to_sym.freeze
     GIT_BASE_URI = config[:git_base_uri].freeze
     GITLAB_API_ENDPOINT = config[:gitlab_api_endpoint].freeze
+    API_ENDPOINT = config[:api_endpoint].freeze
     ACCESS_TOKEN = case GIT_PLATFORM
                    when :github
                      ENV['GITHUB_TOKEN'].freeze
@@ -69,7 +72,6 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
       raise "Unsupported Git hosting platform '#{GIT_PLATFORM}'."\
         " Supported platforms are: #{supported_git_platforms.join(', ')}"
     end
-
     if ACCESS_TOKEN.nil?
       raise "Git platform access token for #{GIT_PLATFORM.capitalize} not set"\
         " - use 'export #{GIT_PLATFORM.upcase}_TOKEN=\"<your token>\"' to set"
