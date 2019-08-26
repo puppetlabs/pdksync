@@ -12,6 +12,12 @@ module PdkSync
   class Configuration < OpenStruct
     SUPPORTED_SCM_PLATFORMS = [:github, :gitlab]
     PDKSYNC_FILE_NAME = 'pdksync.yml'
+
+    # Any key value added to the default config or custom config
+    # will automatically be a new configuration item and referenced
+    # via Configuration.new.<key_name> ie. 
+    # c = Configuration.new
+    # c.api_endpoint
     DEFAULT_CONFIG = {
       namespace: 'puppetlabs',
       pdksync_dir: 'modules_pdksync',
@@ -22,6 +28,7 @@ module PdkSync
       git_platform: :github,
       git_base_uri: 'https://github.com',
       gitlab_api_endpoint: 'https://gitlab.com/api/v4',
+      api_endpoint: nil,
     }
     
     # @param config_path [String] -  the path to the pdk config file
@@ -37,7 +44,9 @@ module PdkSync
     def git_platform_access_settings 
       @git_platform_access_settings ||= {
         access_token: access_token,
-        gitlab_api_endpoint: gitlab_api_endpoint
+        gitlab_api_endpoint: gitlab_api_endpoint || api_endpoint,
+        api_endpoint: api_endpoint
+
       }
     end
 
