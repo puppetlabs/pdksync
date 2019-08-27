@@ -11,6 +11,8 @@ require 'yaml'
 require 'colorize'
 require 'bundler'
 require 'octokit'
+require 'pdk/util/template_uri'
+
 # @summary
 #   This module set's out and controls the pdksync process
 module PdkSync
@@ -313,7 +315,9 @@ module PdkSync
   def self.pdk_update(output_path)
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    template_ref = configuration.module_is_authoritive ? return_template_ref : configuration.pdk_templates_ref
+    _, module_temp_ref = module_templates_url.split('#')
+    module_temp_ref ||= configuration.pdk_templates_ref
+    template_ref = configuration.module_is_authoritive ? module_temp_ref : configuration.pdk_templates_ref
     change_module_template_url(configuration.pdk_templates_url) unless configuration.module_is_authoritive
     _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force --template-ref=#{template_ref}")
     puts "(FAILURE) Unable to run `pdk update`: #{stderr}".red unless status.exitstatus.zero?
@@ -345,10 +349,11 @@ module PdkSync
     data_hash['template-url']
   end
 
-  def self.change_module_template_url(url, metadata_file = 'metadata.json')
+  def self.change_module_template_url(url, ref, metadata_file = 'metadata.json')
     file = File.read(metadata_file)
+    uri = PDK::Util::TemplateURI.uri_safe(url.to_s + "##{ref}")
     data_hash = JSON.parse(file)
-    data_hash['template-url'] = url
+    data_hash['template-url'] = uri
     File.write(metadata_file, data_hash.to_json)
   end
 
@@ -415,7 +420,7 @@ module PdkSync
   # @param [String] repo_name
   #   The name of the repository on which the commit is to be made.
   def self.push_staged_files(git_repo, current_branch, repo_name)
-    git_repo.push(onfiguration.push_file_destination, current_branch)
+    git_repo.push(configuration.push_file_destination, current_branch)
   rescue StandardError => error
     puts "(FAILURE) Pushing to #{configuration.push_file_destination} for #{repo_name} has failed. #{error}".red
   end

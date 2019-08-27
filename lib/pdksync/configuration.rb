@@ -57,7 +57,7 @@ module PdkSync
 
     # @return [String] return a rendered string for pdk to use the templates
     def templates
-      "--template-url=#{template_url} --template-ref=#{template_ref}"
+      "--template-url=#{pdk_templates_url} --template-ref=#{pdk_templates_ref}"
     end
 
     # @param path [String] path to the pdksync config file in yaml format

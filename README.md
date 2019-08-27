@@ -140,8 +140,14 @@ By default pdksync assumes you are hosting your Puppet modules on GitHub, and Gi
 Pdksync also supports the GitLab platform, but without official support by Puppetlabs.
 
 ##### GitHub
+Github.com and Github enterprise both work with octokit which is used in pdksync.  There are some settings
+you will need to adjust if using the on premise github enterprise edition.
 
-To use GitHub you only need to export your GitHub access token as the
+1. `api_endpoint: https://mygithub.mycompany.com/api/v3`
+2. `git_base_uri: git@mygithub.mycompany.com`
+3. `export GITHUB_TOKEN=k3939isdiasdf93i_`  (your token goes here)
+
+To use GitHub.com you only need to export your GitHub access token as the
 environment variable `GITHUB_TOKEN` and configure the namespace in which your
 modules are hosted in `$HOME/.pdksync.yml` as described above.
 
@@ -169,7 +175,7 @@ export GITLAB_TOKEN=<your GitLab access token here>
 
 If you are running your own GitLab instance on premise or use a GitLab instance
 other than the official one at `https://gitlab.com` you also need to configure
-`git_base_uri` and `gitlab_api_endpoint` in `$HOME/.pdksync.yml` so that
+`git_base_uri` and `api_endpoint` in `$HOME/.pdksync.yml` so that
 pdksync knows from where to clone your modules and where to access to GitLab
 API to create the live merge requests:
 
@@ -181,8 +187,44 @@ git_platform: :gitlab
 git_base_uri: 'https://gitlab.example.com'
 # alternatively use SSH:
 #git_base_uri: 'ssh://git@gitlab.example.com:2222'
-gitlab_api_endpoint: 'https://gitlab.example.com/api/v4'
+api_endpoint: 'https://gitlab.example.com/api/v4'
 ```
+
+### Setting who has the authoritive
+It may be desirable to allow modules to dictate which version of the pdk-templates they should sync with.
+There are a few settings you can tune to allow for this kind of flexability.  These settings are in the pdksync.yml file.  All of these settings are optional and have sane defaults.  See `rake pdksync:show_config` for the settings that will be used. 
+
+- pdk_templates_prefix: 'nwops-'  (example only, keep as empty string)
+- pdk_templates_ref: 1.12.0
+- pdk_templates_url: https://github.com/puppetlabs/pdk-templates.git
+- module_is_authoritive: true
+
+The first setting is `module_is_authoritive`.  When this is set to true the templates and ref specified in the metadata become the authoritive source for these settings.  Even if you have pdk_templates_ref and pdk_templates_url specified in pdksync.yml the metadata settings will alwasys be used.
+
+```json
+# module/metadata.json
+{
+"pdk-version": "1.11.1",
+"template-url": "https://github.com/puppetlabs/pdk-templates#master",
+"template-ref": "heads/master-0-gb096033"
+}
+
+```
+
+When `module_is_authoritive` is set to false the pdk_templates_ref and pdk_templates_url will override what is found in the modules's metadata.json file.  This is very useful when you have to control pdk-template upgrades on modules. 
+
+The other settings dictiate where the templates are located and which branch, tag or reference you want to use.
+`pdk_templates_ref: 'master'` and `pdk_templates_url: https://github.com/puppetlabs/pdk-templates.git`.  These settings will only be utilized if module_is_authoritive is set to false.  However, if you are performing a conversion via pdksync these settings will also be used since the metadata in the module being converted doesn't have pdk settings yet. 
+
+The last setting `pdk_templates_prefix` is a special use case that allows folks with internal forks of pdk-templates to keep branches of the pdk-template tags with additional custom changes. Setting this to an empty string disables this.  You will most likely need to resolve conflicts with this workflow, so it is not for everyone.  If you know of a better way please submmit a pull request. 
+
+This strategy works in conjunction with the pdk-template git tags and the workflow looks like:
+  1. git fetch upstream (github.com/puppetlabs/pdk-templates)
+  2. git checkout master && git rebase upstream/master
+  3. git checkout -b nwops-1.0.13 nwops-1.0.12
+  4. git rebase 1.0.13
+  5. git push origin nwops-1.0.13
+
 
 ### Supporting multiple namespaces
 If you have multiple namespaces that you need to support you will need to create a pdksync.yml config
@@ -193,7 +235,7 @@ You can set a PDKSYNC_CONFIG_PATH environment variable that points to the specif
 
 example: `PDKSYNC_CONFIG_PATH=pdksync_ops.yml`
 
-Or you can set a different HOME enviornment variable that tells pdksync where to find the pdksync.yml file.  Pdksync will locate the pdksync.yml file in the HOME folder you specify.  The config file name is not changable in this case.
+Or you can set a different HOME environment variable that tells pdksync where to find the pdksync.yml file.  Pdksync will locate the pdksync.yml file in the HOME folder you specify.  The config file name is not changable in this case.
 
 example: `HOME=ops`
 
