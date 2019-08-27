@@ -39,6 +39,7 @@ module PdkSync
     def initialize(config_path = ENV['PDKSYNC_CONFIG_PATH'])
       @config_path = locate_config_path(config_path)
       @custom_config = DEFAULT_CONFIG.merge(custom_config(@config_path))
+      @custom_config[:pdk_templates_ref] = "#{@custom_config[:pdk_templates_prefix]}#{@custom_config[:pdk_templates_ref]}"
       super(@custom_config)
       valid_scm?(git_platform)
       valid_access_token?
