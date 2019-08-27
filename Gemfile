@@ -7,3 +7,8 @@ gemspec
 
 gem 'github_changelog_generator', git: 'https://github.com/skywinder/github-changelog-generator', ref: 'master'
 gem 'travis'
+
+group :development do
+  gem 'pry', require: true
+  gem 'rb-readline', require: true
+end

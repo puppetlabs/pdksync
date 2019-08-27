@@ -4,57 +4,27 @@ require 'open3'
 require 'fileutils'
 require 'rake'
 require 'pdk'
-require 'pdksync/constants'
+require 'pdksync/configuration'
 require 'pdksync/gitplatformclient'
 require 'json'
 require 'yaml'
 require 'colorize'
 require 'bundler'
 require 'octokit'
-
 # @summary
 #   This module set's out and controls the pdksync process
-# @param [String] @namspace
-#   The namespace of the repositories we are updating.
-# @param [String] @pdksync_dir
-#   The local directory the repositories are to be copied to.
-# @param [String] @push_file_destination
-#   The remote that the pull requests are to be made against.
-# @param [String] @create_pr_against
-#   The branch the the pull requests are to be made against.
-# @param [String] @managed_modules
-#   The file that the array of managed modules is to be retrieved from.
-# @param [Symbol] @git_platform
-#   The Git hosting platform to use for pull requests
-# @param [String] @git_base_uri
-#   The base URI for Git repository access, for example 'https://github.com' or
-#   'ssh://git@repo.example.com:2222'
-# @param [Hash] @git_platform_access_settings
-#   Hash of access settings required to access the configured Git hosting
-#   platform API. Must always contain the key :access_token set to the exported
-#   GITHUB_TOKEN or GITLAB_TOKEN. In case of Gitlab it also must contain the
-#   key :gitlab_api_endpoint with an appropriate value.
 module PdkSync
-  include Constants
-  @namespace = Constants::NAMESPACE
-  @pdksync_dir = Constants::PDKSYNC_DIR
-  @push_file_destination = Constants::PUSH_FILE_DESTINATION
-  @create_pr_against = Constants::CREATE_PR_AGAINST
-  @managed_modules = Constants::MANAGED_MODULES
-  @default_pdksync_label = Constants::PDKSYNC_LABEL
-  @git_platform = Constants::GIT_PLATFORM
-  @git_base_uri = Constants::GIT_BASE_URI
-  @git_platform_access_settings = {
-    access_token: Constants::ACCESS_TOKEN,
-    gitlab_api_endpoint: Constants::GITLAB_API_ENDPOINT
-  }
+  
+  def self.configuration
+    @configuration ||= PdkSync::Configuration.new
+  end
 
   def self.main(steps: [:clone], args: nil)
     check_pdk_version
     create_filespace
     client = setup_client
     module_names = return_modules
-    raise "No modules found in '#{@managed_modules}'" if module_names.nil?
+    raise "No modules found in '#{configuration.managed_modules}'" if module_names.nil?
     validate_modules_exist(client, module_names)
     pr_list = []
 
@@ -82,17 +52,17 @@ module PdkSync
       puts "Removing branch_name =#{args[:branch_name]}"
     end
 
-    abort "No modules listed in #{@managed_modules}" if module_names.nil?
+    abort "No modules listed in #{configuration.managed_modules}" if module_names.nil?
     module_names.each do |module_name|
       module_args = args.clone
       Dir.chdir(main_path) unless Dir.pwd == main_path
       print "#{module_name}, "
-      repo_name = "#{@namespace}/#{module_name}"
-      output_path = "#{@pdksync_dir}/#{module_name}"
+      repo_name = "#{configuration.namespace}/#{module_name}"
+      output_path = "#{configuration.pdksync_dir}/#{module_name}"
       if steps.include?(:clone)
         clean_env(output_path) if Dir.exist?(output_path)
         print 'delete module directory, '
-        @git_repo = clone_directory(@namespace, module_name, output_path)
+        @git_repo = clone_directory(configuration.namespace, module_name, output_path)
         print 'cloned, '
         puts "(WARNING) Unable to clone repo for #{module_name}".red if @git_repo.nil?
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -101,7 +71,7 @@ module PdkSync
       puts '(WARNING) @output_path does not exist, skipping module'.red unless File.directory?(output_path)
       next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
-        exit_status = run_command(output_path, "#{return_pdk_path} convert --force --template-url https://github.com/puppetlabs/pdk-templates")
+        exit_status = run_command(output_path, "#{return_pdk_path} convert --force")
         print 'converted, '
         next unless exit_status.zero?
       end
@@ -126,7 +96,7 @@ module PdkSync
           module_args = module_args.merge(branch_name: "pdksync_#{ref}",
                                           commit_message: pr_title,
                                           pr_title: pr_title,
-                                          pdksync_label: @default_pdksync_label)
+                                          pdksync_label: configuration.default_pdksync_label)
         end
         print 'pdk update, '
       end
@@ -139,7 +109,7 @@ module PdkSync
       if steps.include?(:push)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
-        if git_instance.diff(git_instance.current_branch, "#{@push_file_destination}/#{@create_pr_against}").size != 0 # Git::Diff doesn't have empty? # rubocop:disable Style/ZeroLengthPredicate
+        if git_instance.diff(git_instance.current_branch, "#{configuration.push_file_destination}/#{configuration.create_pr_against}").size != 0 # Git::Diff doesn't have empty? # rubocop:disable Style/ZeroLengthPredicate
           push_staged_files(git_instance, git_instance.current_branch, repo_name)
           print 'push, '
         else
@@ -149,7 +119,7 @@ module PdkSync
       if steps.include?(:create_pr)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
-        if git_instance.diff(git_instance.current_branch, "#{@push_file_destination}/#{@create_pr_against}").size != 0 # Git::Diff doesn't have empty? # rubocop:disable Style/ZeroLengthPredicate
+        if git_instance.diff(git_instance.current_branch, "#{configuration.push_file_destination}/#{configuration.create_pr_against}").size != 0 # Git::Diff doesn't have empty? # rubocop:disable Style/ZeroLengthPredicate
           pdk_version = return_pdk_version("#{output_path}/metadata.json")
 
           # If a label is supplied, verify that it is available in the repo
@@ -210,9 +180,9 @@ module PdkSync
   end
 
   # @summary
-  #   This method when called will create a directory identified by the set global variable '@pdksync_dir', on the condition that it does not already exist.
+  #   This method when called will create a directory identified by the set global variable 'configuration.pdksync_dir', on the condition that it does not already exist.
   def self.create_filespace
-    FileUtils.mkdir @pdksync_dir unless Dir.exist?(@pdksync_dir)
+    FileUtils.mkdir configuration.pdksync_dir unless Dir.exist?(configuration.pdksync_dir)
   end
 
   # @summary
@@ -220,18 +190,18 @@ module PdkSync
   # @return [PdkSync::GitPlatformClient] client
   #   The Git platform client that has been created.
   def self.setup_client
-    PdkSync::GitPlatformClient.new(@git_platform, @git_platform_access_settings)
+    PdkSync::GitPlatformClient.new(configuration.git_platform, configuration.git_platform_access_settings)
   rescue StandardError => error
     raise "Git platform access not set up correctly: #{error}"
   end
 
   # @summary
-  #   This method when called will access a file set by the global variable '@managed_modules' and retrieve the information within as an array.
+  #   This method when called will access a file set by the global variable 'configuration.managed_modules' and retrieve the information within as an array.
   # @return [Array]
   #   An array of different module names.
   def self.return_modules
-    raise "File '#{@managed_modules}' is empty/does not exist" if File.size?(@managed_modules).nil?
-    YAML.safe_load(File.open(@managed_modules))
+    raise "File '#{configuration.managed_modules}' is empty/does not exist" if File.size?(configuration.managed_modules).nil?
+    YAML.safe_load(File.open(configuration.managed_modules))
   end
 
   # @summary
@@ -244,10 +214,10 @@ module PdkSync
   #   String array of the names of Git platform repos
   def self.validate_modules_exist(client, module_names)
     invalid_names = []
-    raise "Error reading in modules. Check syntax of '#{@managed_modules}'." unless !module_names.nil? && module_names.is_a?(Array)
+    raise "Error reading in modules. Check syntax of '#{configuration.managed_modules}'." unless !module_names.nil? && module_names.is_a?(Array)
     module_names.each do |module_name|
       # If module name is invalid, push it to invalid names array
-      unless client.repository?("#{@namespace}/#{module_name}")
+      unless client.repository?("#{configuration.namespace}/#{module_name}")
         invalid_names.push(module_name)
         next
       end
@@ -298,7 +268,7 @@ module PdkSync
   # @return [Git::Base]
   #   A git object representing the local repository.
   def self.clone_directory(namespace, module_name, output_path)
-    Git.clone("#{@git_base_uri}/#{namespace}/#{module_name}.git", output_path.to_s) # is returned
+    Git.clone("#{configuration.git_base_uri}/#{namespace}/#{module_name}.git", output_path.to_s) # is returned
   rescue Git::GitExecuteError => error
     puts "(FAILURE) Cloning #{module_name} has failed. #{error}".red
   end
@@ -421,9 +391,9 @@ module PdkSync
   # @param [String] repo_name
   #   The name of the repository on which the commit is to be made.
   def self.push_staged_files(git_repo, current_branch, repo_name)
-    git_repo.push(@push_file_destination, current_branch)
+    git_repo.push(onfiguration.push_file_destination, current_branch)
   rescue StandardError => error
-    puts "(FAILURE) Pushing to #{@push_file_destination} for #{repo_name} has failed. #{error}".red
+    puts "(FAILURE) Pushing to #{configuration.push_file_destination} for #{repo_name} has failed. #{error}".red
   end
 
   # @summary
@@ -446,7 +416,7 @@ module PdkSync
       message = "#{pr_title}\npdk version: `#{pdk_version}` \n"
       head = template_ref
     end
-    pr = client.create_pull_request(repo_name, @create_pr_against,
+    pr = client.create_pull_request(repo_name, configuration.create_pr_against,
                                     head,
                                     title,
                                     message)
