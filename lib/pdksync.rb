@@ -20,7 +20,7 @@ module PdkSync
   end
 
   def self.main(steps: [:clone], args: nil)
-    check_pdk_version
+    check_pdk_version if ENV['PDKSYNC_VERSION_CHECK'].eql?('true')
     create_filespace
     client = setup_client
     module_names = return_modules
