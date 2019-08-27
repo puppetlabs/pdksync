@@ -25,7 +25,7 @@ module PdkSync
     }
     
     # @param config_path [String] -  the path to the pdk config file
-    def initialize(config_path = ENV['PDK_CONFIG_PATH'])
+    def initialize(config_path = ENV['PDKSYNC_CONFIG_PATH'])
       @config_path = locate_config_path(config_path)
       @custom_config = DEFAULT_CONFIG.merge(custom_config(@config_path))
       super(@custom_config)
@@ -52,16 +52,13 @@ module PdkSync
     end
 
     # @return [String] the path the pdksync config file, nil if not found
-    def locate_config_path(custom_file)
+    def locate_config_path(custom_file = nil)
       files = [ 
           custom_file, 
           PDKSYNC_FILE_NAME, 
           File.join(ENV['HOME'], PDKSYNC_FILE_NAME)
       ]
-      files.find do |file|
-        next unless file
-        File.exist?(file)
-      end
+      files.find { |file| file && File.exist?(file) }
     end
 
     private

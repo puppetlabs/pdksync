@@ -184,6 +184,19 @@ git_base_uri: 'https://gitlab.example.com'
 gitlab_api_endpoint: 'https://gitlab.example.com/api/v4'
 ```
 
+### Supporting multiple namespaces
+If you have multiple namespaces that you need to support you will need to create a pdksync.yml config
+file for each namespace.  This will allow you to create a folder structure and keep a separate
+managed_modules.yml for that namespace too.
+
+You can set a PDKSYNC_CONFIG_PATH environment variable that points to the specific pdksync.yml config file for use in a CI or on the CLI. This allows you to set custom names for pdksync.yml file.
+
+example: `PDKSYNC_CONFIG_PATH=pdksync_ops.yml`
+
+Or you can set a different HOME enviornment variable that tells pdksync where to find the pdksync.yml file.  Pdksync will locate the pdksync.yml file in the HOME folder you specify.  The config file name is not changable in this case.
+
+example: `HOME=ops`
+
 ### Workflow
 --------
 

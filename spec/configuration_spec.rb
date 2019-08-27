@@ -7,7 +7,7 @@ RSpec.describe 'configuration' do
     before(:each) do
       allow(ENV).to receive(:[]).with('HOME').and_return('./')
       allow(ENV).to receive(:[]).with('GITHUB_TOKEN').and_return('blah')
-      allow(ENV).to receive(:[]).with('PDK_CONFIG_PATH').and_return(nil)
+      allow(ENV).to receive(:[]).with('PDKSYNC_CONFIG_PATH').and_return(nil)
     end
 
     let(:instance) do
@@ -49,5 +49,10 @@ RSpec.describe 'configuration' do
     it '#locate_config_path with value' do
         config = File.join(fixtures_dir, 'pdksync.yml')
         expect(instance.locate_config_path(config)).to eq(config)
+    end
+
+    it 'gets a different config file path when variable is used' do
+      allow(ENV).to receive(:[]).with('PDKSYNC_CONFIG_PATH').and_return(File.join(fixtures_dir, 'pdksync.yml'))
+      expect(instance.locate_config_path(ENV['PDKSYNC_CONFIG_PATH'])).to eq(File.join(fixtures_dir, 'pdksync.yml'))
     end
 end
