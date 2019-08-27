@@ -32,7 +32,7 @@ namespace :pdksync do
     puts 'Please note that you can override any of the configuration by using an additional file at `$HOME/.pdksync.yml`.'.bold.red
     puts "\nPDKSync Configuration".bold.yellow
     config.to_h.each do |key, value|
-      puts "- #{key.to_s}: ".bold + "#{value.to_s}".cyan
+      puts "- #{key}: ".bold + value.to_s.cyan
     end
   end
 end

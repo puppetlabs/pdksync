@@ -3,19 +3,19 @@ require 'pdk/version'
 require 'ostruct'
 
 # @summary
-#   A class used to contain a set of configuration variables 
+#   A class used to contain a set of configuration variables
 # @note
 #   Configuration is loaded from `$HOME/.pdksync.yml`. If $HOME is not set, the config_path will use the current directory.
 #   The configuration filename and path can be overridden with env variable PDK_CONFIG_PATH
 #   Set PDKSYNC_LABEL to '' to disable adding a label during pdksync runs.
-module PdkSync 
+module PdkSync
   class Configuration < OpenStruct
-    SUPPORTED_SCM_PLATFORMS = [:github, :gitlab]
-    PDKSYNC_FILE_NAME = 'pdksync.yml'
+    SUPPORTED_SCM_PLATFORMS = [:github, :gitlab].freeze
+    PDKSYNC_FILE_NAME = 'pdksync.yml'.freeze
 
     # Any key value added to the default config or custom config
     # will automatically be a new configuration item and referenced
-    # via Configuration.new.<key_name> ie. 
+    # via Configuration.new.<key_name> ie.
     # c = Configuration.new
     # c.api_endpoint
     DEFAULT_CONFIG = {
@@ -33,8 +33,8 @@ module PdkSync
       pdk_templates_ref: PDK::VERSION,
       pdk_templates_url: 'https://github.com/puppetlabs/pdk-templates.git',
       module_is_authoritive: true
-    }
-    
+    }.freeze
+
     # @param config_path [String] -  the path to the pdk config file
     def initialize(config_path = ENV['PDKSYNC_CONFIG_PATH'])
       @config_path = locate_config_path(config_path)
@@ -45,7 +45,7 @@ module PdkSync
     end
 
     # @return [Hash] - returns the access settings for git scm
-    def git_platform_access_settings 
+    def git_platform_access_settings
       @git_platform_access_settings ||= {
         access_token: access_token,
         gitlab_api_endpoint: gitlab_api_endpoint || api_endpoint,
@@ -53,7 +53,7 @@ module PdkSync
 
       }
     end
-   
+
     # @return [String] return a rendered string for pdk to use the templates
     def templates
       "--template-url=#{template_url} --template-ref=#{template_ref}"
@@ -71,10 +71,10 @@ module PdkSync
 
     # @return [String] the path the pdksync config file, nil if not found
     def locate_config_path(custom_file = nil)
-      files = [ 
-          custom_file, 
-          PDKSYNC_FILE_NAME, 
-          File.join(ENV['HOME'], PDKSYNC_FILE_NAME)
+      files = [
+        custom_file,
+        PDKSYNC_FILE_NAME,
+        File.join(ENV['HOME'], PDKSYNC_FILE_NAME)
       ]
       files.find { |file| file && File.exist?(file) }
     end
@@ -84,8 +84,8 @@ module PdkSync
     # @return [Boolean] true if the supported platforms were specified correctly
     # @param scm [Symbol] - the scm type (:github or :gitlab)
     def valid_scm?(scm)
-      unless SUPPORTED_SCM_PLATFORMS.include?(git_platform)
-        raise ArgumentError, "Unsupported Git hosting platform '#{git_platform}'."\
+      unless SUPPORTED_SCM_PLATFORMS.include?(scm)
+        raise ArgumentError, "Unsupported Git hosting platform '#{scm}'."\
           " Supported platforms are: #{SUPPORTED_SCM_PLATFORMS.join(', ')}"
       end
       true
@@ -112,10 +112,10 @@ module PdkSync
   end
 end
 
-# monkey patch 
+# monkey patch
 class Hash
-  #take keys of hash and transform those to a symbols
+  # take keys of hash and transform those to a symbols
   def transform_keys_to_symbols
-    self.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+    each_with_object({}) { |(k, v), memo| memo[k.to_sym] = v; }
   end
 end

@@ -14,7 +14,6 @@ require 'octokit'
 # @summary
 #   This module set's out and controls the pdksync process
 module PdkSync
-  
   def self.configuration
     @configuration ||= PdkSync::Configuration.new
   end
@@ -315,7 +314,7 @@ module PdkSync
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
     template_ref = configuration.module_is_authoritive ? return_template_ref : configuration.pdk_templates_ref
-    change_module_template_url(configuration.pdk_templates_url) unless configuration.module_is_authoritive 
+    change_module_template_url(configuration.pdk_templates_url) unless configuration.module_is_authoritive
     _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force --template-ref=#{template_ref}")
     puts "(FAILURE) Unable to run `pdk update`: #{stderr}".red unless status.exitstatus.zero?
     status.exitstatus
@@ -335,7 +334,7 @@ module PdkSync
 
   # @summary
   #   This method when called will retrieve the tempalate-url of the current module,
-  # @param metadata_file [String] 
+  # @param metadata_file [String]
   #   An optional input that can be used to set the location of the metadata file.
   # @param url [String] - the url of the pdk-templates repo
   # @return [String]
@@ -346,7 +345,7 @@ module PdkSync
     data_hash['template-url']
   end
 
-  def self.change_module_template_url(url, metadata_file = 'metadata.json' )
+  def self.change_module_template_url(url, metadata_file = 'metadata.json')
     file = File.read(metadata_file)
     data_hash = JSON.parse(file)
     data_hash['template-url'] = url
