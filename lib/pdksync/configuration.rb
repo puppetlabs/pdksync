@@ -29,6 +29,9 @@ module PdkSync
       git_base_uri: 'https://github.com',
       gitlab_api_endpoint: 'https://gitlab.com/api/v4',
       api_endpoint: nil,
+      pdk_templates_prefix: nil,
+      pdk_templates_ref: PDK::VERSION,
+      pdk_templates_url: 'https://github.com/puppetlabs/pdk-templates.git',
     }
     
     # @param config_path [String] -  the path to the pdk config file
@@ -48,6 +51,11 @@ module PdkSync
         api_endpoint: api_endpoint
 
       }
+    end
+   
+    # @return [String] return a rendered string for pdk to use the templates
+    def templates
+      "--template-url=#{template_url} --template-ref=#{template_ref}"
     end
 
     # @param path [String] path to the pdksync config file in yaml format

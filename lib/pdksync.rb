@@ -71,7 +71,7 @@ module PdkSync
       puts '(WARNING) @output_path does not exist, skipping module'.red unless File.directory?(output_path)
       next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
-        exit_status = run_command(output_path, "#{return_pdk_path} convert --force")
+        exit_status = run_command(output_path, "#{return_pdk_path} convert --force #{configuration.templates}")
         print 'converted, '
         next unless exit_status.zero?
       end
