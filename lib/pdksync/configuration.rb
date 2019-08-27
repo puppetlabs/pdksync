@@ -32,6 +32,7 @@ module PdkSync
       pdk_templates_prefix: nil,
       pdk_templates_ref: PDK::VERSION,
       pdk_templates_url: 'https://github.com/puppetlabs/pdk-templates.git',
+      module_is_authoritive: true
     }
     
     # @param config_path [String] -  the path to the pdk config file

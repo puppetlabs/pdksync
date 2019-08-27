@@ -314,7 +314,8 @@ module PdkSync
   def self.pdk_update(output_path)
     # Runs the pdk update command
     Dir.chdir(output_path) unless Dir.pwd == output_path
-    _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force")
+    template_ref = configuration.module_is_authoritive ? return_template_ref : configuration.pdk_templates_ref
+    _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force --template-ref=#{template_ref}")
     puts "(FAILURE) Unable to run `pdk update`: #{stderr}".red unless status.exitstatus.zero?
     status.exitstatus
   end
