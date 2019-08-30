@@ -21,6 +21,7 @@ Style/BlockDelimiters:
     be consistent then.
   EnforcedStyle: braces_for_chaining
 Style/ClassAndModuleChildren:
+  Enabled: false
   Description: Compact style reduces the required amount of indentation.
   EnforcedStyle: compact
   Exclude:
@@ -86,4 +87,5 @@ Style/SymbolProc:
   Enabled: false
 Style/Documentation:
   Exclude:
+    - lib/pdksync/logger.rb
     - lib/pdksync/configuration.rb

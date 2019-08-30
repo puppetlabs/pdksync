@@ -239,6 +239,18 @@ Or you can set a different HOME environment variable that tells pdksync where to
 
 example: `HOME=ops`
 
+### Logging output
+Pdksync uses a logger class to log all output.  You can control how the logger works via a few environment variables. 
+
+To control the level set the `LOG_LEVEL` to one of 
+1. info
+2. debug
+3. fatal
+4. error
+5. warn
+
+To control where the logs are sent (defaults to stdout) set the `PDKSYNC_LOG_FILENAME` to a file path. 
+
 ### Workflow
 --------
 

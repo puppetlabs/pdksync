@@ -12,6 +12,7 @@ require 'colorize'
 require 'bundler'
 require 'octokit'
 require 'pdk/util/template_uri'
+require 'pdksync/logger'
 
 # @summary
 #   This module set's out and controls the pdksync process
@@ -35,56 +36,56 @@ module PdkSync
     # validation run_a_command
     if steps.include?(:run_a_command)
       raise '"run_a_command" requires an argument to run.' if args.nil?
-      puts "Command '#{args}'"
+      PdkSync::Logger.info "Command '#{args}'"
     end
     # validation create_commit
     if steps.include?(:create_commit)
       raise 'Needs a branch_name and commit_message' if args.nil? || args[:commit_message].nil? || args[:branch_name].nil?
-      puts "Commit branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}"
+      PdkSync::Logger.info "Commit branch_name=#{args[:branch_name]} commit_message=#{args[:commit_message]}"
     end
     # validation create_pr
     if steps.include?(:create_pr)
       raise 'Needs a pr_title' if args.nil? || args[:pr_title].nil?
-      puts "PR title =#{args[:additional_title]} #{args[:pr_title]}"
+      PdkSync::Logger.info "PR title =#{args[:additional_title]} #{args[:pr_title]}"
     end
     # validation clean_branches
     if steps.include?(:clean_branches)
       raise 'Needs a branch_name, and the branch name contains the string pdksync' if args.nil? || args[:branch_name].nil? || !args[:branch_name].include?('pdksync')
-      puts "Removing branch_name =#{args[:branch_name]}"
+      PdkSync::Logger.info "Removing branch_name =#{args[:branch_name]}"
     end
 
     abort "No modules listed in #{configuration.managed_modules}" if module_names.nil?
     module_names.each do |module_name|
       module_args = args.clone
       Dir.chdir(main_path) unless Dir.pwd == main_path
-      print "#{module_name}, "
+      PdkSync::Logger.info "#{module_name}, "
       repo_name = "#{configuration.namespace}/#{module_name}"
       output_path = "#{configuration.pdksync_dir}/#{module_name}"
       if steps.include?(:clone)
         clean_env(output_path) if Dir.exist?(output_path)
-        print 'delete module directory, '
+        PdkSync::Logger.info 'delete module directory'
         @git_repo = clone_directory(configuration.namespace, module_name, output_path)
-        print 'cloned, '
-        puts "(WARNING) Unable to clone repo for #{module_name}".red if @git_repo.nil?
+        PdkSync::Logger.info 'cloned'
+        PdkSync::Logger.error "Unable to clone repo for #{module_name}" if @git_repo.nil?
         Dir.chdir(main_path) unless Dir.pwd == main_path
         next if @git_repo.nil?
       end
-      puts '(WARNING) @output_path does not exist, skipping module'.red unless File.directory?(output_path)
+      PdkSync::Logger.warn "#{output_path} does not exist, skipping module" unless File.directory?(output_path)
       next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
         exit_status = run_command(output_path, "#{return_pdk_path} convert --force #{configuration.templates}")
-        print 'converted, '
+        PdkSync::Logger.info 'converted'
         next unless exit_status.zero?
       end
       if steps.include?(:pdk_validate)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         exit_status = run_command(output_path, "#{return_pdk_path} validate -a")
-        print 'validated, '
+        PdkSync::Logger.info 'validated'
         next unless exit_status.zero?
       end
       if steps.include?(:run_a_command)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        print 'run command, '
+        PdkSync::Logger.info 'run command'
         exit_status = run_command(output_path, module_args)
         next unless exit_status.zero?
       end
@@ -99,22 +100,22 @@ module PdkSync
                                           pr_title: pr_title,
                                           pdksync_label: configuration.default_pdksync_label)
         end
-        print 'pdk update, '
+        PdkSync::Logger.info 'pdk update'
       end
       if steps.include?(:create_commit)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
         create_commit(git_instance, module_args[:branch_name], module_args[:commit_message])
-        print 'commit created, '
+        PdkSync::Logger.info 'commit created'
       end
       if steps.include?(:push)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
         if git_instance.diff(git_instance.current_branch, "#{configuration.push_file_destination}/#{configuration.create_pr_against}").size != 0 # Git::Diff doesn't have empty? # rubocop:disable Style/ZeroLengthPredicate
+          PdkSync::Logger.info 'push'
           push_staged_files(git_instance, git_instance.current_branch, repo_name)
-          print 'push, '
         else
-          print 'skipped push, '
+          PdkSync::Logger.info 'skipped push'
         end
       end
       if steps.include?(:create_pr)
@@ -134,50 +135,46 @@ module PdkSync
 
           # Create the PR and add link to pr list
           pr = create_pr(client, repo_name, git_instance.current_branch, pdk_version, module_args[:pr_title])
-          if pr.nil?
-            break
-          end
+          break if pr.nil?
 
           pr_list.push(pr.html_url)
-          print 'created pr, '
+          PdkSync::Logger.info 'created pr'
 
           # If a valid label is supplied, add this to the PR
           if label_valid == true
             add_label(client, repo_name, pr.number, label)
-            print "added label '#{label}' "
+            PdkSync::Logger.info "added label '#{label}' "
           end
         else
-          print 'skipped pr, '
+          PdkSync::Logger.info 'skipped pr'
         end
       end
       if steps.include?(:clean_branches)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         delete_branch(client, repo_name, module_args[:branch_name])
-        print 'branch deleted, '
+        PdkSync::Logger.info 'branch deleted'
       end
-      puts 'done.'.green
+      PdkSync::Logger.info 'done'
     end
     return if pr_list.size.zero?
-    puts "\nPRs created:\n".blue
-    pr_list.each do |pr|
-      puts pr
-    end
+    PdkSync::Logger.info "\nPRs created:\n"
+    puts pr_list.join("\n")
   end
 
   # @summary
   #   Check the local pdk version against the most recent tagged release on GitHub
   def self.check_pdk_version
     stdout, _stderr, status = Open3.capture3("#{return_pdk_path} --version")
-    raise "(FAILURE) Unable to find pdk at '#{return_pdk_path}'.".red unless status.exitstatus
+    PdkSync::Logger.fatal "Unable to find pdk at '#{return_pdk_path}'." unless status.exitstatus
 
     local_version = stdout.strip
     remote_version = Octokit.tags('puppetlabs/pdk').first[:name][1..-1]
 
     unless Gem::Version.new(remote_version) <= Gem::Version.new(local_version)
-      puts "(WARNING) The current version of pdk is #{remote_version} however you are using #{local_version}".red
+      PdkSync::Logger.warn "The current version of pdk is #{remote_version} however you are using #{local_version}"
     end
   rescue StandardError => error
-    puts "(WARNING) Unable to check latest pdk version. #{error}".red
+    PdkSync::Logger.warn "Unable to check latest pdk version. #{error}"
   end
 
   # @summary
@@ -236,7 +233,7 @@ module PdkSync
     path = if File.executable?(full_path)
              full_path
            else
-             puts "(WARNING) Using pdk on PATH not '#{full_path}'".red
+             PdkSync::Logger.warn "(WARNING) Using pdk on PATH not '#{full_path}'"
              'pdk'
            end
     path
@@ -274,7 +271,7 @@ module PdkSync
     clone_url = "#{configuration.git_base_uri}#{sep}#{namespace}/#{module_name}.git"
     Git.clone(clone_url, output_path.to_s) # is returned
   rescue Git::GitExecuteError => error
-    puts "(FAILURE) Cloning #{module_name} has failed. #{error}".red
+    PdkSync::Logger.fatal "Cloning #{module_name} has failed. #{error}"
   end
 
   # @summary
@@ -301,8 +298,8 @@ module PdkSync
       stdout, stderr, status = Open3.capture3(command)
     end
 
-    puts "\n#{stdout}\n".yellow
-    puts "(FAILURE) Unable to run command '#{command}': #{stderr}".red unless status.exitstatus.zero?
+    PdkSync::Logger.info "\n#{stdout}\n"
+    PdkSync::Logger.fatal "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
     status.exitstatus
   end
 
@@ -318,9 +315,9 @@ module PdkSync
     _, module_temp_ref = module_templates_url.split('#')
     module_temp_ref ||= configuration.pdk_templates_ref
     template_ref = configuration.module_is_authoritive ? module_temp_ref : configuration.pdk_templates_ref
-    change_module_template_url(configuration.pdk_templates_url) unless configuration.module_is_authoritive
+    change_module_template_url(configuration.pdk_templates_url, template_ref) unless configuration.module_is_authoritive
     _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force --template-ref=#{template_ref}")
-    puts "(FAILURE) Unable to run `pdk update`: #{stderr}".red unless status.exitstatus.zero?
+    PdkSync::Logger.fatal "Unable to run `pdk update`: #{stderr}" unless status.exitstatus.zero?
     status.exitstatus
   end
 
@@ -386,10 +383,10 @@ module PdkSync
   def self.add_staged_files(git_repo)
     if git_repo.status.changed != {}
       git_repo.add(all: true)
-      puts 'All files have been staged.'
+      PdkSync::Logger.info 'All files have been staged.'
       true
     else
-      puts 'Nothing to commit.'
+      PdkSync::Logger.info 'Nothing to commit.'
       false
     end
   end
@@ -422,7 +419,7 @@ module PdkSync
   def self.push_staged_files(git_repo, current_branch, repo_name)
     git_repo.push(configuration.push_file_destination, current_branch)
   rescue StandardError => error
-    puts "(FAILURE) Pushing to #{configuration.push_file_destination} for #{repo_name} has failed. #{error}".red
+    PdkSync::Logger.error "Pushing to #{configuration.push_file_destination} for #{repo_name} has failed. #{error}"
   end
 
   # @summary
@@ -445,13 +442,13 @@ module PdkSync
       message = "#{pr_title}\npdk version: `#{pdk_version}` \n"
       head = template_ref
     end
-    pr = client.create_pull_request(repo_name, configuration.create_pr_against,
-                                    head,
-                                    title,
-                                    message)
-    pr
+    client.create_pull_request(repo_name, configuration.create_pr_against,
+                               head,
+                               title,
+                               message)
   rescue StandardError => error
-    puts "(FAILURE) PR creation for #{repo_name} has failed. #{error}".red
+    PdkSync::Logger.fatal "PR creation for #{repo_name} has failed. #{error}"
+    nil
   end
 
   # @summary
@@ -480,7 +477,7 @@ module PdkSync
     # Raise error if a match was not found else return true
     (match == false) ? (raise StandardError, "Label '#{label}' not found in #{repo_name}") : (return true)
   rescue StandardError => error
-    puts "(FAILURE) Retrieving labels for #{repo_name} has failed. #{error}".red
+    PdkSync::Logger.fatal "Retrieving labels for #{repo_name} has failed. #{error}"
     return false
   end
 
@@ -497,7 +494,7 @@ module PdkSync
   def self.add_label(client, repo_name, issue_number, label)
     client.update_issue(repo_name, issue_number, labels: [label])
   rescue StandardError => error
-    puts "(FAILURE) Adding label to #{repo_name} issue #{issue_number} has failed. #{error}".red
+    PdkSync::Logger.info "Adding label to #{repo_name} issue #{issue_number} has failed. #{error}"
     return false
   end
 
@@ -512,6 +509,6 @@ module PdkSync
   def self.delete_branch(client, repo_name, branch_name)
     client.delete_branch(repo_name, branch_name)
   rescue StandardError => error
-    puts "(FAILURE) Deleting #{branch_name} in #{repo_name} failed. #{error}".red
+    PdkSync::Logger.fatal "Deleting #{branch_name} in #{repo_name} failed. #{error}"
   end
 end
