@@ -4,6 +4,7 @@
 #- puppetlabs-acl
 #- puppetlabs-apache
 #- puppetlabs-apt
+#- puppetlabs-azure
 #- puppetlabs-bootstrap
 #- puppetlabs-chocolatey
 #- puppetlabs-concat
