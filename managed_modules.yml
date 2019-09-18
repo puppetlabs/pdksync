@@ -1,46 +1,49 @@
 ---
-## windows team
-#- puppetlabs-acl
-#- puppetlabs-chocolatey
-#- puppetlabs-dsc
-#- puppetlabs-dsc_lite
-#- puppetlabs-iis
-#- puppetlabs-powershell
-#- puppetlabs-registry
-#- puppetlabs-reboot
-#- puppetlabs-scheduled_task
-#- puppetlabs-sqlserver
-#- puppetlabs-windows
-#- puppetlabs-wsus_client
-## modules team
+## IA content team
 #- puppetlabs-accounts
+#- puppetlabs-acl
 #- puppetlabs-apache
 #- puppetlabs-apt
 #- puppetlabs-bootstrap
+#- puppetlabs-chocolatey
 #- puppetlabs-concat
+#- puppetlabs-docker
+#- puppetlabs-dsc
+#- puppetlabs-dsc_lite
 #- puppetlabs-exec
 #- puppetlabs-facter_task
 #- puppetlabs-firewall
 #- puppetlabs-haproxy
+#- puppetlabs-helm
 #- puppetlabs-ibm_installation_manager
+#- puppetlabs-iis
 #- puppetlabs-inifile
 #- puppetlabs-java
 #- puppetlabs-java_ks
+#- puppetlabs-kubernetes
 #- puppetlabs-motd
 #- puppetlabs-mysql
 #- puppetlabs-ntp
 #- puppetlabs-package
 #- puppetlabs-postgresql
+#- puppetlabs-powershell
 #- puppetlabs-puppet_conf
+#- puppetlabs-reboot
+#- puppetlabs-registry
 #- puppetlabs-resource
+#- puppetlabs-rook
 #- puppetlabs-satellite_pe_tools
+#- puppetlabs-scheduled_task
 #- puppetlabs-service
+#- puppetlabs-sqlserver
 #- puppetlabs-stdlib
 #- puppetlabs-tagmail
 #- puppetlabs-tomcat
 #- puppetlabs-translate
 #- puppetlabs-vcsrepo
 #- puppetlabs-websphere_application_server
+#- puppetlabs-windows
+#- puppetlabs-wsus_client
 ## networking team
 #- cisco_ios
 #- device_manager
@@ -50,7 +53,3 @@
 #- puppetlabs-testing
 #- puppetlabs-testing1
 #- puppetlabs-testing2
-## cloud and containers team
-#- puppetlabs-kubernetes
-#- puppetlabs-helm
-#- puppetlabs-rook
