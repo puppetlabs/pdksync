@@ -54,5 +54,27 @@ describe PdkSync do
     it 'raise when clean_branches with no arguments' do
       expect { PdkSync.main(steps: [:clean_branches]) }.to raise_error(RuntimeError, %r{Needs a branch_name, and the branch name contains the string pdksync})
     end
+    it 'raise when gem_file_update with no arguments' do
+      expect { PdkSync.main(steps: [:gem_file_update]) }.to raise_error(RuntimeError, %r{gem_file_update" requires arguments (gem_to_test) to run.})
+    end
+    # it 'gem_file_update runs, and contains the gem_line given' do
+    #   PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'beaker-rspec', gem_line: "gem beaker-rspec '~> 3.4'"})
+    #   expect(file).to have_file_content "gem beaker-rspec '~> 3.4'"
+    # end
+    # it 'gem_file_update runs, and contains the gem_sha given' do
+    #   PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'beaker-rspec', gem_sha_finder: 'jsjsjsjsjsjsjs', gem_sha_replacer: 'abcdefgjhkk'})
+    #   expect(file).to have_file_content "abcdefgjhkk"
+    # end
+    # it 'gem_file_update runs, and contains the gem_version given' do
+    #   PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'beaker-rspec', gem_version_finder: '<= 0.4.9', gem_version_replacer: '<= 0.4.11'})
+    #   expect(file).to have_file_content "abcdefgjhkk"
+    # end
+    # it 'gem_file_update runs, and contains the gem_branch given' do
+    #   PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'beaker-rspec', gem_branch_finder: 'jsjsjsjsjsjsjs', gem_branch_replacer: 'abcdefgjhkk'})
+    #   expect(file).to have_file_content "abcdefgjhkk"
+    # end
+    it 'raise when run_tests with no arguments' do
+      expect { PdkSync.main(steps: [:run_tests]) }.to raise_error(RuntimeError, %r{run_tests" requires arguments (module_type) to run.})
+    end
   end
 end

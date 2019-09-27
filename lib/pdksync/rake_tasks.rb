@@ -10,6 +10,15 @@ task :pdksync, [:additional_title] do |_task, args|
   PdkSync.main(steps: [:use_pdk_ref, :clone, :pdk_update, :create_commit, :push, :create_pr], args: args)
 end
 
+desc 'Run full gemtesting process, clone repository, gemfile update, create pr. Additional title information can be added to the title, which will be appended before the reference section.'
+task :gemtesting, [:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer] do |_task, args|
+  args = { branch_name: 'pdksync_gemtesting{ref}',
+           commit_message: 'pdksync_gemtesting{ref}',
+           pr_title: 'pdksync_gemtesting{ref}',
+           additional_title: args[:additional_title] }
+  PdkSync.main(steps: [:use_pdk_ref, :clone, :gem_file_update, :create_commit, :push, :create_pr], args: args)
+end
+
 namespace :pdksync do
   desc 'Runs PDK convert against modules'
   task :pdk_convert do
@@ -24,6 +33,16 @@ namespace :pdksync do
   desc "Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'"
   task :run_a_command, [:command] do |_task, args|
     PdkSync.main(steps: [:run_a_command], args: args[:command])
+  end
+
+  desc "Gem File Update'gem_file_update[gem_to_test, gem_line, gem_sha_finder, gem_sha_replacer, gem_version_finder, gem_version_replacer, gem_branch_finder, gem_branch_replacer]'"
+  task :gem_file_update, [:gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer] do |_task, args|
+    PdkSync.main(steps: [:gem_file_update], args: args)
+  end
+
+  desc "Run test against modules eg rake 'run_tests[litmus]'"
+  task :run_tests, [:module_type] do |_task, args|
+    PdkSync.main(steps: [:run_tests], args: args)
   end
 
   desc 'Display the current configuration of pdksync'
