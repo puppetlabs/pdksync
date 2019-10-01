@@ -51,6 +51,6 @@
 #- puppetlabs-panos
 #- puppetlabs-resource_api
 ## testing only
-#- puppetlabs-testing
+- puppetlabs-testing
 #- puppetlabs-testing1
 #- puppetlabs-testing2

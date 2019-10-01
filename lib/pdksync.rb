@@ -37,6 +37,7 @@ require 'pry'
 #   key :gitlab_api_endpoint with an appropriate value.
 module PdkSync
   include Constants
+  @main_path=Dir.pwd
   @namespace = Constants::NAMESPACE
   @pdksync_dir = Constants::PDKSYNC_DIR
   @push_file_destination = Constants::PUSH_FILE_DESTINATION
@@ -84,12 +85,12 @@ module PdkSync
     end
     # validation gem_file_update
     if steps.include?(:gem_file_update)
-      raise '"gem_file_update" requires arguments (gem_to_test) to run.' if  args[:gem_to_test].nil? 
+      raise '"gem_file_update" requires arguments (gem_to_test) to run.' if  args[:gem_to_test].nil?
       puts "Command '#{args}'"
     end
     # validation run_tests
     if steps.include?(:run_tests)
-      raise '"run_tests" requires arguments (module_type) to run.' if  args[:module_type].nil? 
+      raise '"run_tests" requires arguments (module_type) to run.' if  args[:module_type].nil?
       puts "Command '#{args}'"
     end
 
@@ -354,6 +355,73 @@ module PdkSync
     status.exitstatus
   end
 
+  def self.get_source_test_gem(gem_to_test, gem_line)
+    if !gem_line.nil?
+      new_data = Array.new
+      new_data = gem_line.split(',')
+      return new_data
+    elsif !gem_to_test.nil?
+      file = File.open('Gemfile')
+      file.each_line do |line|
+        if line.include?(gem_to_test.to_s)
+          return line.split(',')[1].strip.to_s
+          break
+        end
+      end
+    end
+  end
+
+  def self.validate_gem_update_module(gem_to_test, gem_line)
+    gem_to_test = gem_to_test.chomp('"').reverse.chomp('"').reverse
+    Dir.chdir(@main_path)
+    output_path = "#{@pdksync_dir}/#{gem_to_test}"
+    clean_env(output_path) if Dir.exist?(output_path)
+    print 'delete module directory, '
+
+    if !gem_line.nil?
+      git_repo = get_source_test_gem(gem_to_test, gem_line)[1].strip.split(" ")[1].to_s
+      print 'delete module directory, '
+      git_repo = run_command(@pdksync_dir, "git clone #{git_repo}")
+    elsif !gem_to_test.nil?
+      git_repo = clone_directory(@namespace, gem_to_test, output_path.to_s)
+    end
+      Dir.chdir(@main_path)
+      raise "Unable to clone repo for #{gem_to_test}. Check repository's url to be correct!".red if git_repo.nil?
+
+      @all_versions = ""
+      @all_refs = ""
+      @all_branches = ""
+
+      Dir.chdir(output_path)
+      stdout_refs, stderr_refs, status_refs = Open3.capture3("git show-ref -s")
+      @all_refs = stdout_refs
+      stdout_branches, stderr_branches, status_branches = Open3.capture3("git branch -r")
+      @all_branches = stdout_branches
+      puts "@all_branches=#{@all_branches}"
+      stdout_versions, stderr_versions, status_versions = Open3.capture3("git tag")
+      @all_versions = stdout_versions
+
+      raise "Couldn't get references due to #{stderr_refs}".red unless status_refs.exitstatus.zero?
+      raise "Couldn't get branches due to #{stderr_branches}".red unless status_branches.exitstatus.zero?
+      raise "Couldn't get versions due to #{stderr_versions}".red unless status_versions.exitstatus.zero?
+      Dir.chdir(@main_path)
+  end
+
+  def self.validate_gem_sha_replacer(gem_sha_replacer, gem_to_test)
+    raise "Couldn't find sha: #{gem_sha_replacer} in your repository: #{gem_to_test}".red unless @all_refs.include?(gem_sha_replacer)
+    puts "SHA #{gem_sha_replacer} valid.\n".green
+  end
+
+  def self.validate_gem_branch_replacer(gem_branch_replacer, gem_to_test)
+    raise "Couldn't find branch: #{gem_branch_replacer} in your repository: #{gem_to_test}".red unless @all_branches.include?(gem_branch_replacer)
+    puts "Branch #{gem_branch_replacer} valid.\n".green
+  end
+
+  def self.validate_gem_version_replacer(gem_version_replacer, gem_to_test)
+    raise "Couldn't find version: #{gem_version_replacer} in your repository: #{gem_to_test}".red unless @all_versions.include?(gem_version_replacer)
+    puts "Version #{gem_version_replacer} valid.\n".green
+  end
+
   # @summary
   #   This method when called will update a Gemfile and remove the existing version of gem from the Gemfile.
   # @param [String] output_path
@@ -375,8 +443,58 @@ module PdkSync
   # @param [String] gem_branch_replacer
   #   The gem branch to replace
   def self.gem_file_update(output_path , gem_to_test, gem_line, gem_sha_finder, gem_sha_replacer, gem_version_finder, gem_version_replacer, gem_branch_finder, gem_branch_replacer)
-    Dir.chdir(output_path) unless Dir.pwd == output_path
     file_name = 'Gemfile'
+
+    validate_gem_update_module(gem_to_test, gem_line)
+
+    if !gem_line.nil?
+      new_data = get_source_test_gem(gem_to_test, gem_line)
+      new_data.each { |data|
+        if data.include?("branch")
+          gem_branch_replacer=data.split(" ")[1].strip.chomp('"')
+        elsif data.include?("ref")
+          gem_sha_replacer=data.split(" ")[1].strip.chomp('"')
+        elsif data.include?("version_requirement")
+          versions_replacer=Array.new
+          # gem_version_replacer=data.split(": ")[1]
+          delimiters=['<','>','<=','>=','=']
+          new_versions=data.split(": ")[1].split(Regexp.union(delimiters))
+          new_versions.each { |item|
+            if item.match /(\d+.\d+.\d+)/
+              versions_replacer.push(item.match /(\d+.\d+.\d+)/)
+            end
+          }
+          versions_replacer.each { |version|
+            validate_gem_version_replacer(version.to_s, gem_to_test)
+            }
+          end
+        }
+      end
+
+    if (gem_sha_replacer.nil? == false) && (gem_sha_replacer != "\"\"")
+      validate_gem_sha_replacer(gem_sha_replacer.chomp('"').reverse.chomp('"').reverse, gem_to_test)
+    end
+    if (gem_branch_replacer.nil? == false) &&(gem_branch_replacer != "\"\"")
+      puts "validate gem_branch_replacer=#{gem_branch_replacer}"
+      validate_gem_branch_replacer(gem_branch_replacer.chomp('"').reverse.chomp('"').reverse, gem_to_test)
+    end
+    if (gem_version_replacer.nil? == false) && (gem_version_replacer != "\"\"")
+      versions_replacer=Array.new
+      delimiters=['<','>','<=','>=','=']
+      new_versions=gem_version_replacer.split(Regexp.union(delimiters))
+      new_versions.each { |item|
+        if item.match /(\d+.\d+.\d+)/
+          versions_replacer.push(item.match /(\d+.\d+.\d+)/)
+        end
+      }
+      versions_replacer.each { |version|
+        gem_version_replacer=version.to_s
+        validate_gem_version_replacer(gem_version_replacer, gem_to_test)
+      }
+    end
+
+    Dir.chdir(output_path) unless Dir.pwd == output_path
+
     line_number = 1
     gem_update_version = [
       { finder: gem_version_finder,
@@ -416,15 +534,13 @@ module PdkSync
       file = File.open(file_name)
 	    contents = file.readlines.join
       gem_update_sha.each do |regex|
-        binding.pry
         contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) unless contents =~ /#{gem_to_test}/
       end
 	    File.open(file_name, 'w') { |f| f.write contents.to_s }
     end
-    
+
     # gem_version_finder and gem_version_replacer options are passed
     if (gem_version_finder.nil? == false && gem_version_replacer.nil? == false) && (gem_version_finder != "\"\"" && gem_version_replacer != "\"\"")
-      binding.pry
       # Replace with version
       file = File.open(file_name)
 	    contents = file.readlines.join
@@ -440,7 +556,7 @@ module PdkSync
       file = File.open(file_name)
 	    contents = file.readlines.join
 	    gem_update_branch.each do |regex|
-		  contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) unless contents =~ /#{gem_to_test}/
+		  contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) #unless contents =~ /#{gem_to_test}/
       end
       File.open(file_name, 'w') { |f| f.write contents.to_s }
     end
@@ -475,10 +591,10 @@ module PdkSync
         exit_status = run_command(output_path, "#{n}")
       end
     end
-    
+
     if module_type == 'traditional'
     end
-    
+
   end
 
   # @summary
