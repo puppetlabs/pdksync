@@ -85,12 +85,12 @@ module PdkSync
     end
     # validation gem_file_update
     if steps.include?(:gem_file_update)
-      raise '"gem_file_update" requires arguments (gem_to_test) to run.' if  args[:gem_to_test].nil?
+      raise 'gem_file_update requires arguments (gem_to_test) to run.' if args[:gem_to_test].nil?
       puts "Command '#{args}'"
     end
     # validation run_tests
     if steps.include?(:run_tests)
-      raise '"run_tests" requires arguments (module_type) to run.' if  args[:module_type].nil?
+      raise 'run_tests requires arguments (module_type) to run.' if args[:module_type].nil?
       puts "Command '#{args}'"
     end
 
@@ -443,7 +443,7 @@ module PdkSync
   # @param [String] gem_branch_replacer
   #   The gem branch to replace
   def self.gem_file_update(output_path , gem_to_test, gem_line, gem_sha_finder, gem_sha_replacer, gem_version_finder, gem_version_replacer, gem_branch_finder, gem_branch_replacer)
-    file_name = 'Gemfile'
+    gem_file_name = 'Gemfile'
 
     validate_gem_update_module(gem_to_test, gem_line)
 
@@ -496,69 +496,69 @@ module PdkSync
     Dir.chdir(output_path) unless Dir.pwd == output_path
 
     line_number = 1
-    gem_update_version = [
-      { finder: gem_version_finder,
-        replacer: gem_version_replacer }
-    ]
     gem_update_sha = [
       { finder: "ref: '#{gem_sha_finder}'",
         replacer: "ref: '#{gem_sha_replacer}'" }
+    ]
+    gem_update_version = [
+      { finder: gem_version_finder,
+        replacer: gem_version_replacer }
     ]
     gem_update_branch = [
       { finder: "branch: '#{gem_branch_finder}'",
         replacer: "branch: '#{gem_branch_replacer}'" }
     ]
     # gem_line option is passed
-    if gem_line.nil? == false && gem_line != "\"\""
+    if gem_line.nil? == false && (gem_line != "" || gem_line != "\"\"")
       # Comment the gem in the Gemfile to add the new line ?
         # TO DO
 
       # Delete the gem in the Gemfile to add the new line
       File.open('/tmp/out.tmp', 'w') do |out_file|
-        File.foreach(file_name) do |line|
+        File.foreach(gem_file_name) do |line|
            out_file.puts line unless line =~ /#{gem_to_test}/
         end
       end
-      FileUtils.mv('/tmp/out.tmp', file_name)
+      FileUtils.mv('/tmp/out.tmp', gem_file_name)
 
       # Insert the new Gem to test
-      file = File.open(file_name)
+      file = File.open(gem_file_name)
       contents = file.readlines.map(&:chomp)
       contents.insert(line_number, gem_line)
-      File.open(file_name, 'w') { |f| f.write contents.join("\n") }
+      File.open(gem_file_name, 'w') { |f| f.write contents.join("\n") }
     end
 
     # gem_sha_finder and gem_sha_replacer options are passed
-    if (gem_sha_finder.nil? == false && gem_sha_replacer.nil? == false) && (gem_sha_finder != "\"\"" && gem_sha_replacer != "\"\"")
+    if (gem_sha_finder.nil? == false && gem_sha_replacer.nil? == false) && (gem_sha_finder != "" && gem_sha_finder != "\"\"") && (gem_sha_replacer != "" && gem_sha_replacer != "\"\"")
       # Replace with SHA
-      file = File.open(file_name)
+      file = File.open(gem_file_name)
 	    contents = file.readlines.join
       gem_update_sha.each do |regex|
         contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) unless contents =~ /#{gem_to_test}/
       end
-	    File.open(file_name, 'w') { |f| f.write contents.to_s }
+	    File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
     end
 
     # gem_version_finder and gem_version_replacer options are passed
-    if (gem_version_finder.nil? == false && gem_version_replacer.nil? == false) && (gem_version_finder != "\"\"" && gem_version_replacer != "\"\"")
+    if (gem_version_finder.nil? == false && gem_version_replacer.nil? == false) && (gem_version_finder != "" && gem_version_finder != "\"\"") && (gem_version_replacer != "" && gem_version_replacer != "\"\"")
       # Replace with version
-      file = File.open(file_name)
+      file = File.open(gem_file_name)
 	    contents = file.readlines.join
 	    gem_update_version.each do |regex|
         contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) unless contents =~ /#{gem_to_test}/
       end
-	    File.open(file_name, 'w') { |f| f.write contents.to_s }
+	    File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
     end
 
     # gem_branch_finder and gem_branch_replacer options are passed
-    if (gem_branch_finder.nil? == false && gem_branch_replacer.nil? == false) || (gem_branch_finder != "\"\"" && gem_branch_replacer != "\"\"")
+    if (gem_branch_finder.nil? == false && gem_branch_replacer.nil? == false) && (gem_branch_finder != "" && gem_branch_finder != "\"\"") && (gem_branch_replacer != "" && gem_branch_replacer != "\"\"")
       # Replace with branch
-      file = File.open(file_name)
+      file = File.open(gem_file_name)
 	    contents = file.readlines.join
 	    gem_update_branch.each do |regex|
 		  contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) #unless contents =~ /#{gem_to_test}/
       end
-      File.open(file_name, 'w') { |f| f.write contents.to_s }
+      File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
     end
   end
 
@@ -580,7 +580,7 @@ module PdkSync
     litmus_agent     = 'bundle exec rake litmus:install_agent'
     litmus_module    = 'bundle exec rake litmus:install_module'
     litmus_tests     = 'bundle exec rake litmus:acceptance:parallel'
-    litmus_teardown  = 'bundle exec rake litmus:teardown'
+    litmus_teardown  = 'bundle exec rake litmus:tear_down'
     # Save the current path
     old_path = Dir.pwd
 
