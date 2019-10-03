@@ -364,8 +364,12 @@ module PdkSync
       file = File.open('Gemfile')
       file.each_line do |line|
         if line.include?(gem_to_test.to_s)
-          return line.split(',')[1].strip.to_s
-          break
+          if line.match /(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/
+            return line.split(',')[1].strip.to_s
+            break
+          else
+            return "https://github.com/puppetlabs/#{gem_to_test}"
+          end
         end
       end
     end
@@ -378,8 +382,23 @@ module PdkSync
     clean_env(output_path) if Dir.exist?(output_path)
     print 'delete module directory, '
 
+    # when gem_line is specified, we need to parse the line and identify all the values
+    # - we can have source url or we need to
+    # - sha, branch, version
     if !gem_line.nil?
-      git_repo = get_source_test_gem(gem_to_test, gem_line)[1].strip.split(" ")[1].to_s
+      git_repo = get_source_test_gem(gem_to_test, gem_line)
+      i=0
+      git_repo.each do |item|
+        i = i+1
+        if item.match /(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/
+          git_repo = item.split("git: ")[1]
+          break
+        elsif git_repo.size == i
+          git_repo = "https://github.com/puppetlabs/#{gem_to_test}"
+        end
+      end
+
+      puts "git_repo #{git_repo} will be cloned!"
       print 'delete module directory, '
       git_repo = run_command(@pdksync_dir, "git clone #{git_repo}")
     elsif !gem_to_test.nil?
@@ -397,7 +416,6 @@ module PdkSync
       @all_refs = stdout_refs
       stdout_branches, stderr_branches, status_branches = Open3.capture3("git branch -r")
       @all_branches = stdout_branches
-      puts "@all_branches=#{@all_branches}"
       stdout_versions, stderr_versions, status_versions = Open3.capture3("git tag")
       @all_versions = stdout_versions
 
@@ -575,7 +593,7 @@ module PdkSync
     stderr = ''
     status = Process::Status
     # Runs the module tests command
-    litmus_install   = "bundle install"
+    litmus_install   = "bundle install --path .bundle/gems/ --jobs 4"
     litmus_provision = "bundle exec rake 'litmus:provision_list[release_checks]'"
     litmus_agent     = 'bundle exec rake litmus:install_agent'
     litmus_module    = 'bundle exec rake litmus:install_module'
