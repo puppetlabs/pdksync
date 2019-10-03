@@ -10,12 +10,20 @@ task :pdksync, [:additional_title] do |_task, args|
   PdkSync.main(steps: [:use_pdk_ref, :clone, :pdk_update, :create_commit, :push, :create_pr], args: args)
 end
 
-desc 'Run full gemtesting process, clone repository, gemfile update, create pr. Additional title information can be added to the title, which will be appended before the reference section.'
-task :gemtesting, [:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer] do |_task, args|
-  args = { branch_name: 'pdksync_gemtesting{ref}',
-           commit_message: 'pdksync_gemtesting{ref}',
-           pr_title: 'pdksync_gemtesting{ref}',
-           additional_title: args[:additional_title] }
+desc 'Run full gem_testing process, clone repository, gemfile update, create pr. Additional title information can be added to the title, which will be appended before the reference section.'
+task :gem_testing, [:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer] do |_task, args|
+  args = { branch_name: 'pdksync_gem_testing{ref}',
+           commit_message: 'pdksync_gem_testing{ref}',
+           pr_title: 'pdksync_gem_testing{ref}',
+           additional_title: args[:additional_title],
+           gem_to_test: args[:gem_to_test], 
+           gem_line: args[:gem_line],
+           gem_sha_finder: args[:gem_sha_finder],
+           gem_sha_replacer: args[:gem_sha_replacer],
+           gem_version_finder: args[:gem_version_finder],
+           gem_version_replacer: args[:gem_version_replacer],
+           gem_branch_finder: args[:gem_branch_finder],
+           gem_branch_replacer: args[:gem_branch_replacer]}
   PdkSync.main(steps: [:use_pdk_ref, :clone, :gem_file_update, :create_commit, :push, :create_pr], args: args)
 end
 

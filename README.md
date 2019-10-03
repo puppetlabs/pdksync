@@ -108,12 +108,13 @@ The following rake tasks are available with pdksync:
   - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
 - `pdksync:run_a_command[:command]` Run a command against modules eg rake 'pdksync:run_a_command[complex command here -f -gx]'
 - `pdksync:gem_file_update[[:gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]]` Run gem_file_update against modules 
-  - eg rake to update gem line `pdksync:gem_file_update["litmus", "gem 'puppet_litmus'\, git: 'https://github.com/test/puppet_litmus.git'\, branch: 'testbranch'\"]` 
-  - eg rake to update sha `pdksync:gem_file_update["puppet_litmus", "", "20ee04ba1234e9e83eb2ffb5056e23d641c7a018", "test20ee04ba1234e9e83eb2ffb5056e23d641c7a018"]` 
-  - eg rake to update branch `pdksync:gem_file_update["puppet_litmus", "", "", "", "", "", 'testgem', 'updatetestgem']` 
-  - eg rake to update version`pdksync:gem_file_update["puppet_litmus", "", "", "", '"version_requirement": ">= 4.7.0 < 7.0.0"', '"version_requirement": ">= 4.7.0 < 8.0.0"', "", ""]`
-- `rake 'gemtesting[:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]'` Run complete Gem file testing (cloning, gemfileupdate, create commit, create PR)PR title outputs as `pdksync_gemtesting - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
-  - eg rake to perform gem file testing `rake 'gemtesting[MODULES-8231, "puppet_litmus", "", "20ee04ba1234e9e83eb2ffb5056e23d641c7a018", "test20ee04ba1234e9e83eb2ffb5056e23d641c7a018"]'` 
+  - eg rake to update gem line `pdksync:gem_file_update['puppet_litmus', "gem 'puppet_litmus'\, git: 'https://github.com/test/puppet_litmus.git'\, branch: 'testbranch'"]'` 
+  - eg rake to update sha `pdksync:gem_file_update['github_changelog_generator', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', 'testsha']` 
+  - eg rake to update version`pdksync:gem_file_update['json', '', '', '', "= 1.8.1", "<= testversion", '', '']`
+  - eg rake to update branch `pdksync:gem_file_update['puppet_litmus', '', '', '', '', '', 'testbranch', 'testbranches']` 
+- `rake 'gem_testing[:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]'` Run complete Gem file testing (cloning, gemfileupdate, create commit, create PR)PR title outputs as `pdksync_gemtesting - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
+  - eg rake to perform gem file testing `gem_testing['MODULES-testing', 'puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', 'testsha']` 
+- `pdksync:run_tests[:module_type]` Run acceptance tests for the modules eg rake 'pdksync:run_tests[litmus]'
 
 ### Configuration
 
