@@ -355,6 +355,14 @@ module PdkSync
     status.exitstatus
   end
 
+  # @summary
+  #   This method when called will find the source location of the gem to test
+  # @param [String] gem_to_test
+  #   The gem to test
+  # @param [String] gem_line
+  #   TThe line to update in the Gemfile
+  # @return [String]
+  #   The source location of the gem to test
   def self.get_source_test_gem(gem_to_test, gem_line)
     if !gem_line.nil?
       new_data = gem_line.split(',')
@@ -374,6 +382,12 @@ module PdkSync
     end
   end
 
+  # @summary
+  #   This method when called will validate the gem_line to update in the Gemfile
+  # @param [String] gem_to_test
+  #   The gem to test
+  # @param [String] gem_line
+  #   The line to update in the Gemfile
   def self.validate_gem_update_module(gem_to_test, gem_line)
     gem_to_test = gem_to_test.chomp('"').reverse.chomp('"').reverse
     Dir.chdir(@main_path)
@@ -423,16 +437,34 @@ module PdkSync
     Dir.chdir(@main_path)
   end
 
+  # @summary
+  #   This method when called will validate the gem_sha_replacer to update in the Gemfile
+  # @param [String] gem_to_test
+  #   The gem to test
+  # @param [String] gem_sha_replacer
+  #   The sha to update in the Gemfile
   def self.validate_gem_sha_replacer(gem_sha_replacer, gem_to_test)
     raise "Couldn't find sha: #{gem_sha_replacer} in your repository: #{gem_to_test}".red unless @all_refs.include?(gem_sha_replacer)
     puts "SHA #{gem_sha_replacer} valid.\n".green
   end
 
+  # @summary
+  #   This method when called will validate the gem_branch_replacer to update in the Gemfile
+  # @param [String] gem_to_test
+  #   The gem to test
+  # @param [String] gem_branch_replacer
+  #   The branch to update in the Gemfile
   def self.validate_gem_branch_replacer(gem_branch_replacer, gem_to_test)
     raise "Couldn't find branch: #{gem_branch_replacer} in your repository: #{gem_to_test}".red unless @all_branches.include?(gem_branch_replacer)
     puts "Branch #{gem_branch_replacer} valid.\n".green
   end
 
+  # @summary
+  #   This method when called will validate the gem_version_replacer to update in the Gemfile
+  # @param [String] gem_to_test
+  #   The gem to test
+  # @param [String] gem_version_replacer
+  #   The version to update in the Gemfile
   def self.validate_gem_version_replacer(gem_version_replacer, gem_to_test)
     raise "Couldn't find version: #{gem_version_replacer} in your repository: #{gem_to_test}".red unless @all_versions.include?(gem_version_replacer)
     puts "Version #{gem_version_replacer} valid.\n".green
