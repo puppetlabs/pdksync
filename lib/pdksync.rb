@@ -398,7 +398,6 @@ module PdkSync
         end
       end
 
-      puts "git_repo #{git_repo} will be cloned!"
       print 'delete module directory, '
       git_repo = run_command(@pdksync_dir, "git clone #{git_repo}")
     elsif !gem_to_test.nil?
@@ -465,50 +464,38 @@ module PdkSync
 
     validate_gem_update_module(gem_to_test, gem_line)
 
-    if !gem_line.nil?
+    if (gem_line.nil? == false) && (gem_sha_replacer != "\"\"")
       new_data = get_source_test_gem(gem_to_test, gem_line)
       new_data.each { |data|
         if data.include?("branch")
           gem_branch_replacer=data.split(" ")[1].strip.chomp('"')
         elsif data.include?("ref")
           gem_sha_replacer=data.split(" ")[1].strip.chomp('"')
-        elsif data.include?("version_requirement")
-          versions_replacer=Array.new
-          # gem_version_replacer=data.split(": ")[1]
-          delimiters=['<','>','<=','>=','=']
-          new_versions=data.split(": ")[1].split(Regexp.union(delimiters))
-          new_versions.each { |item|
-            if item.match /(\d+.\d+.\d+)/
-              versions_replacer.push(item.match /(\d+.\d+.\d+)/)
-            end
-          }
-          versions_replacer.each { |version|
-            validate_gem_version_replacer(version.to_s, gem_to_test)
-            }
+        elsif data.match /~>|=|>=|<=|<|>/
+          if data.match /(\d+.\d+.\d+)/
+            version_to_check = data.match /(\d+.\d+.\d+)/
           end
-        }
-      end
+          validate_gem_version_replacer(version_to_check.to_s, gem_to_test)
+        end
+      }
+    end
 
     if (gem_sha_replacer.nil? == false) && (gem_sha_replacer != "\"\"")
       validate_gem_sha_replacer(gem_sha_replacer.chomp('"').reverse.chomp('"').reverse, gem_to_test)
     end
     if (gem_branch_replacer.nil? == false) &&(gem_branch_replacer != "\"\"")
-      puts "validate gem_branch_replacer=#{gem_branch_replacer}"
       validate_gem_branch_replacer(gem_branch_replacer.chomp('"').reverse.chomp('"').reverse, gem_to_test)
     end
     if (gem_version_replacer.nil? == false) && (gem_version_replacer != "\"\"")
-      versions_replacer=Array.new
       delimiters=['<','>','<=','>=','=']
-      new_versions=gem_version_replacer.split(Regexp.union(delimiters))
-      new_versions.each { |item|
-        if item.match /(\d+.\d+.\d+)/
-          versions_replacer.push(item.match /(\d+.\d+.\d+)/)
+      version_to_check=gem_version_replacer.split(Regexp.union(delimiters))
+      version_test=""
+      version_to_check.each { |version|
+        if version.match /(\d+.\d+.\d+)/
+          version_test=version.match /(\d+.\d+.\d+)/
         end
       }
-      versions_replacer.each { |version|
-        gem_version_replacer=version.to_s
-        validate_gem_version_replacer(gem_version_replacer, gem_to_test)
-      }
+      validate_gem_version_replacer(version_test.to_s, gem_to_test)
     end
 
     Dir.chdir(output_path) unless Dir.pwd == output_path
@@ -527,6 +514,7 @@ module PdkSync
         replacer: "branch: '#{gem_branch_replacer}'" }
     ]
     # gem_line option is passed
+
     if gem_line.nil? == false && (gem_line != "" || gem_line != "\"\"")
       # Comment the gem in the Gemfile to add the new line ?
         # TO DO
@@ -534,7 +522,7 @@ module PdkSync
       # Delete the gem in the Gemfile to add the new line
       File.open('/tmp/out.tmp', 'w') do |out_file|
         File.foreach(gem_file_name) do |line|
-           out_file.puts line unless line =~ /#{gem_to_test}/
+          out_file.puts line unless line =~ /#{gem_to_test}/
         end
       end
       FileUtils.mv('/tmp/out.tmp', gem_file_name)
