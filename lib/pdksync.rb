@@ -37,7 +37,7 @@ require 'pry'
 #   key :gitlab_api_endpoint with an appropriate value.
 module PdkSync
   include Constants
-  @main_path=Dir.pwd
+  @main_path = Dir.pwd
   @namespace = Constants::NAMESPACE
   @pdksync_dir = Constants::PDKSYNC_DIR
   @push_file_destination = Constants::PUSH_FILE_DESTINATION
@@ -132,13 +132,13 @@ module PdkSync
       if steps.include?(:gem_file_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         print 'gem file update, '
-        gem_file_update(output_path, module_args[:gem_to_test], module_args[:gem_line], module_args[:gem_sha_finder], module_args[:gem_sha_replacer], module_args[:gem_version_finder], module_args[:gem_version_replacer], module_args[:gem_branch_finder], module_args[:gem_branch_replacer])
+        gem_file_update(output_path, module_args[:gem_to_test], module_args[:gem_line], module_args[:gem_sha_finder], module_args[:gem_sha_replacer], module_args[:gem_version_finder], module_args[:gem_version_replacer], module_args[:gem_branch_finder], module_args[:gem_branch_replacer]) # rubocop:disable Metrics/LineLength
         print 'gem file updated, '
       end
       if steps.include?(:run_tests)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         print 'run tests, '
-        exit_status = run_tests(output_path, module_args[:module_type])
+        run_tests(output_path, module_args[:module_type])
       end
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -357,16 +357,15 @@ module PdkSync
 
   def self.get_source_test_gem(gem_to_test, gem_line)
     if !gem_line.nil?
-      new_data = Array.new
       new_data = gem_line.split(',')
-      return new_data
+      return new_data # rubocop:disable Style/RedundantReturn
     elsif !gem_to_test.nil?
       file = File.open('Gemfile')
       file.each_line do |line|
         if line.include?(gem_to_test.to_s)
-          if line.match /(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/
+          if line =~ %r{(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?} # rubocop:disable Style/GuardClause
             return line.split(',')[1].strip.to_s
-            break
+            break # rubocop:disable Lint/UnreachableCode
           else
             return "https://github.com/puppetlabs/#{gem_to_test}"
           end
@@ -387,11 +386,11 @@ module PdkSync
     # - sha, branch, version
     if !gem_line.nil?
       git_repo = get_source_test_gem(gem_to_test, gem_line)
-      i=0
+      i = 0
       git_repo.each do |item|
-        i = i+1
-        if item.match /(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?/
-          git_repo = item.split("git: ")[1]
+        i += 1
+        if item =~ %r{(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?}
+          git_repo = item.split('git: ')[1]
           break
         elsif git_repo.size == i
           git_repo = "https://github.com/puppetlabs/#{gem_to_test}"
@@ -403,25 +402,25 @@ module PdkSync
     elsif !gem_to_test.nil?
       git_repo = clone_directory(@namespace, gem_to_test, output_path.to_s)
     end
-      Dir.chdir(@main_path)
-      raise "Unable to clone repo for #{gem_to_test}. Check repository's url to be correct!".red if git_repo.nil?
+    Dir.chdir(@main_path)
+    raise "Unable to clone repo for #{gem_to_test}. Check repository's url to be correct!".red if git_repo.nil?
 
-      @all_versions = ""
-      @all_refs = ""
-      @all_branches = ""
+    @all_versions = ''
+    @all_refs = ''
+    @all_branches = ''
 
-      Dir.chdir(output_path)
-      stdout_refs, stderr_refs, status_refs = Open3.capture3("git show-ref -s")
-      @all_refs = stdout_refs
-      stdout_branches, stderr_branches, status_branches = Open3.capture3("git branch -r")
-      @all_branches = stdout_branches
-      stdout_versions, stderr_versions, status_versions = Open3.capture3("git tag")
-      @all_versions = stdout_versions
+    Dir.chdir(output_path)
+    stdout_refs, stderr_refs, status_refs = Open3.capture3('git show-ref -s')
+    @all_refs = stdout_refs
+    stdout_branches, stderr_branches, status_branches = Open3.capture3('git branch -r')
+    @all_branches = stdout_branches
+    stdout_versions, stderr_versions, status_versions = Open3.capture3('git tag')
+    @all_versions = stdout_versions
 
-      raise "Couldn't get references due to #{stderr_refs}".red unless status_refs.exitstatus.zero?
-      raise "Couldn't get branches due to #{stderr_branches}".red unless status_branches.exitstatus.zero?
-      raise "Couldn't get versions due to #{stderr_versions}".red unless status_versions.exitstatus.zero?
-      Dir.chdir(@main_path)
+    raise "Couldn't get references due to #{stderr_refs}".red unless status_refs.exitstatus.zero?
+    raise "Couldn't get branches due to #{stderr_branches}".red unless status_branches.exitstatus.zero?
+    raise "Couldn't get versions due to #{stderr_versions}".red unless status_versions.exitstatus.zero?
+    Dir.chdir(@main_path)
   end
 
   def self.validate_gem_sha_replacer(gem_sha_replacer, gem_to_test)
@@ -459,42 +458,42 @@ module PdkSync
   #   The gem branch to find
   # @param [String] gem_branch_replacer
   #   The gem branch to replace
-  def self.gem_file_update(output_path , gem_to_test, gem_line, gem_sha_finder, gem_sha_replacer, gem_version_finder, gem_version_replacer, gem_branch_finder, gem_branch_replacer)
+  def self.gem_file_update(output_path, gem_to_test, gem_line, gem_sha_finder, gem_sha_replacer, gem_version_finder, gem_version_replacer, gem_branch_finder, gem_branch_replacer)
     gem_file_name = 'Gemfile'
 
     validate_gem_update_module(gem_to_test, gem_line)
 
-    if (gem_line.nil? == false) && (gem_sha_replacer != "\"\"")
+    if (gem_line.nil? == false) && (gem_sha_replacer != '\"\"')
       new_data = get_source_test_gem(gem_to_test, gem_line)
-      new_data.each { |data|
-        if data.include?("branch")
-          gem_branch_replacer=data.split(" ")[1].strip.chomp('"')
-        elsif data.include?("ref")
-          gem_sha_replacer=data.split(" ")[1].strip.chomp('"')
-        elsif data.match /~>|=|>=|<=|<|>/
-          if data.match /(\d+.\d+.\d+)/
-            version_to_check = data.match /(\d+.\d+.\d+)/
+      new_data.each do |data|
+        if data.include?('branch')
+          gem_branch_replacer = data.split(' ')[1].strip.chomp('"')
+        elsif data.include?('ref')
+          gem_sha_replacer = data.split(' ')[1].strip.chomp('"')
+        elsif data =~ %r{~>|=|>=|<=|<|>}
+          if data =~ %r{/(\d+.\d+.\d+)}
+            version_to_check = data.match(%r{(\d+.\d+.\d+)})
           end
           validate_gem_version_replacer(version_to_check.to_s, gem_to_test)
         end
-      }
+      end
     end
 
-    if (gem_sha_replacer.nil? == false) && (gem_sha_replacer != "\"\"")
+    if gem_sha_replacer.nil? == false && gem_sha_replacer != '\"\"' && gem_sha_replacer != ''
       validate_gem_sha_replacer(gem_sha_replacer.chomp('"').reverse.chomp('"').reverse, gem_to_test)
     end
-    if (gem_branch_replacer.nil? == false) &&(gem_branch_replacer != "\"\"")
+    if gem_branch_replacer.nil? == false && gem_branch_replacer != '\"\"'
       validate_gem_branch_replacer(gem_branch_replacer.chomp('"').reverse.chomp('"').reverse, gem_to_test)
     end
-    if (gem_version_replacer.nil? == false) && (gem_version_replacer != "\"\"")
-      delimiters=['<','>','<=','>=','=']
-      version_to_check=gem_version_replacer.split(Regexp.union(delimiters))
-      version_test=""
-      version_to_check.each { |version|
-        if version.match /(\d+.\d+.\d+)/
-          version_test=version.match /(\d+.\d+.\d+)/
+    if gem_version_replacer.nil? == false && gem_version_replacer != '\"\"' && gem_version_replacer != ''
+      delimiters = ['<', '>', '<=', '>=', '=']
+      version_to_check = gem_version_replacer.split(Regexp.union(delimiters))
+      version_test = ''
+      version_to_check.each do |version|
+        if version =~ %r{(\d+.\d+.\d+)}
+          version_test = version.match(%r{(\d+.\d+.\d+)})
         end
-      }
+      end
       validate_gem_version_replacer(version_test.to_s, gem_to_test)
     end
 
@@ -515,14 +514,12 @@ module PdkSync
     ]
     # gem_line option is passed
 
-    if gem_line.nil? == false && (gem_line != "" || gem_line != "\"\"")
-      # Comment the gem in the Gemfile to add the new line ?
-        # TO DO
+    if gem_line.nil? == false && (gem_line != '' || gem_line != '\"\"')
 
       # Delete the gem in the Gemfile to add the new line
       File.open('/tmp/out.tmp', 'w') do |out_file|
         File.foreach(gem_file_name) do |line|
-          out_file.puts line unless line =~ /#{gem_to_test}/
+          out_file.puts line unless line =~ %r{#{gem_to_test}}
         end
       end
       FileUtils.mv('/tmp/out.tmp', gem_file_name)
@@ -535,34 +532,34 @@ module PdkSync
     end
 
     # gem_sha_finder and gem_sha_replacer options are passed
-    if (gem_sha_finder.nil? == false && gem_sha_replacer.nil? == false) && (gem_sha_finder != "" && gem_sha_finder != "\"\"") && (gem_sha_replacer != "" && gem_sha_replacer != "\"\"")
+    if gem_sha_finder.nil? == false && gem_sha_replacer.nil? == false && gem_sha_finder != '' && gem_sha_finder != '\"\"' && gem_sha_replacer != '' && gem_sha_replacer != '\"\"' # rubocop:disable Metrics/LineLength
       # Replace with SHA
       file = File.open(gem_file_name)
-	    contents = file.readlines.join
+      contents = file.readlines.join
       gem_update_sha.each do |regex|
-        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) unless contents =~ /#{gem_to_test}/
+        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) # unless contents =~ %r{#{gem_to_test}}
       end
-	    File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
+      File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
     end
 
     # gem_version_finder and gem_version_replacer options are passed
-    if (gem_version_finder.nil? == false && gem_version_replacer.nil? == false) && (gem_version_finder != "" && gem_version_finder != "\"\"") && (gem_version_replacer != "" && gem_version_replacer != "\"\"")
+    if gem_version_finder.nil? == false && gem_version_replacer.nil? == false && gem_version_finder != '' && gem_version_finder != '\"\"' && gem_version_replacer != '' && gem_version_replacer != '\"\"' # rubocop:disable Metrics/LineLength
       # Replace with version
       file = File.open(gem_file_name)
-	    contents = file.readlines.join
-	    gem_update_version.each do |regex|
-        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) unless contents =~ /#{gem_to_test}/
+      contents = file.readlines.join
+      gem_update_version.each do |regex|
+        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) # unless contents =~ %r{#{gem_to_test}}
       end
-	    File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
+      File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
     end
 
     # gem_branch_finder and gem_branch_replacer options are passed
-    if (gem_branch_finder.nil? == false && gem_branch_replacer.nil? == false) && (gem_branch_finder != "" && gem_branch_finder != "\"\"") && (gem_branch_replacer != "" && gem_branch_replacer != "\"\"")
+    if gem_branch_finder.nil? == false && gem_branch_replacer.nil? == false && gem_branch_finder != '' && gem_branch_finder != '\"\"' && gem_branch_replacer != '' && gem_branch_replacer != '\"\"' # rubocop:disable Metrics/LineLength, Style/GuardClause
       # Replace with branch
       file = File.open(gem_file_name)
-	    contents = file.readlines.join
-	    gem_update_branch.each do |regex|
-		  contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) #unless contents =~ /#{gem_to_test}/
+      contents = file.readlines.join
+      gem_update_branch.each do |regex|
+        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) # unless contents =~ %r{#{gem_to_test}}
       end
       File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
     end
@@ -577,12 +574,9 @@ module PdkSync
   # @return [Integer]
   #   The status code of the pdk update run.
   def self.run_tests(output_path, module_type)
-    stdout = ''
-    stderr = ''
-    status = Process::Status
     # Runs the module tests command
-    litmus_install   = "bundle install --path .bundle/gems/ --jobs 4"
-    litmus_provision = "bundle exec rake 'litmus:provision_list[release_checks]'"
+    litmus_install   = 'bundle install --path .bundle/gems/ --jobs 4'
+    litmus_provision = 'bundle exec rake \'litmus:provision_list[release_checks]\''
     litmus_agent     = 'bundle exec rake litmus:install_agent'
     litmus_module    = 'bundle exec rake litmus:install_module'
     litmus_tests     = 'bundle exec rake litmus:acceptance:parallel'
@@ -592,15 +586,14 @@ module PdkSync
 
     # Run the tests
     if module_type == 'litmus'
-      [litmus_install, litmus_provision, litmus_agent, litmus_module, litmus_tests, litmus_teardown].each do |n|
+      [litmus_install, litmus_provision, litmus_agent, litmus_module, litmus_tests, litmus_teardown].each do |test_execute|
         Dir.chdir(old_path)
-        exit_status = run_command(output_path, "#{n}")
+        run_command(output_path, test_execute.to_s)
       end
     end
 
     if module_type == 'traditional'
     end
-
   end
 
   # @summary

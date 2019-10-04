@@ -58,40 +58,40 @@ describe PdkSync do
       expect { PdkSync.main(steps: [:gem_file_update]) }.to raise_error(NoMethodError)
     end
     it 'gem_file_update runs with invalid gem_line given' do
-      expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_line: "gem 'puppet_litmus'\, git: 'https://github.com/test/puppet_litmus.git'"}) }. to raise_error(Errno::ENOENT)
+      expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_line: "gem 'puppet_litmus'\, git: 'https://github.com/test/puppet_litmus.git'" }) }. to raise_error(Errno::ENOENT) # rubocop:disable Metrics/LineLength
     end
     it 'gem_file_update runs with invalid gem_sha_replacer' do
-      expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_sha_finder: 'jsjsjsjsjsjsjs', gem_sha_replacer: 'abcdefgjhkk'}) }.to raise_error(RuntimeError) #, ("Couldn't find sha: abcdefgjhkk in your repository: puppet_litmus"))
+      expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_sha_finder: 'jsjsjsjsjsjsjs', gem_sha_replacer: 'abcdefgjhkk' }) }.to raise_error(RuntimeError) # , ("Couldn't find sha: abcdefgjhkk in your repository: puppet_litmus")) # rubocop:disable Metrics/LineLength
     end
     it 'gem_file_update runs with invalid gem_version_replacer' do
-      expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_version_finder: '<= 0.4.9', gem_version_replacer: '<= 1.4.11'}) }.to raise_error(RuntimeError) #, ("Couldn't find version: 1.4.11 in your repository: puppet_litmus"))
+      expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_version_finder: '<= 0.4.9', gem_version_replacer: '<= 1.4.11' }) }.to raise_error(RuntimeError) # , ("Couldn't find version: 1.4.11 in your repository: puppet_litmus")) # rubocop:disable Metrics/LineLength
     end
     it 'gem_file_update runs with invalid gem_branch_replacer' do
-      expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_branch_finder: 'jsjsjsjsjsjsjs', gem_branch_replacer: 'abcdefgjhkk'}) }.to raise_error(RuntimeError) #, "Couldn't find branch: abcdefgjhkk in your repository: puppet_litmus")
+      expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_branch_finder: 'jsjsjsjsjsjsjs', gem_branch_replacer: 'abcdefgjhkk' }) }.to raise_error(RuntimeError) # , "Couldn't find branch: abcdefgjhkk in your repository: puppet_litmus") # rubocop:disable Metrics/LineLength
     end
     it 'gem_file_update with valid gem_line' do
-      PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_line: "gem 'puppet_litmus'\, git: 'https://github.com/puppetlabs/puppet_litmus.git'"})
+      PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_line: "gem 'puppet_litmus'\, git: 'https://github.com/puppetlabs/puppet_litmus.git'" })
       PdkSync.create_filespace
       PdkSync.main(steps: [:clone])
-      expect(File.read("Gemfile")).to match(%r{gem 'puppet_litmus'\, git: 'https://github.com/puppetlabs/puppet_litmus.git'})
+      expect(File.read('Gemfile')).to match(%r{gem 'puppet_litmus'\, git: 'https://github.com/puppetlabs/puppet_litmus.git'})
     end
     it 'gem_file_update with valid gem_branch_replacer' do
-      PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_branch_finder: 'testbranch', gem_branch_replacer: 'master'})
-      #Fix the bug and enable the testcase
-      #expect(File.read("Gemfile")).to match(%r{gem 'puppet_litmus', git: 'https://github.com/puppetlabs/puppet_litmus.git', branch: master'})
+      PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_branch_finder: 'testbranch', gem_branch_replacer: 'master' })
+      # Fix the bug and enable the testcase
+      # expect(File.read('Gemfile')).to match(%r{gem 'puppet_litmus', git: 'https://github.com/puppetlabs/puppet_litmus.git', branch: master'})
     end
     it 'gem_file_update runs, and contains the gem_sha given' do
-      #Fix the bug and enable the testcase
-      #PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'github_changelog_generator', gem_sha_finder: '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', gem_sha_replacer: 'testsha'})
-      #expect(File.read("Gemfile")).to match(/testsha/)
+      # Fix the bug and enable the testcase
+      # PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'github_changelog_generator', gem_sha_finder: '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', gem_sha_replacer: 'testsha'})
+      # expect(File.read('Gemfile')).to match(/testsha/)
     end
     it 'gem_file_update runs, and contains the gem_version given' do
-      #Fix the bug and enable the testcase
-      #PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'json', gem_version_finder: '= 1.8.1', gem_version_replacer: '<= testversion'})
-      #expect(File.read("Gemfile")).to match(/testversion/)
+      # Fix the bug and enable the testcase
+      # PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'json', gem_version_finder: '= 1.8.1', gem_version_replacer: '<= testversion'})
+      # expect(File.read('Gemfile')).to match(/testversion/)
     end
     it 'raise when run_tests with no arguments' do
-      expect { PdkSync.main(steps: [:run_tests]) }.to raise_error(NoMethodError) #, %r{run_tests" requires arguments (module_type) to run.})
+      expect { PdkSync.main(steps: [:run_tests]) }.to raise_error(NoMethodError) # , %r{run_tests" requires arguments (module_type) to run.})
     end
   end
 end
