@@ -403,7 +403,7 @@ module PdkSync
       i = 0
       git_repo.each do |item|
         i += 1
-        if item =~ %r{(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?}
+        if item =~ %r{((git@|http(s)?:\/\/)([\w\.@]+)(\/|:))([\w,\-,\_]+)\/([\w,\-,\_]+)(.git){0,1}((\/){0,1})}
           git_repo = item.split('git: ')[1]
           break
         elsif git_repo.size == i
@@ -426,7 +426,7 @@ module PdkSync
     Dir.chdir(output_path)
     stdout_refs, stderr_refs, status_refs = Open3.capture3('git show-ref -s')
     @all_refs = stdout_refs
-    stdout_branches, stderr_branches, status_branches = Open3.capture3('git branch -r')
+    stdout_branches, stderr_branches, status_branches = Open3.capture3('git branch -a')
     @all_branches = stdout_branches
     stdout_versions, stderr_versions, status_versions = Open3.capture3('git tag')
     @all_versions = stdout_versions
@@ -455,6 +455,7 @@ module PdkSync
   # @param [String] gem_branch_replacer
   #   The branch to update in the Gemfile
   def self.validate_gem_branch_replacer(gem_branch_replacer, gem_to_test)
+    puts gem_branch_replacer
     raise "Couldn't find branch: #{gem_branch_replacer} in your repository: #{gem_to_test}".red unless @all_branches.include?(gem_branch_replacer)
     puts "Branch #{gem_branch_replacer} valid.\n".green
   end
@@ -499,12 +500,12 @@ module PdkSync
       new_data = get_source_test_gem(gem_to_test, gem_line)
       new_data.each do |data|
         if data.include?('branch')
-          gem_branch_replacer = data.split(' ')[1].strip.chomp('"')
+          gem_branch_replacer = data.split(' ')[1].strip.chomp('"').delete("'")
         elsif data.include?('ref')
-          gem_sha_replacer = data.split(' ')[1].strip.chomp('"')
+          gem_sha_replacer = data.split(' ')[1].strip.chomp('').delete("'")
         elsif data =~ %r{~>|=|>=|<=|<|>}
           if data =~ %r{/(\d+.\d+.\d+)}
-            version_to_check = data.match(%r{(\d+.\d+.\d+)})
+            version_to_check = data.match(%r{(\d+.\d+.\d+)}).delete("'")
           end
           validate_gem_version_replacer(version_to_check.to_s, gem_to_test)
         end
@@ -526,6 +527,7 @@ module PdkSync
           version_test = version.match(%r{(\d+.\d+.\d+)})
         end
       end
+
       validate_gem_version_replacer(version_test.to_s, gem_to_test)
     end
 
@@ -559,7 +561,7 @@ module PdkSync
       # Insert the new Gem to test
       file = File.open(gem_file_name)
       contents = file.readlines.map(&:chomp)
-      contents.insert(line_number, gem_line)
+      contents.insert(line_number, gem_line.chomp('"').reverse.chomp('"').reverse)
       File.open(gem_file_name, 'w') { |f| f.write contents.join("\n") }
     end
 
