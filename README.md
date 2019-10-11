@@ -90,6 +90,27 @@ bundle exec rake -T
 bundle exec rake git:clone_managed_modules
 ```
 
+pdksync tool is extended with the new feature to update the Gemfile. Puppet provides a lot of useful gems to access and manage their functionality between modules. This functionality will help user to perform gem testing prior to release. User is given new rake tasks to update SHA/Version/Branch/line in the Gemfile. Then the changes can be committed, PR can be created which will run the acceptance tests in the PR. If all the tests are executing successfully then the user can go head and release the gem. Below given are the workflows for doing module gem testing with pdksync.
+
+In Workflow 1 we can clone modules, update the gem file, create the commit, push the changes and create the PR using separate rake tasks.
+```shell
+bundle install --path .bundle/gems/
+bundle exec rake -T
+bundle exec rake git:clone_managed_modules
+bundle exec rake 'pdksync:gem_file_update[]'
+bundle exec rake 'git:create_commit[]'
+bundle exec rake 'git:push'
+bundle exec rake 'git:create_pr[]'
+```
+
+In Workflow 2 we can clone modules, update the gem file, create the commit, push the changes and create the PR using single rake task
+```
+Using single rake job
+bundle install --path .bundle/gems/
+bundle exec rake -T
+bundle exec rake 'gem_testing[]'
+```
+
 The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. A pull request against master is opened, and pdksync begins to clone the next repository.
 
 By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `pdksync.yml` in the local directory and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, set `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:create_pr` rake task, the label must exist on each of the managed modules to run successfully.
@@ -109,12 +130,11 @@ The following rake tasks are available with pdksync:
 - `pdksync:run_a_command[:command]` Run a command against modules eg rake 'pdksync:run_a_command[complex command here -f -gx]'
 - `pdksync:gem_file_update[[:gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]]` Run gem_file_update against modules 
   - eg rake to update gem line `pdksync:gem_file_update['puppet_litmus', "gem 'puppet_litmus'\, git: 'https://github.com/test/puppet_litmus.git'\, branch: 'testbranch'"]'` 
-  - eg rake to update sha `pdksync:gem_file_update['github_changelog_generator', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', 'testsha']` 
-  - eg rake to update version`pdksync:gem_file_update['json', '', '', '', "= 1.8.1", "<= testversion", '', '']`
+  - eg rake to update sha `pdksync:gem_file_update['puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', '20ee04ba1234e9e83eb2ffb5056e23d641c7a31']` 
+  - eg rake to update version`pdksync:gem_file_update['puppet_litmus', '', '', '', "= 0.9.0", "<= 0.10.0", '', '']`
   - eg rake to update branch `pdksync:gem_file_update['puppet_litmus', '', '', '', '', '', 'testbranch', 'testbranches']` 
 - `rake 'gem_testing[:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]'` Run complete Gem file testing (cloning, gemfileupdate, create commit, create PR)PR title outputs as `pdksync_gemtesting - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
   - eg rake to perform gem file testing `gem_testing['MODULES-testing', 'puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', 'testsha']` 
-- `pdksync:run_tests[:module_type]` Run acceptance tests for the modules eg rake 'pdksync:run_tests[litmus]'
 
 ### Configuration
 
