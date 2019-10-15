@@ -90,7 +90,8 @@ bundle exec rake -T
 bundle exec rake git:clone_managed_modules
 ```
 
-pdksync tool is extended with the new feature to update the Gemfile. Puppet provides a lot of useful gems to access and manage their functionality between modules. This functionality will help user to perform gem testing prior to release. User is given new rake tasks to update SHA/Version/Branch/line in the Gemfile. Then the changes can be committed, PR can be created which will run the acceptance tests in the PR. If all the tests are executing successfully then the user can go head and release the gem. Below given are the workflows for doing module gem testing with pdksync.
+pdksync tool is extended with the new feature to update the Gemfile. Puppet provides a lot of useful gems to access and manage their functionality between modules. This functionality will help user to perform gem testing prior to release. User is given new rake tasks to update SHA/Version/Branch/line in the Gemfile. Then the changes can be committed, PR can be created which will run the acceptance tests in the PR. If all the tests are executing successfully then the user can close the PRS and release the gem. Below given are the workflows for doing module gem testing with pdksync.
+
 
 In Workflow 1 we can clone modules, update the gem file, create the commit, push the changes and create the PR using separate rake tasks.
 ```shell
@@ -110,6 +111,8 @@ bundle install --path .bundle/gems/
 bundle exec rake -T
 bundle exec rake 'gem_testing[]'
 ```
+
+Once the verified gem is released we can use pdksync to update the the new version of gem released in the  .sync.yaml file.
 
 The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. A pull request against master is opened, and pdksync begins to clone the next repository.
 
