@@ -54,5 +54,8 @@ describe PdkSync do
     it 'raise when clean_branches with no arguments' do
       expect { PdkSync.main(steps: [:clean_branches]) }.to raise_error(RuntimeError, %r{Needs a branch_name, and the branch name contains the string pdksync})
     end
+    it 'raise when run_tests_jenkins with no arguments' do
+      expect { PdkSync.main(steps: [:run_tests]) }.to raise_error(RuntimeError, %r{Jenkins access token for \#\{JENKINS_PLATFORM.capitalize\} not set})
+    end
   end
 end

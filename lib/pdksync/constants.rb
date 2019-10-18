@@ -17,7 +17,10 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
       pdksync_label: 'maintenance',
       git_platform: :github,
       git_base_uri: 'https://github.com',
-      gitlab_api_endpoint: 'https://gitlab.com/api/v4'
+      gitlab_api_endpoint: 'https://gitlab.com/api/v4',
+      jenkins_platform: :jenkins,
+      jenkins_base_uri: 'https://jenkins.io',
+      jenkins_api_endpoint: ''
     }
 
     supported_git_platforms = [:github, :gitlab]
@@ -55,13 +58,17 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     PDKSYNC_LABEL = config[:pdksync_label].freeze
     GIT_PLATFORM = config[:git_platform].downcase.to_sym.freeze
     GIT_BASE_URI = config[:git_base_uri].freeze
+    JENKINS_PLATFORM = config[:jenkins_platform].downcase.to_sym.freeze
     GITLAB_API_ENDPOINT = config[:gitlab_api_endpoint].freeze
+    JENKINS_API_ENDPOINT = config[:jenkins_api_endpoint].freeze
     ACCESS_TOKEN = case GIT_PLATFORM
                    when :github
                      ENV['GITHUB_TOKEN'].freeze
                    when :gitlab
                      ENV['GITLAB_TOKEN'].freeze
                    end
+    JENKINS_USERNAME = ENV['JENKINS_USERNAME'].freeze
+    JENKINS_PASSWORD = ENV['JENKINS_PASSWORD'].freeze
 
     # Sanity checks
 
@@ -73,6 +80,16 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     if ACCESS_TOKEN.nil?
       raise "Git platform access token for #{GIT_PLATFORM.capitalize} not set"\
         " - use 'export #{GIT_PLATFORM.upcase}_TOKEN=\"<your token>\"' to set"
+    end
+
+    if JENKINS_USERNAME.nil?
+      raise "Jenkins access token for #{JENKINS_PLATFORM.capitalize} not set"\
+        " - use 'export #{JENKINS_PLATFORM.upcase}_USERNAME=\"<your username>\"' to set"
+    end
+
+    if JENKINS_PASSWORD.nil?
+      raise "Jenkins access token for #{JENKINS_PLATFORM.capitalize} not set"\
+        " - use 'export #{JENKINS_PLATFORM.upcase}_PASSWORD=\"<your password>\"' to set"
     end
   end
 end

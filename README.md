@@ -90,6 +90,10 @@ bundle exec rake -T
 bundle exec rake git:clone_managed_modules
 ```
 
+pdksync tool is extended with the new feature to run the tests locally for litmus converted modules and also to run the adhoc jobs on jenkins for traditional modules.
+Following rake task are available to perform the above tasks.
+`pdksync:run_tests[litmus]` `pdksync:run_tests_jenkins[]`
+
 The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. A pull request against master is opened, and pdksync begins to clone the next repository.
 
 By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `pdksync.yml` in the local directory and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, set `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:create_pr` rake task, the label must exist on each of the managed modules to run successfully.
@@ -107,6 +111,8 @@ The following rake tasks are available with pdksync:
   - `rake pdksync` PR title outputs as `pdksync - pdksync_heads/master-0-gabccfb1`
   - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
 - `pdksync:run_a_command[:command]` Run a command against modules eg rake 'pdksync:run_a_command[complex command here -f -gx]'
+- `pdksync:run_tests[litmus]` Run Acceptance tests locally on litmus modules.
+- `pdksync:run_tests_jenkins[]` Run Acceptance tests through Jenkins on traditional modules.
 
 ### Configuration
 

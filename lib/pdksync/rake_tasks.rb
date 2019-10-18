@@ -26,6 +26,11 @@ namespace :pdksync do
     PdkSync.main(steps: [:run_a_command], args: args[:command])
   end
 
+  desc "Run test in jenkins for traditional modules eg rake 'run_tests_jenkins['modulename', 'branchname']'"
+  task :run_tests_jenkins, [:github_repo, :github_branch] do |_task, args|
+    PdkSync.main(steps: [:run_tests_jenkins], args: args)
+  end
+
   desc 'Display the current configuration of pdksync'
   task :show_config do
     include PdkSync::Constants

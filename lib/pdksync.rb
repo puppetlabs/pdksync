@@ -6,6 +6,7 @@ require 'rake'
 require 'pdk'
 require 'pdksync/constants'
 require 'pdksync/gitplatformclient'
+require 'pdksync/jenkinclient'
 require 'json'
 require 'yaml'
 require 'colorize'
@@ -44,9 +45,15 @@ module PdkSync
   @default_pdksync_label = Constants::PDKSYNC_LABEL
   @git_platform = Constants::GIT_PLATFORM
   @git_base_uri = Constants::GIT_BASE_URI
+  @jenkins_platform = Constants::JENKINS_PLATFORM
   @git_platform_access_settings = {
     access_token: Constants::ACCESS_TOKEN,
     gitlab_api_endpoint: Constants::GITLAB_API_ENDPOINT
+  }
+  @jenkins_platform_access_settings = {
+    jenkins_username: Constants::JENKINS_USERNAME,
+    jenkins_password: Constants::JENKINS_PASSWORD,
+    jenkins_api_endpoint: Constants::JENKINS_API_ENDPOINT
   }
 
   def self.main(steps: [:clone], args: nil)
@@ -57,6 +64,9 @@ module PdkSync
     raise "No modules found in '#{@managed_modules}'" if module_names.nil?
     validate_modules_exist(client, module_names)
     pr_list = []
+    if steps.include?(:run_tests_jenkins)
+      jenkins_client = setup_jenkins_client
+    end
 
     # The current directory is saved for cleanup purposes
     main_path = Dir.pwd
@@ -80,6 +90,12 @@ module PdkSync
     if steps.include?(:clean_branches)
       raise 'Needs a branch_name, and the branch name contains the string pdksync' if args.nil? || args[:branch_name].nil? || !args[:branch_name].include?('pdksync')
       puts "Removing branch_name =#{args[:branch_name]}"
+    end
+    # validation run_tests_jenkins
+    if steps.include?(:run_tests_jenkins)
+      jenkins_client = setup_jenkins_client
+      raise 'run_tests_jenkins requires arguments (github_repo, github_branch) to run.' if args[:github_repo].nil? || args[:github_branch].nil?
+      puts "Command '#{args}'"
     end
 
     abort "No modules listed in #{@managed_modules}" if module_names.nil?
@@ -116,6 +132,11 @@ module PdkSync
         print 'run command, '
         exit_status = run_command(output_path, module_args)
         next unless exit_status.zero?
+      end
+      if steps.include?(:run_tests_jenkins)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        print 'run tests in jenkins, '
+        run_tests_jenkins(jenkins_client, module_args[:github_repo], module_args[:github_branch])
       end
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -226,6 +247,16 @@ module PdkSync
   end
 
   # @summary
+  #   This method when called will create and return an octokit client with access to the upstream jenkin repositories.
+  # @return [PdkSync::JenkinsPlatformClient] client
+  #   The Jenkins platform client that has been created.
+  def self.setup_jenkins_client
+    PdkSync::JenkinsClient.new(@jenkins_platform_access_settings)
+  rescue StandardError => error
+    raise "Jenkins platform access not set up correctly: #{error}"
+  end
+
+  # @summary
   #   This method when called will access a file set by the global variable '@managed_modules' and retrieve the information within as an array.
   # @return [Array]
   #   An array of different module names.
@@ -330,6 +361,28 @@ module PdkSync
     puts "\n#{stdout}\n".yellow
     puts "(FAILURE) Unable to run command '#{command}': #{stderr}".red unless status.exitstatus.zero?
     status.exitstatus
+  end
+
+  # @summary
+  #   This method when called will create a pr on the given repository that will create a pr to merge the given commit into the master with the pdk version as an identifier.
+  # @param [PdkSync::GitPlatformClient] client
+  #   The Git platform client used to gain access to and manipulate the repository.
+  # @param [String] ouput_path
+  #   The location that the command is to be run from.
+  # @param [String] jenkins_client
+  #   Jenkins authentication.
+  # @param [String] repo_name
+  #   Module to run on Jenkins
+  # @param [String] current_branch
+  #   The branch against which the user needs to run the jenkin jobs
+  def self.run_tests_jenkins(jenkins_client, repo_name, current_branch)
+    if jenkins_client.nil? == false || repo_name.nil? == false || current_branch.nil? == false
+      pr = jenkins_client.create_adhoc_job(repo_name,
+                                           current_branch)
+      pr
+    end
+  rescue StandardError => error
+    puts "(FAILURE) Jenkins Job creation for #{repo_name} has failed. #{error}".red
   end
 
   # @summary
