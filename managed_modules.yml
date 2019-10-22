@@ -20,7 +20,7 @@
 #- puppetlabs-iis
 #- puppetlabs-inifile
 #- puppetlabs-java
-#- puppetlabs-java_ks
+- puppetlabs-java_ks
 #- puppetlabs-kubernetes
 #- puppetlabs-motd
 #- puppetlabs-mysql
@@ -51,6 +51,6 @@
 #- puppetlabs-panos
 #- puppetlabs-resource_api
 ## testing only
-#- puppetlabs-testing
+# - puppetlabs-testing
 #- puppetlabs-testing1
 #- puppetlabs-testing2

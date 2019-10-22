@@ -12,6 +12,8 @@ require 'yaml'
 require 'colorize'
 require 'bundler'
 require 'octokit'
+require 'HTTParty'
+require 'ruby-progressbar'
 
 # @summary
 #   This module set's out and controls the pdksync process
@@ -55,6 +57,120 @@ module PdkSync
     jenkins_password: Constants::JENKINS_PASSWORD,
     jenkins_api_endpoint: Constants::JENKINS_API_ENDPOINT
   }
+
+  # convert duration from milliseconds to format h m s ms
+  def self.get_duration_hrs_and_mins(milliseconds)
+    return '' unless milliseconds
+    hours, milliseconds   = milliseconds.divmod(1000 * 60 * 60)
+    minutes, milliseconds = milliseconds.divmod(1000 * 60)
+    seconds, milliseconds = milliseconds.divmod(1000)
+    "#{hours}h #{minutes}m #{seconds}s #{milliseconds}ms"
+  end
+
+  # jenkins report
+  def self.jenkins_report_analisation(github_repo, build_id)
+    job_name = "forge-module_#{github_repo}_init-manual-parameters_adhoc"
+    adhoc_urls = []
+    # add init build url to ad-hoc urls
+    adhoc_urls.push("https://jenkins-master-prod-1.delivery.puppetlabs.net/job/#{job_name}")
+
+    # create adhoc_url slist
+    adhoc_urls.each do |url|
+      build_job_data = HTTParty.get("#{url}/api/json").parsed_response
+      downstream_job = build_job_data['downstreamProjects']
+      break if downstream_job.empty?
+      downstream_job.each do |item|
+        next if item.nil?
+        adhoc_urls.push(item['url']) unless item['url'].nil? && item['url'].include?('skippable_adhoc')
+      end
+    end
+    # remove duplicates and sort it
+    adhoc_urls = adhoc_urls.uniq
+    adhoc_urls = adhoc_urls.sort_by { |url| HTTParty.get("#{url}/api/json").parsed_response['fullDisplayName'].scan(%r{[0-9]{2}\s}).first.to_i }
+
+    # analyse each build result
+    # status, execution time, full-log in case of failures
+    adhoc_urls.each do |url|
+      puts '-' * 100
+      # next if skipped
+      current_build_data = HTTParty.get("#{url}/api/json").parsed_response
+      puts "Skipped build: #{current_build_data['fullDisplayName']}" if url.include?('skippable_adhoc') ||
+                                                                        current_build_data['color'] == 'notbuilt' ||
+                                                                        current_build_data['fullDisplayName'].downcase.include?('skipped')
+      next if url.include?('skippable_adhoc') || current_build_data['color'] == 'notbuilt'
+      next if current_build_data['fullDisplayName'].downcase.include?('skipped')
+      puts url
+      get_data_build(url, build_id)
+    end
+  end
+
+  # for each build from adhoc jobs, get data
+  # if multiple platforms under current url, get data for each platform
+  def self.get_data_build(url, build_id)
+    current_build_data = HTTParty.get("#{url}/api/json").parsed_response
+    puts "Build name=#{current_build_data['fullDisplayName']}"
+
+    if current_build_data['activeConfigurations'].nil?
+      # builds don't have the sabe build_id. That's why just the init build will be identified by id, rest of them by lastBuild
+      current_build_url = "#{url}/#{build_id}/api/json" if url.include?('init-manual-parameters_adhoc')
+      current_build_url = "#{url}lastBuild/api/json" unless url.include?('init-manual-parameters_adhoc')
+      current_build_data = HTTParty.get(current_build_url).parsed_response
+      progressbar = ProgressBar.create
+      while current_build_data['building'] == true
+        progressbar.increment
+        current_build_data = HTTParty.get(current_build_url).parsed_response
+        sleep 30
+      end
+      execution_time = get_duration_hrs_and_mins(current_build_data['duration'].to_i)
+      analyse_jenkins_report(url)
+      puts "Execution time: #{execution_time}"
+    else
+      # if multiple platforms (multiple builds)
+      # next if not built
+      platforms_list = []
+      current_build_data['activeConfigurations'].each do |url_child|
+        puts "Skipped build for: #{url_child['url'].split('PLATFORM=')[1].split(',')[0]}" if url_child['color'] == 'notbuilt'
+        next if url_child['color'] == 'notbuilt'
+        platforms_list.push(url_child['url'])
+      end
+
+      platforms_list.each do |platform_build|
+        puts "PLATFORM: #{platform_build.split('PLATFORM=')[1].split(',')[0]}"
+        platform_last_build_data = "#{platform_build}lastBuild/api/json"
+        platform_last_build_job_data = HTTParty.get(platform_last_build_data).parsed_response
+        progressbar = ProgressBar.create
+        while platform_last_build_job_data['building'] == true
+          progressbar.increment
+          sleep 30
+          platform_last_build_job_data = HTTParty.get(platform_last_build_data).parsed_response
+        end
+        analyse_jenkins_report(platform_build)
+        execution_time = get_duration_hrs_and_mins(platform_last_build_job_data['duration'].to_i)
+        puts "Execution time: #{execution_time}"
+      end
+    end
+  end
+
+  # analyse result
+  # when success, when failed
+  def self.analyse_jenkins_report(url)
+    last_build_job_data = HTTParty.get("#{url}/lastBuild/api/json").parsed_response
+    return 'No logs' unless last_build_job_data
+    if last_build_job_data['result'].casecmp?('success')
+      puts "Status: #{last_build_job_data['result']}".green
+    elsif last_build_job_data['result'].casecmp?('aborted')
+      puts "Status: #{last_build_job_data['result']}".blue
+      puts "Check full log on: #{url}lastBuild/console".blue
+    elsif last_build_job_data['result'].casecmp?('failure')
+      # last_build_console = "#{build}lastBuild/consoleText"
+      # last_build_logs = HTTParty.get(last_build_console).parsed_response
+      # failed_full_log="Failures: #{last_build_logs.split("Failures")[1]}"
+      # failed_sumarized_log="Failed examples: #{last_build_logs.split("Failures")[1]}"
+      puts "Status: #{last_build_job_data['result']}".red
+      # puts failed_sumarized_log
+      puts "Check full log on: #{url}lastBuild/console".red
+    end
+  end
 
   def self.main(steps: [:clone], args: nil)
     check_pdk_version
@@ -135,8 +251,9 @@ module PdkSync
       end
       if steps.include?(:run_tests_jenkins)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        print 'run tests in jenkins, '
-        run_tests_jenkins(jenkins_client, module_args[:github_repo], module_args[:github_branch])
+        print 'run tests ien jenkins, '
+        build_id = run_tests_jenkins(jenkins_client, module_args[:github_repo], module_args[:github_branch])
+        jenkins_report_analisation(module_args[:github_repo], build_id)
       end
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
