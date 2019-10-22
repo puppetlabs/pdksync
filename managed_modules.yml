@@ -20,7 +20,7 @@
 #- puppetlabs-iis
 #- puppetlabs-inifile
 #- puppetlabs-java
-- puppetlabs-java_ks
+# - puppetlabs-java_ks
 #- puppetlabs-kubernetes
 #- puppetlabs-motd
 #- puppetlabs-mysql
