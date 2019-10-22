@@ -86,7 +86,6 @@ Run the following commands to check that everything is working as expected:
 
 ```shell
 bundle install --path .bundle/gems/
-bundle exec rake -T
 bundle exec rake git:clone_managed_modules
 ```
 
@@ -96,7 +95,6 @@ pdksync tool is extended with the new feature to update the Gemfile. Puppet prov
 In Workflow 1 we can clone modules, update the gem file, create the commit, push the changes and create the PR using separate rake tasks.
 ```shell
 bundle install --path .bundle/gems/
-bundle exec rake -T
 bundle exec rake git:clone_managed_modules
 bundle exec rake 'pdksync:gem_file_update[]'
 bundle exec rake 'git:create_commit[]'
@@ -108,7 +106,6 @@ In Workflow 2 we can clone modules, update the gem file, create the commit, push
 ```
 Using single rake job
 bundle install --path .bundle/gems/
-bundle exec rake -T
 bundle exec rake 'gem_testing[]'
 ```
 

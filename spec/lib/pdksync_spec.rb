@@ -10,6 +10,10 @@ describe PdkSync do
     @module_names = ['puppetlabs-testing']
     @output_path = "#{@pdksync_dir}/#{module_name}"
     @folder = Dir.pwd
+    # Make changes to modules_managed.yaml file
+    text = File.read('managed_modules.yml')
+    new_contents = text.gsub(%r{#- puppetlabs-testing$}, '- puppetlabs-testing')
+    File.open('managed_modules.yml', 'w') { |file| file.puts new_contents }
   end
 
   before(:each) do
@@ -99,5 +103,12 @@ describe PdkSync do
         expect(File.read('Gemfile')).to match(%r{gem 'puppet_litmus', git: 'https://github.com/puppetlabs/puppet_litmus.git'})
       end
     end
+  end
+  after(:all) do
+    # Make changes to modules_managed.yaml file
+    Dir.chdir(@folder)
+    text = File.read('managed_modules.yml')
+    new_contents = text.gsub(%r{- puppetlabs-testing$}, '#- puppetlabs-testing')
+    File.open('managed_modules.yml', 'w') { |file| file.puts new_contents }
   end
 end

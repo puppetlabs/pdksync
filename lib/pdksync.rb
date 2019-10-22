@@ -11,7 +11,6 @@ require 'yaml'
 require 'colorize'
 require 'bundler'
 require 'octokit'
-require 'pry'
 
 # @summary
 #   This module set's out and controls the pdksync process
