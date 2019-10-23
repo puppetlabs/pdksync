@@ -443,8 +443,12 @@ module PdkSync
   # @param [String] gem_sha_replacer
   #   The sha to update in the Gemfile
   def self.validate_gem_sha_replacer(gem_sha_replacer, gem_to_test)
-    raise "Couldn't find sha: #{gem_sha_replacer} in your repository: #{gem_to_test}".red unless @all_refs.include?(gem_sha_replacer)
-    puts "SHA #{gem_sha_replacer} valid.\n".green
+    found = false
+    @all_refs.split(' ').each do |sha|
+      puts "SHA #{gem_sha_replacer} valid.\n".green if gem_sha_replacer == sha
+      found = true if gem_sha_replacer == sha
+    end
+    raise "Couldn't find sha: #{gem_sha_replacer} in your repository: #{gem_to_test}".red if found == false
   end
 
   # @summary
@@ -454,7 +458,6 @@ module PdkSync
   # @param [String] gem_branch_replacer
   #   The branch to update in the Gemfile
   def self.validate_gem_branch_replacer(gem_branch_replacer, gem_to_test)
-    puts gem_branch_replacer
     raise "Couldn't find branch: #{gem_branch_replacer} in your repository: #{gem_to_test}".red unless @all_branches.include?(gem_branch_replacer)
     puts "Branch #{gem_branch_replacer} valid.\n".green
   end
@@ -466,8 +469,12 @@ module PdkSync
   # @param [String] gem_version_replacer
   #   The version to update in the Gemfile
   def self.validate_gem_version_replacer(gem_version_replacer, gem_to_test)
-    raise "Couldn't find version: #{gem_version_replacer} in your repository: #{gem_to_test}".red unless @all_versions.include?(gem_version_replacer)
-    puts "Version #{gem_version_replacer} valid.\n".green
+    found = false
+    @all_versions.split(' ').each do |version|
+      puts "Version #{gem_version_replacer} valid.\n".green if gem_version_replacer == version
+      found = true if gem_version_replacer == version
+    end
+    raise "Couldn't find version: #{gem_version_replacer} in your repository: #{gem_to_test}".red if found == false
   end
 
   # @summary
@@ -503,9 +510,8 @@ module PdkSync
         elsif data.include?('ref')
           gem_sha_replacer = data.split(' ')[1].strip.chomp('').delete("'")
         elsif data =~ %r{~>|=|>=|<=|<|>}
-          if data =~ %r{/(\d+.\d+.\d+)}
-            version_to_check = data.match(%r{(\d+.\d+.\d+)}).delete("'")
-          end
+          delimiters = ['>', '<', '>=', '<=', '=']
+          version_to_check = data.split(Regexp.union(delimiters))[1].chomp('""').delete("'")
           validate_gem_version_replacer(version_to_check.to_s, gem_to_test)
         end
       end
@@ -520,14 +526,10 @@ module PdkSync
     if gem_version_replacer.nil? == false && gem_version_replacer != '\"\"' && gem_version_replacer != ''
       delimiters = ['<', '>', '<=', '>=', '=']
       version_to_check = gem_version_replacer.split(Regexp.union(delimiters))
-      version_test = ''
       version_to_check.each do |version|
-        if version =~ %r{(\d+.\d+.\d+)}
-          version_test = version.match(%r{(\d+.\d+.\d+)})
-        end
+        next if version.nil?
+        validate_gem_version_replacer(version.to_s, gem_to_test) unless version == ''
       end
-
-      validate_gem_version_replacer(version_test.to_s, gem_to_test)
     end
 
     Dir.chdir(output_path) unless Dir.pwd == output_path
