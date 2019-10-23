@@ -1,3 +1,4 @@
+require 'spec_helper'
 require_relative '../../lib/pdksync'
 require 'git'
 require 'fileutils'
@@ -16,9 +17,13 @@ describe PdkSync do
     allow(PdkSync).to receive(:return_modules).and_return(@module_names)
     allow(PdkSync).to receive(:validate_modules_exist).and_return(@module_names)
     Dir.chdir(@folder)
+    allow(PdkSync::GitPlatformClient).to receive(:new).and_return(platform)
+    allow(Octokit).to receive(:tags).with('puppetlabs/pdk').and_return([{ name: '1' }])
   end
 
   context 'main method' do
+    let(:platform) { Object.new }
+
     it 'runs clone sucessfully' do
       FileUtils.rm_rf(@pdksync_dir)
       PdkSync.create_filespace
@@ -49,6 +54,9 @@ describe PdkSync do
       expect { PdkSync.main(steps: [:create_pr]) }.to raise_error(RuntimeError, %r{Needs a pr_title})
     end
     it 'raise when create_pr with invalid label' do
+      label = double(:label)
+      allow(label).to receive(:name).and_return('not_existent')
+      allow(platform).to receive(:labels).and_return([label])
       expect { PdkSync.main(steps: [:create_pr], args: { pr_title: 'My amazing PR', label: 'doot doot' }) }.to raise_error(RuntimeError, %r{Ensure label is valid})
     end
     it 'raise when clean_branches with no arguments' do
