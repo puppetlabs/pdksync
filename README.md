@@ -4,12 +4,13 @@ Table of Contents
 -----------------
 
 1. [Overview](#overview)
-2. [Usage](#usage)
-3. [How it works](#how-it-works)
-4. [Configuration](#configuration)
-5. [Workflow](#workflow)
-6. [Migrating from modulesync to pdksync](#migrating-from-modulesync-to-pdksync)
-7. [Contributing](#contributing)
+2. [Requirements](#requirements)
+3. [Usage](#usage)
+4. [How it works](#how-it-works)
+5. [Configuration](#configuration)
+6. [Workflow](#workflow)
+7. [Migrating from modulesync to pdksync](#migrating-from-modulesync-to-pdksync)
+8. [Contributing](#contributing)
 
 ### Overview
 --------
@@ -17,6 +18,11 @@ Table of Contents
 Pdksync is an efficient way to run a `pdk update` command against the various Puppet module repositories that you manage — keeping them up-to-date with the changes made to PDK. It is a solution for converted modules that no longer run with modulesync.
 
 Pdksync by default expects that your Puppet module repositories live on GitHub and will behave accordingly. It also supports GitLab as an alternative Git hosting platform.
+
+### Requirements
+--------
+* Ruby >= 2.4.4
+* Bundler ~> 1.15
 
 ### Usage
 ----------
