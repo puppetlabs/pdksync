@@ -14,6 +14,7 @@ require 'bundler'
 require 'octokit'
 require 'HTTParty'
 require 'ruby-progressbar'
+require 'pry'
 
 # @summary
 #   This module set's out and controls the pdksync process
@@ -172,6 +173,23 @@ module PdkSync
     end
   end
 
+  # @summary
+  #   This method is used to identify the type of module.
+  # @param [String] output_path
+  #   The location that the command is to be run from.
+  # @param [String] repo_name
+  #   The module name to identify the type
+  def self.module_type(output_path, repo_name)
+    module_type = ''
+    if repo_name.nil? == false
+      if File.exist?("#{output_path}/provision.yaml")
+        module_type = 'litmus'
+      else
+        module_type = 'traditional'
+      end
+    end
+  end
+
   def self.main(steps: [:clone], args: nil)
     check_pdk_version
     create_filespace
@@ -210,7 +228,7 @@ module PdkSync
     # validation run_tests_jenkins
     if steps.include?(:run_tests_jenkins)
       jenkins_client = setup_jenkins_client
-      raise 'run_tests_jenkins requires arguments (github_repo, github_branch) to run.' if args[:github_repo].nil? || args[:github_branch].nil?
+      raise 'run_tests_jenkins requires arguments (github_branch) to run.' if args[:github_branch].nil?
       puts "Command '#{args}'"
     end
 
@@ -251,9 +269,15 @@ module PdkSync
       end
       if steps.include?(:run_tests_jenkins)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        print 'run tests ien jenkins, '
-        build_id = run_tests_jenkins(jenkins_client, module_args[:github_repo], module_args[:github_branch])
-        jenkins_report_analisation(module_args[:github_repo], build_id)
+        print 'run tests in jenkins, '
+        module_type = module_type(output_path, module_name)
+        if module_type == 'traditional'
+          build_id = run_tests_jenkins(output_path, jenkins_client, module_name, module_args[:github_branch])
+          jenkins_report_analisation(module_name, build_id)
+        end
+        if module_type == 'litmus'
+          puts '(Error) Module Type is Litmus please use the rake task run_tests to run'.red 
+        end
       end
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -480,6 +504,38 @@ module PdkSync
     status.exitstatus
   end
 
+ # @summary
+  #   This method when called will run the 'module tests' command at the given location, with an error message being thrown if it is not successful.
+  # @param [String] output_path
+  #   The location that the command is to be run from.
+  # @param [String] module_type
+  #   The module type (litmus or traditional)
+  # @return [Integer]
+  #   The status code of the pdk update run.
+  def self.run_acceptance_tests(output_path, module_type)
+    # Runs the module tests command
+    litmus_install   = 'bundle install --path .bundle/gems/ --jobs 4'
+    litmus_provision = 'bundle exec rake \'litmus:provision_list[release_checks]\''
+    litmus_agent     = 'bundle exec rake litmus:install_agent'
+    litmus_module    = 'bundle exec rake litmus:install_module'
+    litmus_tests     = 'bundle exec rake litmus:acceptance:parallel'
+    litmus_teardown  = 'bundle exec rake litmus:tear_down'
+    # Save the current path
+    old_path = Dir.pwd
+
+     # Run the tests
+    if module_type == 'litmus'
+      [litmus_install, litmus_provision, litmus_agent, litmus_module, litmus_tests, litmus_teardown].each do |test_execute|
+        Dir.chdir(old_path)
+        run_command(output_path, test_execute.to_s)
+      end
+    end
+
+     if module_type == 'traditional'
+
+    end
+  end
+
   # @summary
   #   This method when called will create a pr on the given repository that will create a pr to merge the given commit into the master with the pdk version as an identifier.
   # @param [PdkSync::GitPlatformClient] client
@@ -492,7 +548,7 @@ module PdkSync
   #   Module to run on Jenkins
   # @param [String] current_branch
   #   The branch against which the user needs to run the jenkin jobs
-  def self.run_tests_jenkins(jenkins_client, repo_name, current_branch)
+  def self.run_tests_jenkins(output_path, jenkins_client, repo_name, current_branch)
     if jenkins_client.nil? == false || repo_name.nil? == false || current_branch.nil? == false
       pr = jenkins_client.create_adhoc_job(repo_name,
                                            current_branch)
