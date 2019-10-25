@@ -24,7 +24,7 @@ task :gem_testing, [:additional_title, :gem_to_test, :gem_line, :gem_sha_finder,
            gem_version_replacer: args[:gem_version_replacer],
            gem_branch_finder: args[:gem_branch_finder],
            gem_branch_replacer: args[:gem_branch_replacer] }
-  PdkSync.main(steps: [:use_pdk_ref, :clone, :gem_file_update, :create_commit, :push, :create_pr], args: args)
+  PdkSync.main(steps: [:use_gem_ref, :clone, :gem_file_update, :create_commit, :push, :create_pr], args: args)
 end
 
 namespace :pdksync do

@@ -152,6 +152,13 @@ module PdkSync
         end
         print 'pdk update, '
       end
+      if steps.include?(:use_gem_ref)
+        pr_title = module_args[:additional_title] ? "#{module_args[:additional_title]} - pdksync_gem_testing" : 'pdksync_gem_testing'
+        module_args = module_args.merge(branch_name: "gem_testing_#{module_args[:gem_to_test]}",
+                                        commit_message: pr_title,
+                                        pr_title: pr_title,
+                                        pdksync_label: @default_pdksync_label)
+      end
       if steps.include?(:create_commit)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         git_instance = Git.open(output_path)
