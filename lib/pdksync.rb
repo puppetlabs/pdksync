@@ -611,7 +611,8 @@ module PdkSync
   def self.run_tests(output_path, module_type)
     # Runs the module tests command
     litmus_install   = 'bundle install --path .bundle/gems/ --jobs 4'
-    litmus_provision = 'bundle exec rake \'litmus:provision_list[release_checks]\''
+    # litmus_provision = 'bundle exec rake \'litmus:provision_list[release_checks]\''
+    litmus_provision = 'bundle exec rake \'litmus:provision[vmpooler, debian-9-x86_64]\''
     litmus_agent     = 'bundle exec rake litmus:install_agent'
     litmus_module    = 'bundle exec rake litmus:install_module'
     litmus_tests     = 'bundle exec rake litmus:acceptance:parallel'
@@ -623,7 +624,42 @@ module PdkSync
     if module_type == 'litmus'
       [litmus_install, litmus_provision, litmus_agent, litmus_module, litmus_tests, litmus_teardown].each do |test_execute|
         Dir.chdir(old_path)
-        run_command(output_path, test_execute.to_s)
+        # run_command(output_path, test_execute.to_s)
+        Bundler.with_clean_env do
+          Dir.chdir(output_path) unless Dir.pwd == output_path
+          # stdout = ''
+          # _stderr = ''
+          # _status = ''
+          stdout, _stderr, _status = Open3.capture3(test_execute.to_s)
+          if test_execute == litmus_tests
+            # stdout, _stderr, _status = Open3.capture3(test_execute.to_s)
+            if !stdout.nil? && stdout.include?('Failed')
+              questions = []
+              questions << {
+                name:     'detailed_report',
+                question: _('Do you want to enable detailed test report ?'),
+                type:     :yes
+              }
+              prompt = TTY::Prompt.new(help_color: :cyan)
+              interview = PDK::CLI::Util::Interview.new(prompt)
+              interview.add_questions(questions)
+              answers = interview.run
+
+              # rubocop:disable Metrics/BlockNesting
+              if !answers['detailed_report'].nil? && answers['detailed_report'].casecmp('yes').zero?
+                puts stdout
+              else
+                puts "Failed examples #{stdout.split('Failed examples')[1]}".red
+                puts 'Failed to connect to the test vm: getaddrinfo: nodename nor servname provided, or not known'.red if stdout.include?('An error occurred')
+              end
+            else
+              puts "Successful #{stdout.split('Successful')[1]}".green
+            end
+          else
+            puts stdout
+          end
+          puts stdout.match(%r{\Finished\s\S+\s\d+(\s\S+\s\d+\D\d+\s\S+|\D\d+\s\S+)}).to_s.green
+        end
       end
     end
 
