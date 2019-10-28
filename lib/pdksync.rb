@@ -559,9 +559,10 @@ module PdkSync
     if gem_line.nil? == false && (gem_line != '' || gem_line != '\"\"')
 
       # Delete the gem in the Gemfile to add the new line
+      gem_test = gem_to_test.chomp('"').reverse.chomp('"').reverse
       File.open('/tmp/out.tmp', 'w') do |out_file|
         File.foreach(gem_file_name) do |line|
-          out_file.puts line unless line =~ %r{#{gem_to_test}}
+          out_file.puts line unless line =~ %r{#{gem_test}}
         end
       end
       FileUtils.mv('/tmp/out.tmp', gem_file_name)
@@ -579,7 +580,7 @@ module PdkSync
       file = File.open(gem_file_name)
       contents = file.readlines.join
       gem_update_sha.each do |regex|
-        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) # unless contents =~ %r{#{gem_to_test}}
+        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer])
       end
       File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
     end
@@ -590,7 +591,7 @@ module PdkSync
       file = File.open(gem_file_name)
       contents = file.readlines.join
       gem_update_version.each do |regex|
-        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) # unless contents =~ %r{#{gem_to_test}}
+        contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer])
       end
       File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
     end
