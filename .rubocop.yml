@@ -15,14 +15,17 @@ AllCops:
   - modules_pdksync/**/*
 Metrics/LineLength:
   Description: People have wide screens, use them.
-  Max: 200
+  Max: 230
 Style/BlockDelimiters:
   Description: Prefer braces for chaining. Mostly an aesthetical choice. Better to
     be consistent then.
   EnforcedStyle: braces_for_chaining
 Style/ClassAndModuleChildren:
+  Enabled: false
   Description: Compact style reduces the required amount of indentation.
   EnforcedStyle: compact
+  Exclude:
+    - lib/pdksync/configuration.rb
 Style/EmptyElse:
   Description: Enforce against empty else clauses, but allow `nil` for clarity.
   EnforcedStyle: empty
@@ -82,3 +85,7 @@ Style/IfUnlessModifier:
   Enabled: false
 Style/SymbolProc:
   Enabled: false
+Style/Documentation:
+  Exclude:
+    - lib/pdksync/logger.rb
+    - lib/pdksync/configuration.rb

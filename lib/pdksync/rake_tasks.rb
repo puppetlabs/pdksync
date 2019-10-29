@@ -28,20 +28,12 @@ namespace :pdksync do
 
   desc 'Display the current configuration of pdksync'
   task :show_config do
-    include PdkSync::Constants
+    config = PdkSync::Configuration.new
     puts 'Please note that you can override any of the configuration by using an additional file at `$HOME/.pdksync.yml`.'.bold.red
-    puts 'PDKSync Configuration'.bold.yellow
-    puts '- Git hosting platform: '.bold + PdkSync::Constants::GIT_PLATFORM.to_s.cyan
-    puts '- Git base URI: '.bold + PdkSync::Constants::GIT_BASE_URI.to_s.cyan
-    if PdkSync::Constants::GIT_PLATFORM == :gitlab
-      puts '- Gitlab API endpoint: '.bold + PdkSync::Constants::GITLAB_API_ENDPOINT.to_s.cyan
+    puts "\nPDKSync Configuration".bold.yellow
+    config.to_h.each do |key, value|
+      puts "- #{key}: ".bold + value.to_s.cyan
     end
-    puts '- Namespace: '.bold + PdkSync::Constants::NAMESPACE.to_s.cyan
-    puts '- PDKSync Dir: '.bold + PdkSync::Constants::PDKSYNC_DIR.to_s.cyan
-    puts '- Push File Destination: '.bold + PdkSync::Constants::PUSH_FILE_DESTINATION.to_s.cyan
-    puts '- Create PR Against: '.bold + PdkSync::Constants::CREATE_PR_AGAINST.to_s.cyan
-    puts '- Managed Modules: '.bold + PdkSync::Constants::MANAGED_MODULES.to_s.cyan
-    puts '- Default PDKSync Label: '.bold + PdkSync::Constants::PDKSYNC_LABEL.to_s.cyan
   end
 end
 
