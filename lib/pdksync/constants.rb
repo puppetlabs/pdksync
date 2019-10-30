@@ -21,6 +21,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
       jenkins_platform: :jenkins,
       jenkins_base_uri: 'https://jenkins.io',
       jenkins_api_endpoint: ''
+      jenkins_server_url: 'https://jenkins-master-prod-1.delivery.puppetlabs.net'
     }
 
     supported_git_platforms = [:github, :gitlab]

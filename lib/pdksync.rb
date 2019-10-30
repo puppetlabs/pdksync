@@ -56,6 +56,7 @@ module PdkSync
     jenkins_username: Constants::JENKINS_USERNAME,
     jenkins_password: Constants::JENKINS_PASSWORD,
     jenkins_api_endpoint: Constants::JENKINS_API_ENDPOINT
+    jenkins_server_url: Constants::JENKINS_SERVER_URL
   }
 
   # convert duration from milliseconds to format h m s ms
@@ -271,8 +272,12 @@ module PdkSync
         print 'run tests in jenkins, '
         module_type = module_type(output_path, module_name)
         if module_type == 'traditional'
-          build_id = run_tests_jenkins(jenkins_client, module_name, module_args[:github_branch])
-          jenkins_report_analisation(module_name, build_id)
+          if module_args[:test_framework] == 'jenkins' || module_args[:test_framework] == ''
+            github_user = 'puppetlabs' if module_args[:test_framework].nil
+            job_name = "forge-module_#{module_name}_init-manual-parameters_adhoc" if module_args[:job_name].nil
+            build_id = run_tests_jenkins(jenkins_client, module_name, module_args[:github_branch], module_args[:test_framework], github_user, job_name)
+            jenkins_report_analisation(module_name, build_id)
+          end
         end
         if module_type == 'litmus'
           puts '(Error) Module Type is Litmus please use the rake task run_tests to run'.red
@@ -515,10 +520,12 @@ module PdkSync
   #   Module to run on Jenkins
   # @param [String] current_branch
   #   The branch against which the user needs to run the jenkin jobs
-  def self.run_tests_jenkins(jenkins_client, repo_name, current_branch)
-    if jenkins_client.nil? == false || repo_name.nil? == false || current_branch.nil? == false
+  def self.run_tests_jenkins(jenkins_client, repo_name, current_branch, github_user, job_name)
+    if jenkins_client || repo_name || current_branch
       pr = jenkins_client.create_adhoc_job(repo_name,
-                                           current_branch)
+                                           current_branch,
+                                           github_user,
+                                           job_name)
       pr
     end
   rescue StandardError => error

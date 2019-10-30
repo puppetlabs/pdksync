@@ -13,7 +13,8 @@ class PdkSync::JenkinsClient
   def initialize(jenkins_platform_access_settings)
     jenkins_username = jenkins_platform_access_settings[:jenkins_username]
     jenkins_password = jenkins_platform_access_settings[:jenkins_password]
-    @client = JenkinsApi::Client.new('server_url' => 'https://jenkins-master-prod-1.delivery.puppetlabs.net',
+    jenkins_server_url = jenkins_platform_access_settings[:jenkins_server_url]
+    @client = JenkinsApi::Client.new('server_url' => jenkins_server_url,
                                      'username'   => jenkins_username,
                                      'password'   => jenkins_password)
   end
@@ -27,13 +28,12 @@ class PdkSync::JenkinsClient
   #   The target branch against which to create the adhoc job
   # @return
   #   Build Id returned by the job
-  def create_adhoc_job(github_repo, github_branch)
+  def create_adhoc_job(github_repo, github_branch, github_user, job_name)
     # params to start the build
-    job_params = { 'GITHUB_USER' => 'puppetlabs',
+    job_params = { 'GITHUB_USER' => github_user,
                    'GITHUB_REPO' => github_repo,
                    'GITHUB_REF'  => github_branch }
     # job name
-    job_name = "forge-module_#{github_repo}_init-manual-parameters_adhoc"
     # Wait for up to 30 seconds, attempt to cancel queued build
     opts = { 'build_start_timeout' => 30,
              'cancel_on_build_start_timeout' => true,
