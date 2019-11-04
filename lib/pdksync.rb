@@ -108,7 +108,7 @@ module PdkSync
       if steps.include?(:run_tests)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         print 'run tests, '
-        run_tests(output_path, module_args[:module_type])
+        run_tests(output_path, module_args[:module_type], module_args[:provision_type])
       end
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -586,10 +586,10 @@ module PdkSync
   #   The module type (litmus or traditional)
   # @return [Integer]
   #   The status code of the pdk update run.
-  def self.run_tests(output_path, module_type)
+  def self.run_tests(output_path, module_type, provision_type)
     # Runs the module tests command
     litmus_install   = 'bundle install --path .bundle/gems/ --jobs 4'
-    litmus_provision = 'bundle exec rake \'litmus:provision_list[release_checks]\''
+    litmus_provision = "bundle exec rake \'litmus:provision_list[#{provision_type}]\'"
     litmus_agent     = 'bundle exec rake litmus:install_agent'
     litmus_module    = 'bundle exec rake litmus:install_module'
     litmus_tests     = 'bundle exec rake litmus:acceptance:parallel'

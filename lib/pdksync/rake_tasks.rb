@@ -49,7 +49,7 @@ namespace :pdksync do
   end
 
   desc "Run test against modules eg rake 'run_tests[litmus]'"
-  task :run_tests, [:module_type] do |_task, args|
+  task :run_tests, [:module_type, :provision_type] do |_task, args|
     PdkSync.main(steps: [:run_tests], args: args)
   end
 
