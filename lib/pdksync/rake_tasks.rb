@@ -48,9 +48,14 @@ namespace :pdksync do
     PdkSync.main(steps: [:gem_file_update], args: args)
   end
 
-  desc "Run test against modules eg rake 'run_tests[litmus]'"
-  task :run_tests, [:module_type, :provision_type] do |_task, args|
-    PdkSync.main(steps: [:run_tests], args: args)
+  desc "Run test against modules eg rake 'run_tests_locally[litmus, 'provision_type']'"
+  task :run_tests_locally, [:module_type, :provision_type] do |_task, args|
+    PdkSync.main(steps: [:run_tests_locally], args: args)
+  end
+
+  desc "Fetch run results against modules eg rake 'fetch_test_results_locally[litmus]'"
+  task :fetch_test_results_locally, [:module_type] do |_task, args|
+    PdkSync.main(steps: [:fetch_test_results_locally], args: args)
   end
 
   desc 'Display the current configuration of pdksync'

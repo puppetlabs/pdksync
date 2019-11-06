@@ -13,6 +13,7 @@ require 'bundler'
 require 'octokit'
 require 'pdk/util/template_uri'
 require 'pdksync/logger'
+require 'pry'
 
 # @summary
 #   This module set's out and controls the pdksync process
@@ -20,6 +21,7 @@ module PdkSync
   def self.configuration
     @configuration ||= PdkSync::Configuration.new
   end
+  @main_path = Dir.pwd
 
   def self.main(steps: [:clone], args: nil)
     check_pdk_version if ENV['PDKSYNC_VERSION_CHECK'].eql?('true')
@@ -58,9 +60,14 @@ module PdkSync
       raise 'gem_file_update requires arguments (gem_to_test) to run.' if args[:gem_to_test].nil?
       puts "Command '#{args}'"
     end
-    # validation run_tests
-    if steps.include?(:run_tests)
-      raise 'run_tests requires arguments (module_type) to run.' if args[:module_type].nil?
+    # validation run_tests_locally
+    if steps.include?(:run_tests_locally)
+      raise 'run_tests_locally requires arguments (module_type) to run.' if args[:module_type].nil?
+      puts "Command '#{args}'"
+    end
+    # validation fetch_test_results_locally
+    if steps.include?(:fetch_test_results_locally)
+      raise 'fetch_test_results_locally requires arguments (module_type) to run.' if args[:module_type].nil?
       puts "Command '#{args}'"
     end
 
@@ -105,11 +112,17 @@ module PdkSync
         gem_file_update(output_path, module_args[:gem_to_test], module_args[:gem_line], module_args[:gem_sha_finder], module_args[:gem_sha_replacer], module_args[:gem_version_finder], module_args[:gem_version_replacer], module_args[:gem_branch_finder], module_args[:gem_branch_replacer]) # rubocop:disable Metrics/LineLength
         print 'gem file updated, '
       end
-      if steps.include?(:run_tests)
+      if steps.include?(:run_tests_locally)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         print 'run tests, '
-        run_tests(output_path, module_args[:module_type], module_args[:provision_type])
+        run_tests_locally(output_path, module_args[:module_type], module_args[:provision_type], module_names)
       end
+      if steps.include?(:fetch_test_results_locally)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        print 'Fetch test results, '
+        fetch_test_results_locally(output_path, module_args[:module_type], module_names)
+      end
+      
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         next unless pdk_update(output_path).zero?
@@ -314,7 +327,6 @@ module PdkSync
     stdout = ''
     stderr = ''
     status = Process::Status
-
     Dir.chdir(output_path) unless Dir.pwd == output_path
 
     # Environment cleanup required due to Ruby subshells using current Bundler environment
@@ -367,7 +379,7 @@ module PdkSync
   def self.validate_gem_update_module(gem_to_test, gem_line)
     gem_to_test = gem_to_test.chomp('"').reverse.chomp('"').reverse
     Dir.chdir(@main_path)
-    output_path = "#{@pdksync_dir}/#{gem_to_test}"
+    output_path = "#{configuration.pdksync_dir}/#{gem_to_test}"
     clean_env(output_path) if Dir.exist?(output_path)
     print 'delete module directory, '
 
@@ -388,7 +400,7 @@ module PdkSync
       end
 
       print 'delete module directory, '
-      git_repo = run_command(@pdksync_dir, "git clone #{git_repo}")
+      git_repo = run_command("#{configuration.pdksync_dir}", "git clone #{git_repo}")
     elsif !gem_to_test.nil?
       git_repo = clone_directory(@namespace, gem_to_test, output_path.to_s)
     end
@@ -586,26 +598,70 @@ module PdkSync
   #   The module type (litmus or traditional)
   # @return [Integer]
   #   The status code of the pdk update run.
-  def self.run_tests(output_path, module_type, provision_type)
+  def self.run_tests_locally(output_path, module_type, provision_type, module_names)
+    provision_type = provision_type.chomp('"').reverse.chomp('"').reverse
     # Runs the module tests command
     litmus_install   = 'bundle install --path .bundle/gems/ --jobs 4'
-    litmus_provision = "bundle exec rake \'litmus:provision_list[#{provision_type}]\'"
+    litmus_provision = "bundle exec rake 'litmus:provision_list[#{provision_type}]'"
     litmus_agent     = 'bundle exec rake litmus:install_agent'
     litmus_module    = 'bundle exec rake litmus:install_module'
-    litmus_tests     = 'bundle exec rake litmus:acceptance:parallel'
-    litmus_teardown  = 'bundle exec rake litmus:tear_down'
+    litmus_tests     = 'bundle exec rake litmus:acceptance:parallel 2>&1 | tee litmusacceptance.out &'
+    #litmus_teardown  = 'bundle exec rake litmus:tear_down'
+    status           = Process::Status
     # Save the current path
     old_path = Dir.pwd
-
+    i = 0
     # Run the tests
     if module_type == 'litmus'
-      [litmus_install, litmus_provision, litmus_agent, litmus_module, litmus_tests, litmus_teardown].each do |test_execute|
+      [litmus_install, litmus_provision, litmus_agent, litmus_module, litmus_tests].each do |test_execute|
         Dir.chdir(old_path)
-        run_command(output_path, test_execute.to_s)
+        status = run_command(output_path, test_execute.to_s)
+        if status == 0
+          i = i + 1
+          PdkSync::Logger.info "#{test_execute} - SUCCEED"
+        else
+          PdkSync::Logger.fatal "#{test_execute} - FAILED"
+        end
       end
     end
+    if module_type != 'litmus'
+      PdkSync::Logger.warn "(WARNING) Executing testcases locally supports only for litmus'"
+    end
+    if i == 5
+      PdkSync::Logger.info "SUCCESS: Kicked of module Acceptance tests to run for the module #{module_names} and Results are available in the following path #{output_path}/litmusacceptance.out."
+    else
+      PdkSync::Logger.fatal "FAILED: Kicked of module Acceptance tests to run for the module #{module_names} and Results are available in the following path #{output_path}/litmusacceptance.out."
+    end
+  end
 
-    if module_type == 'traditional'
+  # @summary
+  #   This method when called will run the 'module tests' command at the given location, with an error message being thrown if it is not successful.
+  # @param [String] output_path
+  #   The location that the command is to be run from.
+  # @param [String] module_type
+  #   The module type (litmus or traditional)
+  # @return [Integer]
+  #   The status code of the pdk update run.
+  def self.fetch_test_results_locally(output_path, module_type, module_names)
+    status           = Process::Status
+    # Save the current path
+    old_path = Dir.pwd
+    i = 0
+    # Run the tests
+    if module_type == 'litmus'
+        Dir.chdir(old_path)
+        lines = IO.readlines("#{output_path}/litmusacceptance.out")[-3..-1]
+        puts module_names
+        puts lines
+    end
+    if module_type != 'litmus'
+      PdkSync::Logger.warn "(WARNING) Fetching test results locally supports only for litmus'"
+    end
+
+    if lines =~ %r{^Failed} and lines =~ %r{^pid} or lines =~ %r{--trace}
+      PdkSync::Logger.fatal "FAILED: Results are available in the following path #{output_path}/litmusacceptance.out for #{module_names}"
+    else
+      PdkSync::Logger.info "SUCCESS: Results are available in the following path #{output_path}/litmusacceptance.out for #{module_names}"
     end
   end
 
