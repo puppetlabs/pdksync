@@ -1,5 +1,8 @@
 ---
 ## IA content team
+#- cisco_ios
+#- device_manager
+#- provision
 #- puppetlabs-accounts
 #- puppetlabs-acl
 #- puppetlabs-apache
@@ -26,12 +29,14 @@
 #- puppetlabs-mysql
 #- puppetlabs-ntp
 #- puppetlabs-package
+#- puppetlabs-panos
 #- puppetlabs-postgresql
 #- puppetlabs-powershell
 #- puppetlabs-puppet_conf
 #- puppetlabs-reboot
 #- puppetlabs-registry
 #- puppetlabs-resource
+#- puppetlabs-resource_api
 #- puppetlabs-rook
 #- puppetlabs-satellite_pe_tools
 #- puppetlabs-scheduled_task
@@ -42,14 +47,10 @@
 #- puppetlabs-tomcat
 #- puppetlabs-translate
 #- puppetlabs-vcsrepo
+#- puppetlabs-vsphere
 #- puppetlabs-websphere_application_server
 #- puppetlabs-windows
 #- puppetlabs-wsus_client
-## networking team
-#- cisco_ios
-#- device_manager
-#- puppetlabs-panos
-#- puppetlabs-resource_api
 ## testing only
 #- puppetlabs-testing
 #- puppetlabs-testing1
