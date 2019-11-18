@@ -122,7 +122,7 @@ module PdkSync
         print 'Fetch test results, '
         fetch_test_results_locally(output_path, module_args[:module_type], module_names)
       end
-      
+
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         next unless pdk_update(output_path).zero?
@@ -352,22 +352,16 @@ module PdkSync
   # @return [String]
   #   The source location of the gem to test
   def self.get_source_test_gem(gem_to_test, gem_line)
-    if !gem_line.nil?
-      new_data = gem_line.split(',')
-      return new_data # rubocop:disable Style/RedundantReturn
-    elsif !gem_to_test.nil?
-      file = File.open('Gemfile')
-      file.each_line do |line|
-        if line.include?(gem_to_test.to_s)
-          if line =~ %r{(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?} # rubocop:disable Style/GuardClause
-            return line.split(',')[1].strip.to_s
-            break # rubocop:disable Lint/UnreachableCode
-          else
-            return "https://github.com/puppetlabs/#{gem_to_test}"
-          end
-        end
-      end
+    return gem_line.split(',') if gem_line
+    return gem_to_test unless gem_to_test
+
+    gemfile_line = File.readlines('Gemfile').find do |line|
+      line.include?(gem_to_test.to_s)
     end
+
+    return "https://github.com/puppetlabs/#{gem_to_test}" unless gemfile_line
+    gemfile_line =~ %r{(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?}
+    line.split(',')[1].strip.to_s if line
   end
 
   # @summary
@@ -386,24 +380,25 @@ module PdkSync
     # when gem_line is specified, we need to parse the line and identify all the values
     # - we can have source url or we need to
     # - sha, branch, version
-    if !gem_line.nil?
+    if gem_line
       git_repo = get_source_test_gem(gem_to_test, gem_line)
       i = 0
       git_repo.each do |item|
         i += 1
         if item =~ %r{((git@|http(s)?:\/\/)([\w\.@]+)(\/|:))([\w,\-,\_]+)\/([\w,\-,\_]+)(.git){0,1}((\/){0,1})}
-          git_repo = item.split('git: ')[1]
+          git_repo = item.split('git:')[1]
           break
         elsif git_repo.size == i
-          git_repo = "https://github.com/puppetlabs/#{gem_to_test}"
+          git_repo = "https://github.com/puppetlabs#{gem_to_test}"
         end
       end
 
       print 'delete module directory, '
-      git_repo = run_command("#{configuration.pdksync_dir}", "git clone #{git_repo}")
-    elsif !gem_to_test.nil?
-      git_repo = clone_directory(@namespace, gem_to_test, output_path.to_s)
+      git_repo = run_command(configuration.pdksync_dir.to_s, "git clone #{git_repo}")
+    elsif gem_to_test
+      git_repo = clone_directory(configuration.namespace, gem_to_test, output_path.to_s)
     end
+
     Dir.chdir(@main_path)
     raise "Unable to clone repo for #{gem_to_test}. Check repository's url to be correct!".red if git_repo.nil?
 
@@ -557,7 +552,7 @@ module PdkSync
     end
 
     # gem_sha_finder and gem_sha_replacer options are passed
-    if gem_sha_finder.nil? == false && gem_sha_replacer.nil? == false && gem_sha_finder != '' && gem_sha_finder != '\"\"' && gem_sha_replacer != '' && gem_sha_replacer != '\"\"' # rubocop:disable Metrics/LineLength
+    if gem_sha_finder.nil? == false && gem_sha_replacer.nil? == false && gem_sha_finder != '' && gem_sha_finder != '\"\"' && gem_sha_replacer != '' && gem_sha_replacer != '\"\"'
       # Replace with SHA
       file = File.open(gem_file_name)
       contents = file.readlines.join
@@ -606,7 +601,7 @@ module PdkSync
     litmus_agent     = 'bundle exec rake litmus:install_agent'
     litmus_module    = 'bundle exec rake litmus:install_module'
     litmus_tests     = 'bundle exec rake litmus:acceptance:parallel 2>&1 | tee litmusacceptance.out &'
-    #litmus_teardown  = 'bundle exec rake litmus:tear_down'
+    # litmus_teardown  = 'bundle exec rake litmus:tear_down'
     status           = Process::Status
     # Save the current path
     old_path = Dir.pwd
@@ -616,8 +611,8 @@ module PdkSync
       [litmus_install, litmus_provision, litmus_agent, litmus_module, litmus_tests].each do |test_execute|
         Dir.chdir(old_path)
         status = run_command(output_path, test_execute.to_s)
-        if status == 0
-          i = i + 1
+        if status.zero?
+          i += 1
           PdkSync::Logger.info "#{test_execute} - SUCCEED"
         else
           PdkSync::Logger.fatal "#{test_execute} - FAILED"
@@ -643,22 +638,21 @@ module PdkSync
   # @return [Integer]
   #   The status code of the pdk update run.
   def self.fetch_test_results_locally(output_path, module_type, module_names)
-    status           = Process::Status
+    # status = Process::Status
     # Save the current path
     old_path = Dir.pwd
-    i = 0
     # Run the tests
     if module_type == 'litmus'
-        Dir.chdir(old_path)
-        lines = IO.readlines("#{output_path}/litmusacceptance.out")[-3..-1]
-        puts module_names
-        puts lines
+      Dir.chdir(old_path)
+      lines = IO.readlines("#{output_path}/litmusacceptance.out")[-3..-1]
+      puts module_names
+      puts lines
     end
     if module_type != 'litmus'
       PdkSync::Logger.warn "(WARNING) Fetching test results locally supports only for litmus'"
     end
 
-    if lines =~ %r{^Failed} and lines =~ %r{^pid} or lines =~ %r{--trace}
+    if lines =~ %r{^Failed} && lines =~ %r{^pid} || lines =~ %r{--trace}
       PdkSync::Logger.fatal "FAILED: Results are available in the following path #{output_path}/litmusacceptance.out for #{module_names}"
     else
       PdkSync::Logger.info "SUCCESS: Results are available in the following path #{output_path}/litmusacceptance.out for #{module_names}"

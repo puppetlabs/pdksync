@@ -96,7 +96,7 @@ describe PdkSync do
       expect { PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_branch_finder: 'jsjsjsjsjsjsjs', gem_branch_replacer: 'abcdefgjhkk' }) }.to raise_error(RuntimeError) # , "Couldn't find branch: abcdefgjhkk in your repository: puppet_litmus") # rubocop:disable Metrics/LineLength
     end
     it 'raise when run_tests with no arguments' do
-      expect { PdkSync.main(steps: [:run_tests]) }.to raise_error(NoMethodError) # , %r{run_tests" requires arguments (module_type) to run.})
+      expect { PdkSync.main(steps: [:run_tests_locally]) }.to raise_error(NoMethodError) # , %r{run_tests" requires arguments (module_type) to run.})
     end
 
     describe 'gem_file_update with valid values' do
@@ -111,8 +111,8 @@ describe PdkSync do
       end
       it 'gem_file_update runs, and contains the gem_sha given' do
         PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus',
-                                                        gem_sha_finder: '04da90638f5b5fd7f007123c8c0cc551c8cb3e54', gem_sha_replacer: 'af33ece9e400f0cf7b556f0440627cffe969e03b' })
-        expect(File.read('Gemfile')).to match(%r{af33ece9e400f0cf7b556f0440627cffe969e03})
+                                                        gem_sha_finder: '04da90638f5b5fd7f007123c8c0cc551c8cb3e54', gem_sha_replacer: '95ed1c62ffcf89003eb0fe9d66989caa45884538' })
+        expect(File.read('Gemfile')).to match(%r{95ed1c62ffcf89003eb0fe9d66989caa45884538})
       end
       it 'gem_file_update runs, and contains the gem_version given' do
         PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus',
