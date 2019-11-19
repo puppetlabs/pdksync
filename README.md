@@ -115,6 +115,16 @@ bundle install --path .bundle/gems/
 bundle exec rake 'gem_testing[]'
 ```
 
+In Workflow 3 we can clone modules, update the gem file, run the tests locally for litmus modules without creating commit,pushing or creating the PR
+```
+Using single rake job
+bundle install --path .bundle/gems/
+bundle exec rake git:clone_managed_modules
+bundle exec rake 'pdksync:gem_file_update[]'
+bundle exec rake 'pdksync:run_tests_locally[]'
+bundle exec rake 'pdksync:fetch_test_results[]'
+```
+
 Once the verified gem is released we can use pdksync to update the the new version of gem released in the  .sync.yaml file.
 
 The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. A pull request against master is opened, and pdksync begins to clone the next repository.
@@ -141,6 +151,10 @@ The following rake tasks are available with pdksync:
   - eg rake to update branch `pdksync:gem_file_update['puppet_litmus', '', '', '', '', '', 'testbranch', 'testbranches']` 
 - `rake 'gem_testing[:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]'` Run complete Gem file testing (cloning, gemfileupdate, create commit, create PR)PR title outputs as `pdksync_gemtesting - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
   - eg rake to perform gem file testing `gem_testing['MODULES-testing', 'puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', 'testsha']` 
+- `pdksync:run_tests_locally[:provision_type, :puppet_collection]` Run litmus modules locally 
+  - eg rake 'pdksync:run_tests_locally["default"]'
+- `pdksync:fetch_test_results_locally[]` Fetch litmus modules local run results 
+  - eg rake 'pdksync:fetch_test_results_locally[]'
 
 ### Configuration
 

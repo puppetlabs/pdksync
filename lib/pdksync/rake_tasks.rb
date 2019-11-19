@@ -39,8 +39,8 @@ namespace :pdksync do
   end
 
   desc "Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'"
-  task :run_a_command, [:command] do |_task, args|
-    PdkSync.main(steps: [:run_a_command], args: args[:command])
+  task :run_a_command, [:command, :option] do |_task, args|
+    PdkSync.main(steps: [:run_a_command], args: args)
   end
 
   desc "Gem File Update'gem_file_update[gem_to_test, gem_line, gem_sha_finder, gem_sha_replacer, gem_version_finder, gem_version_replacer, gem_branch_finder, gem_branch_replacer]'"
@@ -49,13 +49,13 @@ namespace :pdksync do
   end
 
   desc "Run test against modules eg rake 'run_tests_locally[litmus, 'provision_type']'"
-  task :run_tests_locally, [:module_type, :provision_type] do |_task, args|
+  task :run_tests_locally, [:provision_type, :puppet_collection] do |_task, args|
     PdkSync.main(steps: [:run_tests_locally], args: args)
   end
 
   desc "Fetch run results against modules eg rake 'fetch_test_results_locally[litmus]'"
-  task :fetch_test_results_locally, [:module_type] do |_task, args|
-    PdkSync.main(steps: [:fetch_test_results_locally], args: args)
+  task :fetch_test_results_locally do
+    PdkSync.main(steps: [:fetch_test_results_locally])
   end
 
   desc 'Display the current configuration of pdksync'

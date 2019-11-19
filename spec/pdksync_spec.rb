@@ -65,7 +65,7 @@ describe PdkSync do
     end
 
     it 'runs a command "touch cat.meow"' do
-      PdkSync.main(steps: [:run_a_command], args: 'touch cat.meow')
+      PdkSync.main(steps: [:run_a_command], args: { command: 'touch cat.meow' })
       expect File.exist?("#{@output_path}/cat.meow")
     end
 
