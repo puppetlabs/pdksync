@@ -20,7 +20,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
       gitlab_api_endpoint: 'https://gitlab.com/api/v4',
       jenkins_platform: :jenkins,
       jenkins_base_uri: 'https://jenkins.io',
-      jenkins_api_endpoint: ''
+      jenkins_api_endpoint: '',
       jenkins_server_url: 'https://jenkins-master-prod-1.delivery.puppetlabs.net'
     }
 
@@ -62,6 +62,7 @@ module PdkSync # rubocop:disable Style/ClassAndModuleChildren
     JENKINS_PLATFORM = config[:jenkins_platform].downcase.to_sym.freeze
     GITLAB_API_ENDPOINT = config[:gitlab_api_endpoint].freeze
     JENKINS_API_ENDPOINT = config[:jenkins_api_endpoint].freeze
+    JENKINS_SERVER_URL = config[:jenkins_server_url].freeze
     ACCESS_TOKEN = case GIT_PLATFORM
                    when :github
                      ENV['GITHUB_TOKEN'].freeze

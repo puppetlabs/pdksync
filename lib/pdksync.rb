@@ -12,8 +12,7 @@ require 'yaml'
 require 'colorize'
 require 'bundler'
 require 'octokit'
-require 'HTTParty'
-require 'ruby-progressbar'
+require 'terminal-table'
 
 # @summary
 #   This module set's out and controls the pdksync process
@@ -55,29 +54,32 @@ module PdkSync
   @jenkins_platform_access_settings = {
     jenkins_username: Constants::JENKINS_USERNAME,
     jenkins_password: Constants::JENKINS_PASSWORD,
-    jenkins_api_endpoint: Constants::JENKINS_API_ENDPOINT
+    jenkins_api_endpoint: Constants::JENKINS_API_ENDPOINT,
     jenkins_server_url: Constants::JENKINS_SERVER_URL
   }
 
-  # convert duration from milliseconds to format h m s ms
-  def self.get_duration_hrs_and_mins(milliseconds)
-    return '' unless milliseconds
-    hours, milliseconds   = milliseconds.divmod(1000 * 60 * 60)
-    minutes, milliseconds = milliseconds.divmod(1000 * 60)
-    seconds, milliseconds = milliseconds.divmod(1000)
-    "#{hours}h #{minutes}m #{seconds}s #{milliseconds}ms"
+  # convert duration from ms to format h m s ms
+  def self.get_duration_hrs_and_mins(ms)
+    return '' unless ms
+    hours, ms   = ms.divmod(1000 * 60 * 60)
+    minutes, ms = ms.divmod(1000 * 60)
+    seconds, ms = ms.divmod(1000)
+    "#{hours}h #{minutes}m #{seconds}s #{ms}ms"
   end
 
   # jenkins report
-  def self.jenkins_report_analisation(github_repo, build_id)
-    job_name = "forge-module_#{github_repo}_init-manual-parameters_adhoc"
+  def self.fetch_traditional_test_results(build_id, job_name, module_name)
+    puts 'Fetch results from jenkins'
+    # def self.jenkins_report_analisation(github_repo, build_id)
     adhoc_urls = []
-    # add init build url to ad-hoc urls
-    adhoc_urls.push("https://jenkins-master-prod-1.delivery.puppetlabs.net/job/#{job_name}")
-
-    # create adhoc_url slist
+    # get adhoc jobs
+    adhoc_urls.push("#{@jenkins_platform_access_settings[:jenkins_server_url]}/job/#{job_name}")
+    # get_adhoc_jobs(adhoc_urls).size
+    report_rows = []
     adhoc_urls.each do |url|
-      build_job_data = HTTParty.get("#{url}/api/json").parsed_response
+      conn = Faraday::Connection.new "#{url}/api/json"
+      res = conn.get
+      build_job_data = JSON.parse(res.body.to_s)
       downstream_job = build_job_data['downstreamProjects']
       break if downstream_job.empty?
       downstream_job.each do |item|
@@ -85,92 +87,119 @@ module PdkSync
         adhoc_urls.push(item['url']) unless item['url'].nil? && item['url'].include?('skippable_adhoc')
       end
     end
-    # remove duplicates and sort it
-    adhoc_urls = adhoc_urls.uniq
-    adhoc_urls = adhoc_urls.sort_by { |url| HTTParty.get("#{url}/api/json").parsed_response['fullDisplayName'].scan(%r{[0-9]{2}\s}).first.to_i }
 
-    # analyse each build result
-    # status, execution time, full-log in case of failures
+    @failed = false
+    @in_progress = false
+    @aborted = false
+
+    File.delete("results_#{module_name}.out") if File.exist?("results_#{module_name}.out")
+    # remove duplicates
+    adhoc_urls = adhoc_urls.uniq
+    # sort the list
+    adhoc_urls = adhoc_urls.sort_by { |url| JSON.parse(Faraday.get("#{url}/api/json").body.to_s)['fullDisplayName'].scan(%r{[0-9]{2}\s}).first.to_i }
+    # analyse each build result - get status, execution time, logs_link
+    @data = "MODULE_NAME=#{module_name}\nBUILD_ID=#{build_id}\nINITIAL_job=#{@jenkins_platform_access_settings[:jenkins_server_url]}/job/#{job_name}/#{build_id}\n\n"
+    write_to_file("results_#{module_name}.out", @data)
+    puts "Analyse test execution report \n"
     adhoc_urls.each do |url|
-      puts '-' * 100
-      # next if skipped
-      current_build_data = HTTParty.get("#{url}/api/json").parsed_response
-      puts "Skipped build: #{current_build_data['fullDisplayName']}" if url.include?('skippable_adhoc') ||
-                                                                        current_build_data['color'] == 'notbuilt' ||
-                                                                        current_build_data['fullDisplayName'].downcase.include?('skipped')
+      # next if skipped in build name
+      current_build_data = JSON.parse(Faraday.get("#{url}/api/json").body.to_s)
       next if url.include?('skippable_adhoc') || current_build_data['color'] == 'notbuilt'
       next if current_build_data['fullDisplayName'].downcase.include?('skipped')
-      puts url
-      get_data_build(url, build_id)
+      returned_data = get_data_build(url, build_id, module_name) unless @failed || @in_progress
+      if @failed
+        report_rows << ['FAILED', url, returned_data[1]] unless returned_data.nil?
+      elsif @aborted
+        report_rows << ['ABORTED', url, returned_data[1]] unless returned_data.nil?
+      else
+        report_rows << [returned_data[0], url, returned_data[1]] unless returned_data.nil?
+      end
     end
+
+    table = Terminal::Table.new title: "Module Test Results for: #{module_name}\nCheck results in #{Dir.pwd}/results_#{module_name}.out ", headings: %w[Status Result Execution_Time], rows: report_rows
+    puts "SUCCESSFUL test results!\n".green unless @failed || @in_progress
+    puts table
   end
 
   # for each build from adhoc jobs, get data
   # if multiple platforms under current url, get data for each platform
-  def self.get_data_build(url, build_id)
-    current_build_data = HTTParty.get("#{url}/api/json").parsed_response
-    puts "Build name=#{current_build_data['fullDisplayName']}"
-
+  def self.get_data_build(url, build_id, module_name)
+    current_build_data = JSON.parse(Faraday.get("#{url}/api/json").body.to_s)
     if current_build_data['activeConfigurations'].nil?
-      # builds don't have the sabe build_id. That's why just the init build will be identified by id, rest of them by lastBuild
-      current_build_url = "#{url}/#{build_id}/api/json" if url.include?('init-manual-parameters_adhoc')
-      current_build_url = "#{url}lastBuild/api/json" unless url.include?('init-manual-parameters_adhoc')
-      current_build_data = HTTParty.get(current_build_url).parsed_response
-      progressbar = ProgressBar.create
-      while current_build_data['building'] == true
-        progressbar.increment
-        current_build_data = HTTParty.get(current_build_url).parsed_response
-        sleep 30
+      returned_data = analyse_jenkins_report(url, module_name, build_id)
+      if returned_data[0] == 'in progress'
+        @in_progress = true
+      elsif returned_data[0] == 'FAILURE'
+        @failed = true
+      elsif returned_data[0] == 'ABORTED'
+        @aborted = true
       end
-      execution_time = get_duration_hrs_and_mins(current_build_data['duration'].to_i)
-      analyse_jenkins_report(url)
-      puts "Execution time: #{execution_time}"
     else
-      # if multiple platforms (multiple builds)
-      # next if not built
       platforms_list = []
       current_build_data['activeConfigurations'].each do |url_child|
-        puts "Skipped build for: #{url_child['url'].split('PLATFORM=')[1].split(',')[0]}" if url_child['color'] == 'notbuilt'
         next if url_child['color'] == 'notbuilt'
         platforms_list.push(url_child['url'])
       end
 
       platforms_list.each do |platform_build|
-        puts "PLATFORM: #{platform_build.split('PLATFORM=')[1].split(',')[0]}"
-        platform_last_build_data = "#{platform_build}lastBuild/api/json"
-        platform_last_build_job_data = HTTParty.get(platform_last_build_data).parsed_response
-        progressbar = ProgressBar.create
-        while platform_last_build_job_data['building'] == true
-          progressbar.increment
-          sleep 30
-          platform_last_build_job_data = HTTParty.get(platform_last_build_data).parsed_response
+        returned_data = analyse_jenkins_report(platform_build, module_name, build_id)
+        if returned_data[0] == 'in progress'
+          @in_progress = true
+        elsif returned_data[0] == 'FAILURE'
+          @failed = true
+        elsif returned_data[0] == 'ABORTED'
+          @aborted = true
         end
-        analyse_jenkins_report(platform_build)
-        execution_time = get_duration_hrs_and_mins(platform_last_build_job_data['duration'].to_i)
-        puts "Execution time: #{execution_time}"
       end
+    end
+
+    @data = "\nFAILURE. Fix the failures and rerun tests!\n" if @failed
+    @data = "\nIN PROGRESS. Please check test report after the execution is done!\n" if @in_progress
+    write_to_file("results_#{module_name}.out", @data) if @failed || @in_progress
+    puts 'Failed status! Fix errors and rerun.'.red if @failed
+    puts 'Aborted status! Fix errors and rerun.'.red if @aborted
+    puts 'Tests are still running! You can fetch the results later by using this task: fetch_traditional_test_results'.blue if @in_progress
+    returned_data
+  end
+
+  # write test report to file
+  def self.write_to_file(file, _data)
+    File.open(file, 'a') do |f|
+      f.write @data
     end
   end
 
-  # analyse result
-  # when success, when failed
-  def self.analyse_jenkins_report(url)
-    last_build_job_data = HTTParty.get("#{url}/lastBuild/api/json").parsed_response
-    return 'No logs' unless last_build_job_data
-    if last_build_job_data['result'].casecmp?('success')
-      puts "Status: #{last_build_job_data['result']}".green
-    elsif last_build_job_data['result'].casecmp?('aborted')
-      puts "Status: #{last_build_job_data['result']}".blue
-      puts "Check full log on: #{url}lastBuild/console".blue
-    elsif last_build_job_data['result'].casecmp?('failure')
-      # last_build_console = "#{build}lastBuild/consoleText"
-      # last_build_logs = HTTParty.get(last_build_console).parsed_response
-      # failed_full_log="Failures: #{last_build_logs.split("Failures")[1]}"
-      # failed_sumarized_log="Failed examples: #{last_build_logs.split("Failures")[1]}"
-      puts "Status: #{last_build_job_data['result']}".red
-      # puts failed_sumarized_log
-      puts "Check full log on: #{url}lastBuild/console".red
+  # remove duplicated
+  def self.remove_duplicates(file)
+    open = File.open(file, 'r')
+    content = open.read
+    new_content = content.split("\n").uniq
+    write_to_file(file, new_content)
+  end
+
+  # analyse jenkins report 
+  def self.analyse_jenkins_report(url, module_name, build_id)
+    # builds don't have the same build_id. That's why just the init build will be identified by id, rest of them by lastBuild
+    last_build_job_data = JSON.parse(Faraday.get("#{url}/#{build_id}/api/json").body.to_s) if url.include?('init-manual-parameters_adhoc')
+    last_build_job_data = JSON.parse(Faraday.get("#{url}/lastBuild/api/json").body.to_s) unless url.include?('init-manual-parameters_adhoc')
+
+    # status = 'not_built' unless last_build_job_data
+    if last_build_job_data['result'].nil?
+      status = 'in progress'
+      execution_time = 'running'
+    else
+      status = last_build_job_data['result']
+      execution_time = get_duration_hrs_and_mins(last_build_job_data['duration'].to_i)
     end
+
+    # execution_time = 0 unless last_build_job_data
+    logs_link = "#{url}/#{build_id}/" if url.include?('init-manual-parameters_adhoc')
+    logs_link = "#{url}lastBuild/" unless url.include?('init-manual-parameters_adhoc')
+    @data = "Job title =#{last_build_job_data['fullDisplayName']}\n logs_link = #{logs_link}\n status = #{status}\n"
+    # @data[logs_link] = {:status => status, :execution_time => execution_time}
+    return_data = [status, execution_time]
+    write_to_file("results_#{module_name}.out", @data)
+    return_data
   end
 
   # @summary
@@ -227,7 +256,7 @@ module PdkSync
     end
     # validation run_tests_jenkins
     if steps.include?(:run_tests_jenkins)
-      jenkins_client = setup_jenkins_client
+      # jenkins_client = setup_jenkins_client
       raise 'run_tests_jenkins requires arguments (github_branch) to run.' if args[:github_branch].nil?
       puts "Command '#{args}'"
     end
@@ -272,11 +301,16 @@ module PdkSync
         print 'run tests in jenkins, '
         module_type = module_type(output_path, module_name)
         if module_type == 'traditional'
-          if module_args[:test_framework] == 'jenkins' || module_args[:test_framework] == ''
-            github_user = 'puppetlabs' if module_args[:test_framework].nil
-            job_name = "forge-module_#{module_name}_init-manual-parameters_adhoc" if module_args[:job_name].nil
-            build_id = run_tests_jenkins(jenkins_client, module_name, module_args[:github_branch], module_args[:test_framework], github_user, job_name)
-            jenkins_report_analisation(module_name, build_id)
+          github_user = 'puppetlabs' if module_args[:test_framework].nil?
+          github_user = module_args[:github_user] unless module_args[:github_user].nil?
+          if module_args[:test_framework] == 'jenkins' || module_args[:test_framework].nil?
+            module_name = "puppetlabs-#{module_name}" if %w[cisco_ios device_manager].include?(module_name) # rubocop:disable Metrics/BlockNesting
+            job_name = "forge-module_#{module_name}_init-manual-parameters_adhoc"
+            job_name = "forge-windows_#{module_name}_init-manual-parameters_adhoc" if ['puppetlabs-reboot', 'puppetlabs-iis', 'puppetlabs-powershell', 'sqlserver'].include?(module_name) # rubocop:disable Metrics/BlockNesting, Metrics/LineLength
+            build_id = run_tests_jenkins(jenkins_client, module_name, module_args[:github_branch], github_user)
+            next if build_id.nil? # rubocop:disable Metrics/BlockNesting
+            puts "New adhoc TEST EXECUTION has started. \nYou can check progress here: #{@jenkins_platform_access_settings[:jenkins_server_url]}/job/#{job_name}/#{build_id}"
+            fetch_traditional_test_results(build_id, job_name, module_name)
           end
         end
         if module_type == 'litmus'
@@ -344,14 +378,43 @@ module PdkSync
         else
           print 'skipped pr, '
         end
+        pr_list
       end
       if steps.include?(:clean_branches)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         delete_branch(client, repo_name, module_args[:branch_name])
         print 'branch deleted, '
       end
-      puts 'done.'.green
+      if steps.include?(:fetch_traditional_test_results)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        print 'Fetch test results from jenkins, '
+        module_type = module_type(output_path, module_name)
+        if module_type == 'litmus'
+          puts '(Error) Module Type is Litmus please use the rake task run_tests to run'.red
+          next
+        end
+
+        module_name = "puppetlabs-#{module_name}" if %w[cisco_ios device_manager].include?(module_name)
+        File.open("results_#{module_name}.out", 'r') do |f|
+          f.each_line do |line|
+            if line.include?('BUILD_ID')
+              build_id = line.split('=')[1].strip
+            elsif line.include?('MODULE_NAME')
+              module_name = line.split('=')[1].strip
+              # elsif line.include?("INITIAL_job")
+              #   initial_job = line.split("=")[1]
+            end
+          end
+
+          job_name = "forge-module_#{module_name}_init-manual-parameters_adhoc" if module_args[:job_name].nil?
+          job_name = "forge-windows_#{module_name}_init-manual-parameters_adhoc" if ['puppetlabs-reboot', 'puppetlabs-iis', 'puppetlabs-powershell', 'sqlserver'].include?(module_name)
+
+          fetch_traditional_test_results(build_id, job_name, module_name)
+        end
+      end
+      puts "done.\n".green
     end
+
     return if pr_list.size.zero?
     puts "\nPRs created:\n".blue
     pr_list.each do |pr|

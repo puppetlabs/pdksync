@@ -26,8 +26,8 @@ namespace :pdksync do
     PdkSync.main(steps: [:run_a_command], args: args[:command])
   end
 
-  desc "Run test in jenkins for traditional modules eg rake 'run_tests_jenkins['modulename', 'branchname']'"
-  task :run_tests_jenkins, [:github_branch, :test_framework, :github_user, :job_name] do |_task, args|
+  desc "Run test in jenkins for traditional modules eg rake 'run_tests_jenkins['branchname']'"
+  task :run_tests_jenkins, [:github_branch, :test_framework, :github_user] do |_task, args|
     PdkSync.main(steps: [:run_tests_jenkins], args: args)
   end
 
@@ -47,6 +47,11 @@ namespace :pdksync do
     puts '- Create PR Against: '.bold + PdkSync::Constants::CREATE_PR_AGAINST.to_s.cyan
     puts '- Managed Modules: '.bold + PdkSync::Constants::MANAGED_MODULES.to_s.cyan
     puts '- Default PDKSync Label: '.bold + PdkSync::Constants::PDKSYNC_LABEL.to_s.cyan
+  end
+
+  desc "Fetch run results against traditional modules eg rake 'fetch_traditional_test_results'"
+  task :fetch_test_results_jenkins do |_task, args|
+    PdkSync.main(steps: [:fetch_traditional_test_results], args: args)
   end
 end
 
