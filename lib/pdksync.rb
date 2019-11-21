@@ -21,13 +21,15 @@ module PdkSync
     @configuration ||= PdkSync::Configuration.new
   end
 
+  def self.client
+    @client ||= setup_client
+  end
+
   def self.main(steps: [:clone], args: nil)
     check_pdk_version if ENV['PDKSYNC_VERSION_CHECK'].eql?('true')
     create_filespace
-    client = setup_client
     module_names = return_modules
     raise "No modules found in '#{configuration.managed_modules}'" if module_names.nil?
-    validate_modules_exist(client, module_names)
     pr_list = []
 
     # The current directory is saved for cleanup purposes
@@ -62,6 +64,7 @@ module PdkSync
       repo_name = "#{configuration.namespace}/#{module_name}"
       output_path = "#{configuration.pdksync_dir}/#{module_name}"
       if steps.include?(:clone)
+        validate_modules_exist(client, module_names)
         clean_env(output_path) if Dir.exist?(output_path)
         PdkSync::Logger.info 'delete module directory'
         @git_repo = clone_directory(configuration.namespace, module_name, output_path)
