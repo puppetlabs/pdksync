@@ -92,7 +92,7 @@ bundle exec rake git:clone_managed_modules
 
 pdksync tool is extended with the new feature to run the tests locally for litmus converted modules and also to run the adhoc jobs on jenkins for traditional modules.
 Following rake task are available to perform the above tasks.
-`pdksync:run_tests[litmus]` `pdksync:run_tests_jenkins[]`
+`pdksync:run_tests[litmus]` `pdksync:run_tests_jenkins[]` `pdksync:fetch_test_results_jenkins`
 
 The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. A pull request against master is opened, and pdksync begins to clone the next repository.
 
@@ -112,7 +112,9 @@ The following rake tasks are available with pdksync:
   - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
 - `pdksync:run_a_command[:command]` Run a command against modules eg rake 'pdksync:run_a_command[complex command here -f -gx]'
 - `pdksync:run_tests[litmus]` Run Acceptance tests locally on litmus modules.
-- `pdksync:run_tests_jenkins[]` Run Acceptance tests through Jenkins on traditional modules.
+- `pdksync:run_tests_jenkins[branch_under_test,'', github_username]` Run Acceptance tests through Jenkins on traditional modules.
+- `pdksync:fetch_test_results_jenkins` Fetch results against traditional modules
+
 
 ### Configuration
 
@@ -183,6 +185,16 @@ git_base_uri: 'https://gitlab.example.com'
 #git_base_uri: 'ssh://git@gitlab.example.com:2222'
 gitlab_api_endpoint: 'https://gitlab.example.com/api/v4'
 ```
+
+##### Jenkins
+
+**For internal use only.**
+
+To use Jenkins at `https://jenkins-master-prod-1.delivery.puppetlabs.net/` you need to export your jenkins username and jenkins password as the environment variable
+
+`export JENKINS_USERNAME`
+
+`export JENKINS_PASSWORD`.
 
 ### Workflow
 --------
