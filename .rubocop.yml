@@ -1,23 +1,24 @@
 ---
 AllCops:
   DisplayCopNames: true
-  TargetRubyVersion: '2.1'
+  TargetRubyVersion: "2.1"
   Include:
-  - "./**/*.rb"
+    - "./**/*.rb"
   Exclude:
-  - bin/*
-  - ".vendor/**/*"
-  - Gemfile
-  - Rakefile
-  - pkg/**/*
-  - spec/fixtures/**/*
-  - vendor/**/*
-  - modules_pdksync/**/*
+    - bin/*
+    - ".vendor/**/*"
+    - Gemfile
+    - Rakefile
+    - pkg/**/*
+    - spec/fixtures/**/*
+    - vendor/**/*
+    - modules_pdksync/**/*
 Metrics/LineLength:
   Description: People have wide screens, use them.
-  Max: 230
+  Max: 235
 Style/BlockDelimiters:
-  Description: Prefer braces for chaining. Mostly an aesthetical choice. Better to
+  Description:
+    Prefer braces for chaining. Mostly an aesthetical choice. Better to
     be consistent then.
   EnforcedStyle: braces_for_chaining
 Style/ClassAndModuleChildren:
@@ -33,7 +34,8 @@ Style/FormatString:
   Description: Following the main puppet project's style, prefer the % format format.
   EnforcedStyle: percent
 Style/FormatStringToken:
-  Description: Following the main puppet project's style, prefer the simpler template
+  Description:
+    Following the main puppet project's style, prefer the simpler template
     tokens over annotated ones.
   EnforcedStyle: template
 Style/Lambda:
@@ -43,12 +45,14 @@ Style/RegexpLiteral:
   Description: Community preference. See https://github.com/voxpupuli/modulesync_config/issues/168
   EnforcedStyle: percent_r
 Style/TernaryParentheses:
-  Description: Checks for use of parentheses around ternary conditions. Enforce parentheses
+  Description:
+    Checks for use of parentheses around ternary conditions. Enforce parentheses
     on complex expressions for better readability, but seriously consider breaking
     it up.
   EnforcedStyle: require_parentheses_when_complex
 Style/TrailingCommaInArguments:
-  Description: Prefer always trailing comma on multiline argument lists. This makes
+  Description:
+    Prefer always trailing comma on multiline argument lists. This makes
     diffs, and re-ordering nicer.
   EnforcedStyleForMultiline: comma
 Style/SymbolArray:
@@ -87,5 +91,6 @@ Style/SymbolProc:
   Enabled: false
 Style/Documentation:
   Exclude:
+    - lib/pdksync/utils.rb
     - lib/pdksync/logger.rb
     - lib/pdksync/configuration.rb
