@@ -17,6 +17,8 @@ describe PdkSync do
     File.open('managed_modules.yml', 'w') { |file| file.puts new_contents }
   end
 
+  let(:platform) { Object.new }
+
   before(:each) do
     allow(ENV).to receive(:[]).with('HOME').and_return('./')
     allow(ENV).to receive(:[]).with('GIT_DIR').and_return(nil)
@@ -30,10 +32,9 @@ describe PdkSync do
     allow(ENV).to receive(:[]).with('http_proxy').and_return(nil)
     allow(ENV).to receive(:[]).with('HTTP_PROXY').and_return(nil)
     allow(ENV).to receive(:[]).with('PDKSYNC_CONFIG_PATH').and_return(nil)
-    allow(PdkSync).to receive(:return_modules).and_return(@module_names)
-    allow(PdkSync).to receive(:validate_modules_exist).and_return(@module_names)
-    allow(PdkSync).to receive(:setup_client).and_return(git_client)
-
+    allow(PdkSync::Utils).to receive(:return_modules).and_return(@module_names)
+    allow(PdkSync::Utils).to receive(:validate_modules_exist).and_return(@module_names)
+    allow(PdkSync::Utils).to receive(:setup_client).and_return(git_client)
     Dir.chdir(@folder)
     allow(PdkSync::GitPlatformClient).to receive(:new).and_return(platform)
     allow(Octokit).to receive(:tags).with('puppetlabs/pdk').and_return([{ name: '1' }])
@@ -43,13 +44,11 @@ describe PdkSync do
     double(PdkSync::GitPlatformClient)
   end
 
-  let(:platform) { Object.new }
-
   context 'main method' do
     it 'runs clone sucessfully' do
-      allow(PdkSync).to receive(:setup_client).and_return(git_client)
+      allow(PdkSync::Utils).to receive(:setup_client).and_return(git_client)
       FileUtils.rm_rf(@pdksync_dir)
-      PdkSync.create_filespace
+      PdkSync::Utils.create_filespace
       PdkSync.main(steps: [:clone])
       expect(Dir.exist?(@pdksync_dir)).to be(true)
       expect(Dir.exist?(@output_path)).to be(true)
@@ -75,6 +74,10 @@ describe PdkSync do
 
     it 'raise when create_pr with no arguments' do
       expect { PdkSync.main(steps: [:create_pr]) }.to raise_error(RuntimeError, %r{Needs a pr_title})
+    end
+
+    it 'create_pr with 1 argument' do
+      expect { PdkSync.main(steps: [:create_pr], args: { pr_title: 'some title' }) }.to_not raise_error
     end
 
     it 'raise when clean_branches with no arguments' do
