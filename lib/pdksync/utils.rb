@@ -389,8 +389,7 @@ module PdkSync
     #   The gem branch to replace
     def self.gem_file_update(output_path, gem_to_test, gem_line, gem_sha_finder, gem_sha_replacer, gem_version_finder, gem_version_replacer, gem_branch_finder, gem_branch_replacer, main_path)
       gem_file_name = 'Gemfile'
-      puts "output_path=#{main_path}"
-      validate_gem_update_module(gem_to_test, gem_line, output_path)
+      validate_gem_update_module(gem_to_test, gem_line, output_path, main_path)
 
       if (gem_line.nil? == false) && (gem_sha_replacer != '\"\"')
         new_data = get_source_test_gem(gem_to_test, gem_line)
@@ -624,9 +623,9 @@ module PdkSync
     #   The gem to test
     # @param [String] gem_line
     #   The line to update in the Gemfile
-    def self.validate_gem_update_module(gem_to_test, gem_line, output_path)
+    def self.validate_gem_update_module(gem_to_test, gem_line, output_path, main_path)
       gem_to_test = gem_to_test.chomp('"').reverse.chomp('"').reverse
-      Dir.chdir(@main_path)
+      Dir.chdir(main_path)
       output_path = "#{configuration.pdksync_dir}/#{gem_to_test}"
       clean_env(output_path) if Dir.exist?(output_path)
       print 'delete module directory, '
@@ -635,8 +634,6 @@ module PdkSync
       # - we can have source url or we need to
       # - sha, branch, version
       if gem_line
-        puts '#' * 10
-        puts @main_path
         git_repo = get_source_test_gem(gem_to_test, gem_line)
         i = 0
         git_repo.each do |item|
@@ -654,7 +651,7 @@ module PdkSync
         git_repo = clone_directory(configuration.namespace, gem_to_test, output_path.to_s)
       end
 
-      Dir.chdir(@main_path)
+      Dir.chdir(main_path)
       raise "Unable to clone repo for #{gem_to_test}. Check repository's url to be correct!".red if git_repo.nil?
 
       @all_versions = ''
@@ -672,7 +669,7 @@ module PdkSync
       raise "Couldn't get references due to #{stderr_refs}".red unless status_refs.exitstatus.zero?
       raise "Couldn't get branches due to #{stderr_branches}".red unless status_branches.exitstatus.zero?
       raise "Couldn't get versions due to #{stderr_versions}".red unless status_versions.exitstatus.zero?
-      Dir.chdir(output_path)
+      Dir.chdir(main_path)
     end
 
     # @summary

@@ -54,7 +54,9 @@ describe 'PdkSync::Utils' do
 
   it '#self.module_templates_url' do
     allow(Octokit).to receive(:tags).with('puppetlabs/pdk').and_return([{ name: 'v1.14.1' }])
-    expect(PdkSync::Utils.module_templates_url(metadata_file)).to eq('https://github.com/puppetlabs/pdk-templates#1.14.1')
+    url, version = PdkSync::Utils.module_templates_url(metadata_file).split('#')
+    expect(url).to eq('https://github.com/puppetlabs/pdk-templates')
+    expect(version).to match(%r{\d\.\d\d\.\d})
   end
 
   it '#self.change_module_template_url' do
