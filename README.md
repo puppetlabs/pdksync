@@ -84,7 +84,7 @@ pdksync.yml:
 ```yaml
 ---
 namespace: 'YOUR GITHUB NAME'
-git_base_uri: 'git@github.com:'
+git_base_uri: 'git@github.com'
 ```
 
 
