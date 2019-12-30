@@ -1,10 +1,6 @@
 require 'rspec'
 require 'git'
 require 'fileutils'
-# Set environment variable if it does not exist
-unless ENV['GITHUB_TOKEN']
-  ENV['GITHUB_TOKEN'] = 'github-token'
-end
 
 def pupmods_dir
   @pupmods_dir ||= begin
@@ -32,7 +28,11 @@ def fixtures_dir
 end
 
 RSpec.configure do |config|
-  config.before(:suite) { setup_fake_module }
+  config.before(:suite) do
+    setup_fake_module
+    # provide a fake github token for the tests
+    ENV['GITHUB_TOKEN'] = 'github-token'
+  end
   config.before(:each) do
     allow(PdkSync::Utils.configuration).to receive(:git_base_uri).and_return("file://#{fixtures_dir}")
   end
