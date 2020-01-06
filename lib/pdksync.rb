@@ -95,13 +95,13 @@ module PdkSync
       PdkSync::Logger.warn "#{output_path} does not exist, skipping module" unless File.directory?(output_path)
       next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
-        exit_status = run_command(output_path, "#{return_pdk_path} convert --force #{configuration.templates}", nil)
+        exit_status = Utils.run_command(output_path, "#{Utils.return_pdk_path} convert --force #{configuration.templates}", nil)
         PdkSync::Logger.info 'converted'
         next unless exit_status.zero?
       end
       if steps.include?(:pdk_validate)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        exit_status = run_command(output_path, "#{return_pdk_path} validate -a", nil)
+        exit_status = Utils.run_command(output_path, "#{Utils.return_pdk_path} validate -a", nil)
         PdkSync::Logger.info 'validated'
         next unless exit_status.zero?
       end
@@ -109,10 +109,10 @@ module PdkSync
         Dir.chdir(main_path) unless Dir.pwd == main_path
         PdkSync::Logger.info 'run command'
         if module_args[:option].nil?
-          pid = run_command(output_path, module_args[:command], module_args[:option])
+          pid = Utils.run_command(output_path, module_args[:command], module_args[:option])
           next unless pid != 0
         else
-	  exit_status = Utils.run_command(output_path, module_args[:command], nil)
+	        exit_status = Utils.run_command(output_path, module_args[:command], nil)
           next unless exit_status.zero?
         end
       end
