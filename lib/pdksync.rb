@@ -13,6 +13,7 @@ require 'bundler'
 require 'octokit'
 require 'pdk/util/template_uri'
 require 'pdksync/logger'
+require 'pdksync/utils'
 require 'pry'
 require 'terminal-table'
 
@@ -119,7 +120,7 @@ module PdkSync
       if steps.include?(:gem_file_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         print 'gem file update, '
-        Utils.gem_file_update(output_path, module_args[:gem_to_test], module_args[:gem_line], module_args[:gem_sha_finder], module_args[:gem_sha_replacer], module_args[:gem_version_finder], module_args[:gem_version_replacer], module_args[:gem_branch_finder], module_args[:gem_branch_replacer], @main_path) # rubocop:disable Metrics/LineLength
+        Utils.gem_file_update(output_path, module_args[:gem_to_test], module_args[:gem_line], module_args[:gem_sha_finder], module_args[:gem_sha_replacer], module_args[:gem_version_finder], module_args[:gem_version_replacer], module_args[:gem_branch_finder], module_args[:gem_branch_replacer], main_path) # rubocop:disable Metrics/LineLength
         print 'gem file updated, '
       end
       if steps.include?(:run_tests_locally)

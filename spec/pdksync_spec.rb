@@ -38,6 +38,7 @@ describe PdkSync do
     Dir.chdir(@folder)
     allow(PdkSync::GitPlatformClient).to receive(:new).and_return(platform)
     allow(Octokit).to receive(:tags).with('puppetlabs/pdk').and_return([{ name: '1' }])
+    allow(PdkSync::Utils.configuration).to receive(:git_base_uri).and_return('https://github.com')
   end
 
   let(:git_client) do

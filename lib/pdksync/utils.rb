@@ -653,7 +653,9 @@ module PdkSync
             git_repo = item.split('git:')[1]
             break
           elsif git_repo.size == i
-            git_repo = "https://github.com/puppetlabs#{gem_to_test}"
+            # git_repo = "https://github.com/puppetlabs#{gem_to_test}"
+            sep = configuration.git_base_uri.start_with?('git@') ? ':' : '/'
+            git_repo = "#{configuration.git_base_uri}#{sep}#{namespace}/#{gem_to_test}"
           end
         end
         print 'delete module directory, '
