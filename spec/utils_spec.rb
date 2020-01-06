@@ -41,7 +41,7 @@ describe 'PdkSync::Utils' do
   end
 
   it '#self.run_command' do
-    expect(PdkSync::Utils.run_command('./', 'pwd')).to eq(0)
+    expect(PdkSync::Utils.run_command('./', 'pwd', nil)).to eq(0)
   end
 
   it '#self.pdk_update' do

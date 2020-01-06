@@ -222,25 +222,35 @@ module PdkSync
     #   The command to be run.
     # @return [Integer]
     #   The status code of the command run.
-    def self.run_command(output_path, command)
+    def self.run_command(output_path, command, option)
       stdout = ''
       stderr = ''
       status = Process::Status
-
+      pid = ''
       Dir.chdir(output_path) unless Dir.pwd == output_path
 
       # Environment cleanup required due to Ruby subshells using current Bundler environment
-      if command =~ %r{^bundle}
-        Bundler.with_clean_env do
+      if option.nil? == true
+        if command =~ %r{^bundle}
+          Bundler.with_clean_env do
+            stdout, stderr, status = Open3.capture3(command)
+          end
+        else
           stdout, stderr, status = Open3.capture3(command)
         end
+        PdkSync::Logger.info "\n#{stdout}\n"
+        PdkSync::Logger.fatal "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
+        status.exitstatus
       else
-        stdout, stderr, status = Open3.capture3(command)
+        # Environment cleanup required due to Ruby subshells using current Bundler environment
+        if command =~ %r{^sh }
+          Bundler.with_clean_env do
+            pid = spawn(command, out: 'run_command.out', err: 'run_command.err')
+            Process.detach(pid)
+          end
+        end
+        pid
       end
-
-      PdkSync::Logger.info "\n#{stdout}\n"
-      PdkSync::Logger.fatal "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
-      status.exitstatus
     end
 
     # @summary
@@ -366,6 +376,355 @@ module PdkSync
       # Raise error if any invalid matches were found
       raise "Could not find the following repositories: #{invalid}" unless invalid.empty?
       true
+    end
+
+    # @summary
+    #   This method when called will update a Gemfile and remove the existing version of gem from the Gemfile.
+    # @param [String] output_path
+    #   The location that the command is to be run from.
+    # @param [String] gem_to_test
+    #   The Gem to test.
+    # @param [String] gem_line
+    #   The gem line to replace
+    # @param [String] gem_sha_finder
+    #   The gem sha to find
+    # @param [String] gem_sha_replacer
+    #   The gem sha to replace
+    # @param [String] gem_version_finder
+    #   The gem version to find
+    # @param [String] gem_version_replacer
+    #   The gem version to replace
+    # @param [String] gem_branch_finder
+    #   The gem branch to find
+    # @param [String] gem_branch_replacer
+    #   The gem branch to replace
+    def self.gem_file_update(output_path, gem_to_test, gem_line, gem_sha_finder, gem_sha_replacer, gem_version_finder, gem_version_replacer, gem_branch_finder, gem_branch_replacer, main_path)
+      gem_file_name = 'Gemfile'
+      validate_gem_update_module(gem_to_test, gem_line, output_path, main_path)
+
+      if (gem_line.nil? == false) && (gem_sha_replacer != '\"\"')
+        new_data = get_source_test_gem(gem_to_test, gem_line)
+        new_data.each do |data|
+          if data.include?('branch')
+            gem_branch_replacer = data.split(' ')[1].strip.chomp('"').delete("'")
+          elsif data.include?('ref')
+            gem_sha_replacer = data.split(' ')[1].strip.chomp('').delete("'")
+          elsif data =~ %r{~>|=|>=|<=|<|>}
+            delimiters = ['>', '<', '>=', '<=', '=']
+            version_to_check = data.split(Regexp.union(delimiters))[1].chomp('""').delete("'")
+            validate_gem_version_replacer(version_to_check.to_s, gem_to_test)
+          end
+        end
+      end
+
+      if gem_sha_replacer.nil? == false && gem_sha_replacer != '\"\"' && gem_sha_replacer != ''
+        validate_gem_sha_replacer(gem_sha_replacer.chomp('"').reverse.chomp('"').reverse, gem_to_test)
+      end
+      if gem_branch_replacer.nil? == false && gem_branch_replacer != '\"\"'
+        validate_gem_branch_replacer(gem_branch_replacer.chomp('"').reverse.chomp('"').reverse, gem_to_test)
+      end
+      if gem_version_replacer.nil? == false && gem_version_replacer != '\"\"' && gem_version_replacer != ''
+        delimiters = ['<', '>', '<=', '>=', '=']
+        version_to_check = gem_version_replacer.split(Regexp.union(delimiters))
+        version_to_check.each do |version|
+          next if version.nil?
+          validate_gem_version_replacer(version.to_s, gem_to_test) unless version == ''
+        end
+      end
+
+      Dir.chdir(output_path) unless Dir.pwd == output_path
+
+      line_number = 1
+      gem_update_sha = [
+        { finder: "ref: '#{gem_sha_finder}'",
+          replacer: "ref: '#{gem_sha_replacer}'" }
+      ]
+      gem_update_version = [
+        { finder: gem_version_finder,
+          replacer: gem_version_replacer }
+      ]
+      gem_update_branch = [
+        { finder: "branch: '#{gem_branch_finder}'",
+          replacer: "branch: '#{gem_branch_replacer}'" }
+      ]
+      # gem_line option is passed
+
+      if gem_line.nil? == false && (gem_line != '' || gem_line != '\"\"')
+
+        # Delete the gem in the Gemfile to add the new line
+        gem_test = gem_to_test.chomp('"').reverse.chomp('"').reverse
+        File.open('/tmp/out.tmp', 'w') do |out_file|
+          File.foreach(gem_file_name) do |line|
+            out_file.puts line unless line =~ %r{#{gem_test}}
+          end
+        end
+        FileUtils.mv('/tmp/out.tmp', gem_file_name)
+
+        # Insert the new Gem to test
+        file = File.open(gem_file_name)
+        contents = file.readlines.map(&:chomp)
+        contents.insert(line_number, gem_line.chomp('"').reverse.chomp('"').reverse)
+        File.open(gem_file_name, 'w') { |f| f.write contents.join("\n") }
+      end
+
+      # gem_sha_finder and gem_sha_replacer options are passed
+      if gem_sha_finder.nil? == false && gem_sha_replacer.nil? == false && gem_sha_finder != '' && gem_sha_finder != '\"\"' && gem_sha_replacer != '' && gem_sha_replacer != '\"\"'
+        # Replace with SHA
+        file = File.open(gem_file_name)
+        contents = file.readlines.join
+        gem_update_sha.each do |regex|
+          contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer])
+        end
+        File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
+      end
+
+      # gem_version_finder and gem_version_replacer options are passed
+      if gem_version_finder.nil? == false && gem_version_replacer.nil? == false && gem_version_finder != '' && gem_version_finder != '\"\"' && gem_version_replacer != '' && gem_version_replacer != '\"\"' # rubocop:disable Metrics/LineLength
+        # Replace with version
+        file = File.open(gem_file_name)
+        contents = file.readlines.join
+        gem_update_version.each do |regex|
+          contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer])
+        end
+        File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
+      end
+
+      # gem_branch_finder and gem_branch_replacer options are passed
+      if gem_branch_finder.nil? == false && gem_branch_replacer.nil? == false && gem_branch_finder != '' && gem_branch_finder != '\"\"' && gem_branch_replacer != '' && gem_branch_replacer != '\"\"' # rubocop:disable Metrics/LineLength, Style/GuardClause
+        # Replace with branch
+        file = File.open(gem_file_name)
+        contents = file.readlines.join
+        gem_update_branch.each do |regex|
+          contents = contents.gsub(%r{#{regex[:finder]}}, regex[:replacer]) # unless contents =~ %r{#{gem_to_test}}
+        end
+        File.open(gem_file_name, 'w') { |f| f.write contents.to_s }
+      end
+    end
+
+    # @summary
+    #   This method is used to identify the type of module.
+    # @param [String] output_path
+    #   The location that the command is to be run from.
+    # @param [String] repo_name
+    #   The module name to identify the type
+    def self.module_type(output_path, repo_name)
+      if repo_name.nil? == false
+        module_type = if File.exist?("#{output_path}/provision.yaml")
+                        'litmus'
+                      else
+                        'traditional'
+                      end
+      end
+      puts module_type
+      module_type
+    end
+
+    # @summary
+    #   This method when called will run the 'module tests' command at the given location, with an error message being thrown if it is not successful.
+    # @param [String] output_path
+    #   The location that the command is to be run from.
+    # @param [String] module_type
+    #   The module type (litmus or traditional)
+    # @param [String] module_name
+    #   The module name
+    # @param [String] puppet collection
+    #   The puppet collection
+    # @return [Integer]
+    #   The status code of the pdk update run.
+    def self.run_tests_locally(output_path, module_type, provision_type, module_name, puppet_collection)
+      provision_type = provision_type.chomp('"').reverse.chomp('"').reverse
+      status = Process::Status
+      # Save the current path
+      old_path = Dir.pwd
+
+      # Create the acceptance scripts
+      file = File.open('acc.sh', 'w')
+      file.puts '#!/bin/sh'
+
+      if puppet_collection
+        file.puts "export PUPPET_GEM_VERSION='~> #{puppet_collection}'"
+      end
+      file.puts "rm -rf #{output_path}/Gemfile.lock;rm -rf #{output_path}/.bundle"
+      file.puts 'bundle install --path .bundle/gems/ --jobs 4'
+      file.puts "bundle exec rake 'litmus:provision_list[#{provision_type}]'"
+      file.puts 'bundle exec rake litmus:install_agent'
+      file.puts 'bundle exec rake litmus:install_module'
+      file.puts 'bundle exec rake litmus:acceptance:parallel'
+      file.puts 'bundle exec rake litmus:tear_down'
+      file.close
+
+      # Runs the module tests command
+      if module_type == 'litmus'
+        run_command(output_path, 'cp ../../acc.sh .', nil)
+        Dir.chdir(old_path)
+        run_command(output_path, 'chmod 777 acc.sh', nil)
+        Dir.chdir(old_path)
+        status = run_command(output_path, 'sh acc.sh 2>&1 | tee litmusacceptance.out', 'background')
+        if status != 0
+          PdkSync::Logger.info "SUCCESS:Kicking of module Acceptance tests to run for the module #{module_name} - SUCCEED.Results will be available in the following path #{output_path}/litmusacceptance.out.Process id is #{status}"
+        else
+          PdkSync::Logger.fatal "FAILURE:Kicking of module Acceptance tests to run for the module #{module_name} - FAILED.Results will be available in the following path #{output_path}/litmusacceptance.out."
+        end
+      end
+      PdkSync::Logger.warn "(WARNING) Executing testcases locally supports only for litmus'" if module_type != 'litmus'
+    end
+
+    # @summary
+    #   This method when called will fetch the module tests results.
+    # @param [String] output_path
+    #   The location that the command is to be run from.
+    # @param [String] module_type
+    #   The module type (litmus or traditional)
+    # @param [String] module_name
+    #   The module name
+    # @param [String] report_rows
+    #   The module test results
+    # @return [Integer]
+    #   The status code of the pdk update run.
+    def self.fetch_test_results_locally(output_path, module_type, module_name, report_rows)
+      # Save the current path
+      old_path = Dir.pwd
+      if module_type != 'litmus'
+        PdkSync::Logger.warn "(WARNING) Fetching test results locally supports only for litmus'"
+      end
+
+      # Run the tests
+      Dir.chdir(old_path)
+      lines = IO.readlines("#{output_path}/litmusacceptance.out")[-10..-1]
+      if lines.find { |e| %r{exit} =~ e } # rubocop:disable Style/ConditionalAssignment
+        report_rows << if lines.find { |e| %r{^Failed} =~ e } || lines.find { |e| %r{--trace} =~ e }
+                         [module_name, 'FAILED', "Results are available in the following path #{output_path}/litmusacceptance.out"]
+                       else
+                         [module_name, 'SUCCESS', "Results are available in the following path #{output_path}/litmusacceptance.out"]
+                       end
+      else
+        report_rows << if lines.find { |e| %r{^Failed} =~ e } || lines.find { |e| %r{--trace} =~ e } || lines.find { |e| %r{rake aborted} =~ e }
+                         [module_name, 'FAILED', "Results are available in the following path #{output_path}/litmusacceptance.out"]
+                       else
+                         [module_name, 'PROGRESS', "Results will be available in the following path #{output_path}/litmusacceptance.out"]
+                       end
+      end
+      return report_rows if module_type == 'litmus'
+    end
+
+    # @summary
+    #   This method when called will find the source location of the gem to test
+    # @param [String] gem_to_test
+    #   The gem to test
+    # @param [String] gem_line
+    #   TThe line to update in the Gemfile
+    # @return [String]
+    #   The source location of the gem to test
+    def self.get_source_test_gem(gem_to_test, gem_line)
+      return gem_line.split(',') if gem_line
+      return gem_to_test unless gem_to_test
+
+      gemfile_line = File.readlines('Gemfile').find do |line|
+        line.include?(gem_to_test.to_s)
+      end
+
+      return "https://github.com/puppetlabs/#{gem_to_test}" unless gemfile_line
+      gemfile_line =~ %r{(http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?}
+      line.split(',')[1].strip.to_s if line
+    end
+
+    # @summary
+    #   This method when called will validate the gem_line to update in the Gemfile
+    # @param [String] gem_to_test
+    #   The gem to test
+    # @param [String] gem_line
+    #   The line to update in the Gemfile
+    def self.validate_gem_update_module(gem_to_test, gem_line, output_path, main_path)
+      gem_to_test = gem_to_test.chomp('"').reverse.chomp('"').reverse
+      Dir.chdir(main_path)
+      output_path = "#{configuration.pdksync_dir}/#{gem_to_test}"
+      clean_env(output_path) if Dir.exist?(output_path)
+      print 'delete module directory, '
+
+      # when gem_line is specified, we need to parse the line and identify all the values
+      # - we can have source url or we need to
+      # - sha, branch, version
+      if gem_line
+        git_repo = get_source_test_gem(gem_to_test, gem_line)
+        i = 0
+        git_repo.each do |item|
+          i += 1
+          if item =~ %r{((git@|http(s)?:\/\/)([\w\.@]+)(\/|:))([\w,\-,\_]+)\/([\w,\-,\_]+)(.git){0,1}((\/){0,1})}
+            git_repo = item.split('git:')[1]
+            break
+          elsif git_repo.size == i
+            # git_repo = "https://github.com/puppetlabs#{gem_to_test}"
+            sep = configuration.git_base_uri.start_with?('git@') ? ':' : '/'
+            git_repo = "#{configuration.git_base_uri}#{sep}#{namespace}/#{gem_to_test}"
+          end
+        end
+        print 'delete module directory, '
+        git_repo = run_command(configuration.pdksync_dir.to_s, "git clone #{git_repo}", nil)
+      elsif gem_to_test
+        git_repo = clone_directory(configuration.namespace, gem_to_test, output_path.to_s)
+      end
+
+      Dir.chdir(main_path)
+      raise "Unable to clone repo for #{gem_to_test}. Check repository's url to be correct!".red if git_repo.nil?
+
+      @all_versions = ''
+      @all_refs = ''
+      @all_branches = ''
+
+      Dir.chdir(output_path)
+
+      stdout_refs, stderr_refs, status_refs = Open3.capture3('git show-ref -s')
+      @all_refs = stdout_refs
+      stdout_branches, stderr_branches, status_branches = Open3.capture3('git branch -a')
+      @all_branches = stdout_branches
+      stdout_versions, stderr_versions, status_versions = Open3.capture3('git tag')
+      @all_versions = stdout_versions
+
+      raise "Couldn't get references due to #{stderr_refs}".red unless status_refs.exitstatus.zero?
+      raise "Couldn't get branches due to #{stderr_branches}".red unless status_branches.exitstatus.zero?
+      raise "Couldn't get versions due to #{stderr_versions}".red unless status_versions.exitstatus.zero?
+      Dir.chdir(main_path)
+    end
+
+    # @summary
+    #   This method when called will validate the gem_sha_replacer to update in the Gemfile
+    # @param [String] gem_to_test
+    #   The gem to test
+    # @param [String] gem_sha_replacer
+    #   The sha to update in the Gemfile
+    def self.validate_gem_sha_replacer(gem_sha_replacer, gem_to_test)
+      found = false
+      @all_refs.split(' ').each do |sha|
+        puts "SHA #{gem_sha_replacer} valid.\n".green if gem_sha_replacer == sha
+        found = true if gem_sha_replacer == sha
+      end
+      raise "Couldn't find sha: #{gem_sha_replacer} in your repository: #{gem_to_test}".red if found == false
+    end
+
+    # @summary
+    #   This method when called will validate the gem_branch_replacer to update in the Gemfile
+    # @param [String] gem_to_test
+    #   The gem to test
+    # @param [String] gem_branch_replacer
+    #   The branch to update in the Gemfile
+    def self.validate_gem_branch_replacer(gem_branch_replacer, gem_to_test)
+      raise "Couldn't find branch: #{gem_branch_replacer} in your repository: #{gem_to_test}".red unless @all_branches.include?(gem_branch_replacer)
+      puts "Branch #{gem_branch_replacer} valid.\n".green
+    end
+
+    # @summary
+    #   This method when called will validate the gem_version_replacer to update in the Gemfile
+    # @param [String] gem_to_test
+    #   The gem to test
+    # @param [String] gem_version_replacer
+    #   The version to update in the Gemfile
+    def self.validate_gem_version_replacer(gem_version_replacer, gem_to_test)
+      found = false
+      @all_versions.split(' ').each do |version|
+        puts "Version #{gem_version_replacer} valid.\n".green if gem_version_replacer == version
+        found = true if gem_version_replacer == version
+      end
+      raise "Couldn't find version: #{gem_version_replacer} in your repository: #{gem_to_test}".red if found == false
     end
   end
 end
