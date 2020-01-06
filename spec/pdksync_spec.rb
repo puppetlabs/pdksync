@@ -83,6 +83,7 @@ describe PdkSync do
     it 'raise when clean_branches with no arguments' do
       expect { PdkSync.main(steps: [:clean_branches]) }.to raise_error(RuntimeError, %r{Needs a branch_name, and the branch name contains the string pdksync})
     end
+
     it 'raise when gem_file_update with no arguments' do
       expect { PdkSync.main(steps: [:gem_file_update]) }.to raise_error(NoMethodError)
     end
@@ -100,8 +101,7 @@ describe PdkSync do
     end
     it 'raise when run_tests with no arguments' do
       expect { PdkSync.main(steps: [:run_tests_locally]) }.to raise_error(NoMethodError) # , %r{run_tests" requires arguments (module_type) to run.})
-    end
-
+    end    
     describe 'gem_file_update with valid values' do
       before(:all) do
         # rubocop:disable LineLength
