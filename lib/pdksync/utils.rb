@@ -657,7 +657,7 @@ module PdkSync
           end
         end
         print 'delete module directory, '
-        git_repo = run_command(configuration.pdksync_dir.to_s, "git clone #{git_repo}")
+        git_repo = run_command(configuration.pdksync_dir.to_s, "git clone #{git_repo}", nil)
       elsif gem_to_test
         git_repo = clone_directory(configuration.namespace, gem_to_test, output_path.to_s)
       end
@@ -669,7 +669,9 @@ module PdkSync
       @all_refs = ''
       @all_branches = ''
 
+      #binding.pry
       Dir.chdir(output_path)
+      #binding.pry
       stdout_refs, stderr_refs, status_refs = Open3.capture3('git show-ref -s')
       @all_refs = stdout_refs
       stdout_branches, stderr_branches, status_branches = Open3.capture3('git branch -a')
