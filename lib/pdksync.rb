@@ -13,7 +13,8 @@ require 'bundler'
 require 'octokit'
 require 'pdk/util/template_uri'
 require 'pdksync/logger'
-require 'pdksync/utils'
+require 'pry'
+require 'terminal-table'
 
 # @summary
 #   This module set's out and controls the pdksync process
@@ -34,6 +35,8 @@ module PdkSync
     module_names = Utils.return_modules
     raise "No modules found in '#{Utils.configuration.managed_modules}'" if module_names.nil?
     pr_list = []
+    report_rows = []
+    table = Terminal::Table.new
 
     # The current directory is saved for cleanup purposes
     main_path = Dir.pwd
@@ -65,7 +68,10 @@ module PdkSync
     end
     # validation run_tests_locally
     if steps.include?(:run_tests_locally)
-      raise '"run_tests" requires arguments (module_type) to run.' if args[:module_type].nil?
+      puts "Command '#{args}'"
+    end
+    # validation fetch_test_results_locally
+    if steps.include?(:fetch_test_results_locally)
       puts "Command '#{args}'"
     end
 
@@ -89,21 +95,26 @@ module PdkSync
       PdkSync::Logger.warn "#{output_path} does not exist, skipping module" unless File.directory?(output_path)
       next unless File.directory?(output_path)
       if steps.include?(:pdk_convert)
-        exit_status = Utils.run_command(output_path, "#{Utils.return_pdk_path} convert --force #{Utils.configuration.templates}")
+        exit_status = run_command(output_path, "#{return_pdk_path} convert --force #{configuration.templates}", nil)
         PdkSync::Logger.info 'converted'
         next unless exit_status.zero?
       end
       if steps.include?(:pdk_validate)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        exit_status = Utils.run_command(output_path, "#{Utils.return_pdk_path} validate -a")
+        exit_status = run_command(output_path, "#{return_pdk_path} validate -a", nil)
         PdkSync::Logger.info 'validated'
         next unless exit_status.zero?
       end
       if steps.include?(:run_a_command)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         PdkSync::Logger.info 'run command'
-        exit_status = Utils.run_command(output_path, module_args)
-        next unless exit_status.zero?
+        if module_args[:option].nil?
+          pid = run_command(output_path, module_args[:command], module_args[:option])
+          next unless pid != 0
+        else
+	  exit_status = Utils.run_command(output_path, module_args[:command], nil)
+          next unless exit_status.zero?
+        end
       end
       if steps.include?(:gem_file_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -113,8 +124,15 @@ module PdkSync
       end
       if steps.include?(:run_tests_locally)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        print 'run tests, '
-        Utils.run_tests_locally(output_path, module_args[:module_type])
+        print 'Run tests '
+        module_type = module_type(output_path, module_name)
+        run_tests_locally(output_path, module_type, module_args[:provision_type], module_name, module_args[:puppet_collection])
+      end
+      if steps.include?(:fetch_test_results_locally)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        print 'Fetch test results for local run '
+        module_type = module_type(output_path, module_name)
+        table = fetch_test_results_locally(output_path, module_type, module_name, report_rows)
       end
       if steps.include?(:pdk_update)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -128,6 +146,13 @@ module PdkSync
                                           pdksync_label: Utils.configuration.default_pdksync_label)
         end
         PdkSync::Logger.info 'pdk update'
+      end
+      if steps.include?(:use_gem_ref)
+        pr_title = module_args[:additional_title] ? "#{module_args[:additional_title]} - pdksync_gem_testing" : 'pdksync_gem_testing'
+        module_args = module_args.merge(branch_name: "gem_testing_#{module_args[:gem_to_test]}",
+                                        commit_message: pr_title,
+                                        pr_title: pr_title,
+                                        pdksync_label: @default_pdksync_label)
       end
       if steps.include?(:create_commit)
         Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -183,6 +208,8 @@ module PdkSync
       end
       PdkSync::Logger.info 'done'
     end
+    table = Terminal::Table.new title: 'Module Test Results', headings: %w[Module Status Result From], rows: report_rows
+    puts table if steps.include?(:fetch_test_results_locally)
     return if pr_list.size.zero?
     PdkSync::Logger.info "\nPRs created:\n"
     puts pr_list.join("\n")
