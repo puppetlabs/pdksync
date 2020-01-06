@@ -112,7 +112,7 @@ module PdkSync
           pid = Utils.run_command(output_path, module_args[:command], module_args[:option])
           next unless pid != 0
         else
-	        exit_status = Utils.run_command(output_path, module_args[:command], nil)
+          exit_status = Utils.run_command(output_path, module_args[:command], nil)
           next unless exit_status.zero?
         end
       end

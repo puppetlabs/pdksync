@@ -214,44 +214,44 @@ module PdkSync
       PdkSync::Logger.fatal "Cloning #{module_name} has failed. #{error}"
     end
 
-  # @summary
-  #   This method when called will run a command command at the given location, with an error message being thrown if it is not successful.
-  # @param [String] output_path
-  #   The location that the command is to be run from.
-  # @param [String] command
-  #   The command to be run.
-  # @return [Integer]
-  #   The status code of the command run.
-  def self.run_command(output_path, command, option)
-    stdout = ''
-    stderr = ''
-    status = Process::Status
-    pid = ''
-    Dir.chdir(output_path) unless Dir.pwd == output_path
+    # @summary
+    #   This method when called will run a command command at the given location, with an error message being thrown if it is not successful.
+    # @param [String] output_path
+    #   The location that the command is to be run from.
+    # @param [String] command
+    #   The command to be run.
+    # @return [Integer]
+    #   The status code of the command run.
+    def self.run_command(output_path, command, option)
+      stdout = ''
+      stderr = ''
+      status = Process::Status
+      pid = ''
+      Dir.chdir(output_path) unless Dir.pwd == output_path
 
-    # Environment cleanup required due to Ruby subshells using current Bundler environment
-    if option.nil? == true
-      if command =~ %r{^bundle}
-        Bundler.with_clean_env do
+      # Environment cleanup required due to Ruby subshells using current Bundler environment
+      if option.nil? == true
+        if command =~ %r{^bundle}
+          Bundler.with_clean_env do
+            stdout, stderr, status = Open3.capture3(command)
+          end
+        else
           stdout, stderr, status = Open3.capture3(command)
         end
+        PdkSync::Logger.info "\n#{stdout}\n"
+        PdkSync::Logger.fatal "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
+        status.exitstatus
       else
-        stdout, stderr, status = Open3.capture3(command)
-      end
-      PdkSync::Logger.info "\n#{stdout}\n"
-      PdkSync::Logger.fatal "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
-      status.exitstatus
-    else
-      # Environment cleanup required due to Ruby subshells using current Bundler environment
-      if command =~ %r{^sh }
-        Bundler.with_clean_env do
-          pid = spawn(command, out: 'run_command.out', err: 'run_command.err')
-          Process.detach(pid)
+        # Environment cleanup required due to Ruby subshells using current Bundler environment
+        if command =~ %r{^sh }
+          Bundler.with_clean_env do
+            pid = spawn(command, out: 'run_command.out', err: 'run_command.err')
+            Process.detach(pid)
+          end
         end
+        pid
       end
-      pid
     end
-  end
 
     # @summary
     #   This method when called will run the 'pdk update --force' command at the given location, with an error message being thrown if it is not successful.
@@ -669,9 +669,8 @@ module PdkSync
       @all_refs = ''
       @all_branches = ''
 
-      #binding.pry
       Dir.chdir(output_path)
-      #binding.pry
+
       stdout_refs, stderr_refs, status_refs = Open3.capture3('git show-ref -s')
       @all_refs = stdout_refs
       stdout_branches, stderr_branches, status_branches = Open3.capture3('git branch -a')
