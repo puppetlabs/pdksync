@@ -103,6 +103,17 @@ describe PdkSync do
     it 'raise when run_tests with no arguments' do
       expect { PdkSync.main(steps: [:run_tests_locally]) }.to raise_error(NoMethodError) # , %r{run_tests" requires arguments (module_type) to run.})
     end
+    it 'raise when run_tests_jenkins with no arguments' do
+      allow(ENV).to receive(:[]).with('JENKINS_USERNAME').and_return('JENKINS_USERNAME')
+      allow(ENV).to receive(:[]).with('JENKINS_PASSWORD').and_return('JENKINS_PASSWORD')
+      expect { PdkSync.main(steps: [:run_tests_jenkins], args: {}) }.to raise_error(RuntimeError) # , "run_tests_jenkins requires arguments (github_repo, github_branch) to run"
+    end
+    it 'raise errors without jenkins credentials' do
+      allow(ENV).to receive(:[]).with('JENKINS_USERNAME').and_return(nil)
+      allow(ENV).to receive(:[]).with('JENKINS_PASSWORD').and_return(nil)
+      expect { PdkSync.main(steps: [:run_tests_jenkins], args: { github_repo: 'test', github_branch: 'test' }) }.to raise_error(RuntimeError, %r{Jenkins access token for Jenkins not set})
+    end
+
     describe 'gem_file_update with valid values' do
       before(:all) do
         # rubocop:disable LineLength

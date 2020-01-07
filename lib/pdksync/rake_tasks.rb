@@ -58,6 +58,11 @@ namespace :pdksync do
     PdkSync.main(steps: [:fetch_test_results_locally])
   end
 
+  desc "Run test in jenkins for traditional modules eg rake 'run_tests_jenkins['branchname']'"
+  task :run_tests_jenkins, [:github_branch, :test_framework, :github_user] do |_task, args|
+    PdkSync.main(steps: [:run_tests_jenkins], args: args)
+  end
+
   desc 'Display the current configuration of pdksync'
   task :show_config do
     config = PdkSync::Configuration.new
@@ -66,6 +71,11 @@ namespace :pdksync do
     config.to_h.each do |key, value|
       puts "- #{key}: ".bold + value.to_s.cyan
     end
+  end
+
+  desc "Fetch run results against traditional modules eg rake 'fetch_traditional_test_results'"
+  task :fetch_test_results_jenkins do |_task, args|
+    PdkSync.main(steps: [:fetch_test_results_jenkins], args: args)
   end
 end
 
