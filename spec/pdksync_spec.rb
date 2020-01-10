@@ -111,7 +111,7 @@ describe PdkSync do
     it 'raise errors without jenkins credentials' do
       allow(ENV).to receive(:[]).with('JENKINS_USERNAME').and_return(nil)
       allow(ENV).to receive(:[]).with('JENKINS_PASSWORD').and_return(nil)
-      expect { PdkSync.main(steps: [:run_tests_jenkins], args: { github_repo: 'test', github_branch: 'test' }) }.to raise_error(RuntimeError, %r{Jenkins access token for Jenkins not set})
+      expect { PdkSync.main(steps: [:run_tests_jenkins], args: { jenkins_server_url: 'https//jenkins.com', github_repo: 'test', github_branch: 'test' }) }.to raise_error(RuntimeError, %r{Jenkins access token for Jenkins not set})
     end
 
     describe 'gem_file_update with valid values' do

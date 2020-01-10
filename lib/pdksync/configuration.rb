@@ -35,7 +35,7 @@ module PdkSync
       jenkins_platform: :jenkins,
       jenkins_base_uri: 'https://jenkins.io',
       jenkins_api_endpoint: '',
-      jenkins_server_url: 'https://jenkins-master-prod-1.delivery.puppetlabs.net',
+      jenkins_server_url: '',
       module_is_authoritive: true
     }.freeze
 
@@ -63,8 +63,7 @@ module PdkSync
       @jenkins_platform_access_settings ||= {
         jenkins_username: ENV['JENKINS_USERNAME'].freeze,
         jenkins_password: ENV['JENKINS_PASSWORD'].freeze,
-        jenkins_api_endpoint: '',
-        jenkins_server_url: 'https://jenkins-master-prod-1.delivery.puppetlabs.net'
+        jenkins_api_endpoint: ''
       }
     end
 

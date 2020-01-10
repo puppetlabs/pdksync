@@ -155,10 +155,10 @@ The following rake tasks are available with pdksync:
   - eg rake 'pdksync:run_tests_locally["default"]'
 - `pdksync:fetch_test_results_locally[]` Fetch litmus modules local run results
   - eg rake 'pdksync:fetch_test_results_locally[]'
-- `pdksync:run_tests_jenkins[:github_branch, :test_framework, :github_user]` Run traditional modules on jenkins. For now this rake task works just for test_framework: jenkins.
+- `pdksync:run_tests_jenkins[:jenkins_server_url, :github_branch, :test_framework, :github_user]` Run traditional modules on jenkins. For now this rake task works just for test_framework: jenkins.
   - eg rake 'pdksync:run_tests_jenkins[test_branch, '', test_user]'
 - `pdksync:test_results_jenkins[]` Fetch traditional modules jenkins run results
-  - eg rake 'pdksync:test_results_jenkins[]'
+  - eg rake 'pdksync:test_results_jenkins[jenkins_server_url]'
 
 ### Configuration
 

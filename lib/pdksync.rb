@@ -78,7 +78,12 @@ module PdkSync
     end
     # validation run_tests_jenkins
     if steps.include?(:run_tests_jenkins)
-      raise 'run_tests_jenkins requires arguments (github_repo, github_branch) to run.' if args[:github_branch].nil?
+      raise 'run_tests_jenkins requires arguments (jenkins_server_url, github_branch) to run.' if args[:github_branch].nil? || args[:jenkins_server_url].nil?
+      puts "Command '#{args}'"
+    end
+    # validation test_results_jenkins
+    if steps.include?(:test_results_jenkins)
+      raise 'test_results_jenkins requires argument jenkins_server_url to run.' if args[:jenkins_server_url].nil?
       puts "Command '#{args}'"
     end
 
@@ -215,7 +220,7 @@ module PdkSync
       end
 
       if steps.include?(:run_tests_jenkins)
-        jenkins_client = Utils.setup_jenkins_client
+        jenkins_client = Utils.setup_jenkins_client(module_args[:jenkins_server_url])
         Dir.chdir(main_path) unless Dir.pwd == main_path
         PdkSync::Logger.info 'Run tests in jenkins '
         module_type = Utils.module_type(output_path, module_name)
@@ -229,7 +234,7 @@ module PdkSync
             build_id = Utils.run_tests_jenkins(jenkins_client, module_name, module_args[:github_branch], github_user, job_name)
             next if build_id.nil? # rubocop:disable Metrics/BlockNesting
             PdkSync::Logger.info "New adhoc TEST EXECUTION has started. \nYou can check progress here: #{configuration['jenkins_server_url']}/job/#{job_name}/#{build_id}"
-            Utils.test_results_jenkins(build_id, job_name, module_name)
+            Utils.test_results_jenkins(module_args[:jenkins_server_url], build_id, job_name, module_name)
           end
         end
         if module_type == 'litmus'
@@ -258,8 +263,7 @@ module PdkSync
 
           job_name = "forge-module_#{module_name}_init-manual-parameters_adhoc" if module_args[:job_name].nil?
           job_name = "forge-windows_#{module_name}_init-manual-parameters_adhoc" if ['puppetlabs-reboot', 'puppetlabs-iis', 'puppetlabs-powershell', 'sqlserver'].include?(module_name)
-
-          Utils.test_results_jenkins(build_id, job_name, module_name)
+          Utils.test_results_jenkins(module_args[:jenkins_server_url], build_id, job_name, module_name)
         end
       end
 

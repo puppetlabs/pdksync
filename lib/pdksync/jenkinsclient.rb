@@ -10,10 +10,9 @@ class PdkSync::JenkinsClient
   # @param [String] jenkins_platform_access_settings
   #   The Jenkins credentials, required to access the Jenkins API
 
-  def initialize(jenkins_platform_access_settings)
+  def initialize(jenkins_server_url, jenkins_platform_access_settings)
     jenkins_username = jenkins_platform_access_settings[:jenkins_username]
     jenkins_password = jenkins_platform_access_settings[:jenkins_password]
-    jenkins_server_url = jenkins_platform_access_settings[:jenkins_server_url]
     @client = JenkinsApi::Client.new('server_url' => jenkins_server_url,
                                      'username'   => jenkins_username,
                                      'password'   => jenkins_password)

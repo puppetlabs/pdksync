@@ -357,7 +357,7 @@ module PdkSync
     #   This method when called will create and return an octokit client with access to jenkins.
     # @return [PdkSync::JenkinsClient] client
     #   The Git platform client that has been created.
-    def self.setup_jenkins_client
+    def self.setup_jenkins_client(jenkins_server_url)
       require 'pdksync/jenkinsclient'
       if configuration.jenkins_platform_access_settings[:jenkins_username].nil?
         raise ArgumentError, "Jenkins access token for #{configuration.jenkins_platform.capitalize} not set"\
@@ -366,7 +366,7 @@ module PdkSync
         raise ArgumentError, "Jenkins access token for #{jenkins_platform.capitalize} not set"\
         " - use 'export #{jenkins_platform.upcase}_PASSWORD=\"<your password>\"' to set"
       end
-      PdkSync::JenkinsClient.new(configuration.jenkins_platform_access_settings)
+      PdkSync::JenkinsClient.new(jenkins_server_url, configuration.jenkins_platform_access_settings)
     rescue StandardError => error
       raise "Jenkins platform access not set up correctly: #{error}"
     end
@@ -778,10 +778,10 @@ module PdkSync
     end
 
     # return jenkins job urls
-    def self.adhoc_urls(job_name)
+    def self.adhoc_urls(job_name, jenkins_server_urls)
       adhoc_urls = []
       # get adhoc jobs
-      adhoc_urls.push("#{configuration['jenkins_server_url']}/job/#{job_name}")
+      adhoc_urls.push("#{jenkins_server_urls}/job/#{job_name}")
       adhoc_urls.each do |url|
         conn = Faraday::Connection.new "#{url}/api/json"
         res = conn.get
@@ -797,10 +797,10 @@ module PdkSync
     end
 
     # test_results_jenkins
-    def self.test_results_jenkins(build_id, job_name, module_name)
+    def self.test_results_jenkins(jenkins_server_url, build_id, job_name, module_name)
       PdkSync::Logger.info 'Fetch results from jenkins'
       # remove duplicates and sort the list
-      adhoc_urls = adhoc_urls(job_name).uniq.sort_by { |url| JSON.parse(Faraday.get("#{url}/api/json").body.to_s)['fullDisplayName'].scan(%r{[0-9]{2}\s}).first.to_i }
+      adhoc_urls = adhoc_urls(job_name, jenkins_server_url).uniq.sort_by { |url| JSON.parse(Faraday.get("#{url}/api/json").body.to_s)['fullDisplayName'].scan(%r{[0-9]{2}\s}).first.to_i }
       report_rows = []
       @failed = false
       @in_progress = false
@@ -808,7 +808,7 @@ module PdkSync
 
       File.delete("results_#{module_name}.out") if File.exist?("results_#{module_name}.out")
       # analyse each build result - get status, execution time, logs_link
-      @data = "MODULE_NAME=#{module_name}\nBUILD_ID=#{build_id}\nINITIAL_job=#{configuration['jenkins_server_url']}/job/#{job_name}/#{build_id}\n\n"
+      @data = "MODULE_NAME=#{module_name}\nBUILD_ID=#{build_id}\nINITIAL_job=#{jenkins_server_url}/job/#{job_name}/#{build_id}\n\n"
       write_to_file("results_#{module_name}.out", @data)
       PdkSync::Logger.info "Analyse test execution report \n"
       adhoc_urls.each do |url|

@@ -58,8 +58,8 @@ namespace :pdksync do
     PdkSync.main(steps: [:fetch_test_results_locally])
   end
 
-  desc "Run test in jenkins for traditional modules eg rake 'run_tests_jenkins['branchname']'"
-  task :run_tests_jenkins, [:github_branch, :test_framework, :github_user] do |_task, args|
+  desc "Run test in jenkins for traditional modules eg rake 'run_tests_jenkins['jenkins_server_url', 'branchname']'"
+  task :run_tests_jenkins, [:jenkins_server_url, :github_branch, :test_framework, :github_user] do |_task, args|
     PdkSync.main(steps: [:run_tests_jenkins], args: args)
   end
 
@@ -74,7 +74,7 @@ namespace :pdksync do
   end
 
   desc "Fetch run results against traditional modules eg rake 'fetch_traditional_test_results'"
-  task :test_results_jenkins do |_task, args|
+  task :test_results_jenkins, [:jenkins_server_url] do |_task, args|
     PdkSync.main(steps: [:test_results_jenkins], args: args)
   end
 end
