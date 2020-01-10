@@ -358,6 +358,7 @@ module PdkSync
     # @return [PdkSync::JenkinsClient] client
     #   The Git platform client that has been created.
     def self.setup_jenkins_client
+      require 'pdksync/jenkinsclient'
       if configuration.jenkins_platform_access_settings[:jenkins_username].nil?
         raise ArgumentError, "Jenkins access token for #{configuration.jenkins_platform.capitalize} not set"\
             " - use 'export #{configuration.jenkins_platform.upcase}_USERNAME=\"<your username>\"' to set"
@@ -768,7 +769,7 @@ module PdkSync
     end
 
     # convert duration from ms to format h m s ms
-    def self.get_duration_hrs_and_mins(ms)
+    def self.duration_hrs_and_mins(ms)
       return '' unless ms
       hours, ms   = ms.divmod(1000 * 60 * 60)
       minutes, ms = ms.divmod(1000 * 60)
@@ -777,7 +778,7 @@ module PdkSync
     end
 
     # jenkins report
-    def self.fetch_test_results_jenkins(build_id, job_name, module_name)
+    def self.test_results_jenkins(build_id, job_name, module_name)
       PdkSync::Logger.info 'Fetch results from jenkins'
       # def self.jenkins_report_analisation(github_repo, build_id)
       adhoc_urls = []
@@ -867,7 +868,7 @@ module PdkSync
       write_to_file("results_#{module_name}.out", @data) if @failed || @in_progress
       PdkSync::Logger.info 'Failed status! Fix errors and rerun.'.red if @failed
       PdkSync::Logger.info 'Aborted status! Fix errors and rerun.'.red if @aborted
-      PdkSync::Logger.info 'Tests are still running! You can fetch the results later by using this task: fetch_test_results_jenkins'.blue if @in_progress
+      PdkSync::Logger.info 'Tests are still running! You can fetch the results later by using this task: test_results_jenkins'.blue if @in_progress
       returned_data
     end
 
@@ -898,7 +899,7 @@ module PdkSync
         execution_time = 'running'
       else
         status = last_build_job_data['result']
-        execution_time = get_duration_hrs_and_mins(last_build_job_data['duration'].to_i)
+        execution_time = duration_hrs_and_mins(last_build_job_data['duration'].to_i)
       end
 
       # execution_time = 0 unless last_build_job_data

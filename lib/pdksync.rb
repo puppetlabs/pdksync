@@ -6,7 +6,7 @@ require 'rake'
 require 'pdk'
 require 'pdksync/configuration'
 require 'pdksync/gitplatformclient'
-require 'pdksync/jenkinclient'
+
 require 'json'
 require 'yaml'
 require 'colorize'
@@ -229,7 +229,7 @@ module PdkSync
             build_id = Utils.run_tests_jenkins(jenkins_client, module_name, module_args[:github_branch], github_user, job_name)
             next if build_id.nil? # rubocop:disable Metrics/BlockNesting
             PdkSync::Logger.info "New adhoc TEST EXECUTION has started. \nYou can check progress here: #{configuration['jenkins_server_url']}/job/#{job_name}/#{build_id}"
-            Utils.fetch_test_results_jenkins(build_id, job_name, module_name)
+            Utils.test_results_jenkins(build_id, job_name, module_name)
           end
         end
         if module_type == 'litmus'
@@ -237,7 +237,7 @@ module PdkSync
         end
       end
 
-      if steps.include?(:fetch_test_results_jenkins)
+      if steps.include?(:test_results_jenkins)
         Dir.chdir(main_path) unless Dir.pwd == main_path
         print 'Fetch test results from jenkins, '
         module_type = Utils.module_type(output_path, module_name)
@@ -260,7 +260,7 @@ module PdkSync
           job_name = "forge-module_#{module_name}_init-manual-parameters_adhoc" if module_args[:job_name].nil?
           job_name = "forge-windows_#{module_name}_init-manual-parameters_adhoc" if ['puppetlabs-reboot', 'puppetlabs-iis', 'puppetlabs-powershell', 'sqlserver'].include?(module_name)
 
-          Utils.fetch_test_results_jenkins(build_id, job_name, module_name)
+          Utils.test_results_jenkins(build_id, job_name, module_name)
         end
       end
 

@@ -74,8 +74,8 @@ namespace :pdksync do
   end
 
   desc "Fetch run results against traditional modules eg rake 'fetch_traditional_test_results'"
-  task :fetch_test_results_jenkins do |_task, args|
-    PdkSync.main(steps: [:fetch_test_results_jenkins], args: args)
+  task :test_results_jenkins do |_task, args|
+    PdkSync.main(steps: [:test_results_jenkins], args: args)
   end
 end
 
