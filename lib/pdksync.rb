@@ -239,7 +239,7 @@ module PdkSync
 
       if steps.include?(:test_results_jenkins)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        print 'Fetch test results from jenkins, '
+        PdkSync::Logger.info 'Fetch test results from jenkins, '
         module_type = Utils.module_type(output_path, module_name)
         if module_type == 'litmus'
           PdkSync::Logger.info '(Error) Module Type is Litmus please use the rake task run_tests_locally to run'.red
@@ -249,7 +249,6 @@ module PdkSync
         module_name = "puppetlabs-#{module_name}" if %w[cisco_ios device_manager].include?(module_name)
         File.open("results_#{module_name}.out", 'r') do |f|
           f.each_line do |line|
-            PdkSync::Logger.info line
             if line.include?('BUILD_ID')
               build_id = line.split('=')[1].strip
             elsif line.include?('MODULE_NAME')

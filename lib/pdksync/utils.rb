@@ -777,15 +777,11 @@ module PdkSync
       "#{hours}h #{minutes}m #{seconds}s #{ms}ms"
     end
 
-    # jenkins report
-    def self.test_results_jenkins(build_id, job_name, module_name)
-      PdkSync::Logger.info 'Fetch results from jenkins'
-      # def self.jenkins_report_analisation(github_repo, build_id)
+    # return jenkins job urls
+    def self.adhoc_urls(job_name)
       adhoc_urls = []
       # get adhoc jobs
       adhoc_urls.push("#{configuration['jenkins_server_url']}/job/#{job_name}")
-      # get_adhoc_jobs(adhoc_urls).size
-      report_rows = []
       adhoc_urls.each do |url|
         conn = Faraday::Connection.new "#{url}/api/json"
         res = conn.get
@@ -797,16 +793,20 @@ module PdkSync
           adhoc_urls.push(item['url']) unless item['url'].nil? && item['url'].include?('skippable_adhoc')
         end
       end
+      adhoc_urls
+    end
 
+    # test_results_jenkins
+    def self.test_results_jenkins(build_id, job_name, module_name)
+      PdkSync::Logger.info 'Fetch results from jenkins'
+      # remove duplicates and sort the list
+      adhoc_urls = adhoc_urls(job_name).uniq.sort_by { |url| JSON.parse(Faraday.get("#{url}/api/json").body.to_s)['fullDisplayName'].scan(%r{[0-9]{2}\s}).first.to_i }
+      report_rows = []
       @failed = false
       @in_progress = false
       @aborted = false
 
       File.delete("results_#{module_name}.out") if File.exist?("results_#{module_name}.out")
-      # remove duplicates
-      adhoc_urls = adhoc_urls.uniq
-      # sort the list
-      adhoc_urls = adhoc_urls.sort_by { |url| JSON.parse(Faraday.get("#{url}/api/json").body.to_s)['fullDisplayName'].scan(%r{[0-9]{2}\s}).first.to_i }
       # analyse each build result - get status, execution time, logs_link
       @data = "MODULE_NAME=#{module_name}\nBUILD_ID=#{build_id}\nINITIAL_job=#{configuration['jenkins_server_url']}/job/#{job_name}/#{build_id}\n\n"
       write_to_file("results_#{module_name}.out", @data)
@@ -817,18 +817,23 @@ module PdkSync
         next if url.include?('skippable_adhoc') || current_build_data['color'] == 'notbuilt'
         next if current_build_data['fullDisplayName'].downcase.include?('skipped')
         returned_data = get_data_build(url, build_id, module_name) unless @failed || @in_progress
-        if @failed
-          report_rows << ['FAILED', url, returned_data[1]] unless returned_data.nil?
-        elsif @aborted
-          report_rows << ['ABORTED', url, returned_data[1]] unless returned_data.nil?
-        else
-          report_rows << [returned_data[0], url, returned_data[1]] unless returned_data.nil?
-        end
+        generate_report_table(report_rows, url, returned_data)
       end
 
       table = Terminal::Table.new title: "Module Test Results for: #{module_name}\nCheck results in #{Dir.pwd}/results_#{module_name}.out ", headings: %w[Status Result Execution_Time], rows: report_rows
       PdkSync::Logger.info "SUCCESSFUL test results!\n".green unless @failed || @in_progress
-      PdkSync::Logger.info table
+      PdkSync::Logger.info "\n#{table} \n"
+    end
+
+    # generate report table when running tests on jenkins
+    def self.generate_report_table(report_rows, url, data)
+      if @failed
+        report_rows << ['FAILED', url, data[1]] unless data.nil?
+      elsif @aborted
+        report_rows << ['ABORTED', url, data[1]] unless data.nil?
+      else
+        report_rows << [data[0], url, data[1]] unless data.nil?
+      end
     end
 
     # for each build from adhoc jobs, get data
@@ -877,14 +882,6 @@ module PdkSync
       File.open(file, 'a') do |f|
         f.write @data
       end
-    end
-
-    # remove duplicated
-    def self.remove_duplicates(file)
-      open = File.open(file, 'r')
-      content = open.read
-      new_content = content.split("\n").uniq
-      write_to_file(file, new_content)
     end
 
     # analyse jenkins report

@@ -39,9 +39,9 @@ class PdkSync::JenkinsClient
              'cancel_on_build_start_timeout' => true,
              'completion_proc' => lambda { |build_number, cancelled| # rubocop:disable Style/Lambda
                if build_number
-                PdkSync::Logger.info "Wait over: build #{build_number} started"
+                 PdkSync::Logger.info "Wait over: build #{build_number} started"
                else
-                PdkSync::Logger.info "Wait over: build not started, build #{cancelled ? '' : 'NOT '} cancelled"
+                 PdkSync::Logger.info "Wait over: build not started, build #{cancelled ? '' : 'NOT '} cancelled"
                end
              } }
 
