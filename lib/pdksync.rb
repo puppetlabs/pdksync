@@ -131,13 +131,13 @@ module PdkSync
       end
       if steps.include?(:run_tests_locally)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        print 'Run tests '
+        PdkSync::Logger.info 'Run tests '
         module_type = Utils.module_type(output_path, module_name)
         Utils.run_tests_locally(output_path, module_type, module_args[:provision_type], module_name, module_args[:puppet_collection])
       end
       if steps.include?(:fetch_test_results_locally)
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        print 'Fetch test results for local run '
+        PdkSync::Logger.info 'Fetch test results for local run '
         module_type = Utils.module_type(output_path, module_name)
         table = Utils.fetch_test_results_locally(output_path, module_type, module_name, report_rows)
       end
@@ -217,7 +217,7 @@ module PdkSync
       if steps.include?(:run_tests_jenkins)
         jenkins_client = Utils.setup_jenkins_client
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        print 'run tests in jenkins, '
+        PdkSync::Logger.info 'Run tests in jenkins '
         module_type = Utils.module_type(output_path, module_name)
         if module_type == 'traditional'
           github_user = 'puppetlabs' if module_args[:test_framework].nil?
@@ -228,14 +228,12 @@ module PdkSync
             job_name = "forge-windows_#{module_name}_init-manual-parameters_adhoc" if ['puppetlabs-reboot', 'puppetlabs-iis', 'puppetlabs-powershell', 'sqlserver'].include?(module_name) # rubocop:disable Metrics/BlockNesting, Metrics/LineLength
             build_id = Utils.run_tests_jenkins(jenkins_client, module_name, module_args[:github_branch], github_user, job_name)
             next if build_id.nil? # rubocop:disable Metrics/BlockNesting
-            puts configuration['jenkins_server_url']
-            puts build_id
-            puts "New adhoc TEST EXECUTION has started. \nYou can check progress here: #{configuration['jenkins_server_url']}/job/#{job_name}/#{build_id}"
+            PdkSync::Logger.info "New adhoc TEST EXECUTION has started. \nYou can check progress here: #{configuration['jenkins_server_url']}/job/#{job_name}/#{build_id}"
             Utils.fetch_test_results_jenkins(build_id, job_name, module_name)
           end
         end
         if module_type == 'litmus'
-          puts '(Error) Module Type is Litmus please use the rake task run_tests_locally to run'.red
+          PdkSync::Logger.info '(Error) Module Type is Litmus please use the rake task run_tests_locally to run'.red
         end
       end
 
@@ -244,14 +242,14 @@ module PdkSync
         print 'Fetch test results from jenkins, '
         module_type = Utils.module_type(output_path, module_name)
         if module_type == 'litmus'
-          puts '(Error) Module Type is Litmus please use the rake task run_tests to run'.red
+          PdkSync::Logger.info '(Error) Module Type is Litmus please use the rake task run_tests_locally to run'.red
           next
         end
 
         module_name = "puppetlabs-#{module_name}" if %w[cisco_ios device_manager].include?(module_name)
         File.open("results_#{module_name}.out", 'r') do |f|
           f.each_line do |line|
-            puts line
+            PdkSync::Logger.info line
             if line.include?('BUILD_ID')
               build_id = line.split('=')[1].strip
             elsif line.include?('MODULE_NAME')

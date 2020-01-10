@@ -532,7 +532,6 @@ module PdkSync
                         'traditional'
                       end
       end
-      puts module_type
       module_type
     end
 
@@ -779,7 +778,7 @@ module PdkSync
 
     # jenkins report
     def self.fetch_test_results_jenkins(build_id, job_name, module_name)
-      puts 'Fetch results from jenkins'
+      PdkSync::Logger.info 'Fetch results from jenkins'
       # def self.jenkins_report_analisation(github_repo, build_id)
       adhoc_urls = []
       # get adhoc jobs
@@ -810,7 +809,7 @@ module PdkSync
       # analyse each build result - get status, execution time, logs_link
       @data = "MODULE_NAME=#{module_name}\nBUILD_ID=#{build_id}\nINITIAL_job=#{configuration['jenkins_server_url']}/job/#{job_name}/#{build_id}\n\n"
       write_to_file("results_#{module_name}.out", @data)
-      puts "Analyse test execution report \n"
+      PdkSync::Logger.info "Analyse test execution report \n"
       adhoc_urls.each do |url|
         # next if skipped in build name
         current_build_data = JSON.parse(Faraday.get("#{url}/api/json").body.to_s)
@@ -827,8 +826,8 @@ module PdkSync
       end
 
       table = Terminal::Table.new title: "Module Test Results for: #{module_name}\nCheck results in #{Dir.pwd}/results_#{module_name}.out ", headings: %w[Status Result Execution_Time], rows: report_rows
-      puts "SUCCESSFUL test results!\n".green unless @failed || @in_progress
-      puts table
+      PdkSync::Logger.info "SUCCESSFUL test results!\n".green unless @failed || @in_progress
+      PdkSync::Logger.info table
     end
 
     # for each build from adhoc jobs, get data
@@ -866,9 +865,9 @@ module PdkSync
       @data = "\nFAILURE. Fix the failures and rerun tests!\n" if @failed
       @data = "\nIN PROGRESS. Please check test report after the execution is done!\n" if @in_progress
       write_to_file("results_#{module_name}.out", @data) if @failed || @in_progress
-      puts 'Failed status! Fix errors and rerun.'.red if @failed
-      puts 'Aborted status! Fix errors and rerun.'.red if @aborted
-      puts 'Tests are still running! You can fetch the results later by using this task: fetch_test_results_jenkins'.blue if @in_progress
+      PdkSync::Logger.info 'Failed status! Fix errors and rerun.'.red if @failed
+      PdkSync::Logger.info 'Aborted status! Fix errors and rerun.'.red if @aborted
+      PdkSync::Logger.info 'Tests are still running! You can fetch the results later by using this task: fetch_test_results_jenkins'.blue if @in_progress
       returned_data
     end
 
