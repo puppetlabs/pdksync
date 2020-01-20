@@ -32,6 +32,10 @@ module PdkSync
       pdk_templates_prefix: nil,
       pdk_templates_ref: PDK::VERSION,
       pdk_templates_url: 'https://github.com/puppetlabs/pdk-templates.git',
+      jenkins_platform: :jenkins,
+      jenkins_base_uri: 'https://jenkins.io',
+      jenkins_api_endpoint: '',
+      jenkins_server_url: '',
       module_is_authoritive: true
     }.freeze
 
@@ -52,6 +56,14 @@ module PdkSync
         gitlab_api_endpoint: gitlab_api_endpoint || api_endpoint,
         api_endpoint: api_endpoint
 
+      }
+    end
+
+    def jenkins_platform_access_settings
+      @jenkins_platform_access_settings ||= {
+        jenkins_username: ENV['JENKINS_USERNAME'].freeze,
+        jenkins_password: ENV['JENKINS_PASSWORD'].freeze,
+        jenkins_api_endpoint: ''
       }
     end
 

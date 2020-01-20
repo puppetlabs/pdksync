@@ -354,6 +354,24 @@ module PdkSync
     end
 
     # @summary
+    #   This method when called will create and return an octokit client with access to jenkins.
+    # @return [PdkSync::JenkinsClient] client
+    #   The Git platform client that has been created.
+    def self.setup_jenkins_client(jenkins_server_url)
+      require 'pdksync/jenkinsclient'
+      if configuration.jenkins_platform_access_settings[:jenkins_username].nil?
+        raise ArgumentError, "Jenkins access token for #{configuration.jenkins_platform.capitalize} not set"\
+            " - use 'export #{configuration.jenkins_platform.upcase}_USERNAME=\"<your username>\"' to set"
+      elsif configuration.jenkins_platform_access_settings[:jenkins_password].nil?
+        raise ArgumentError, "Jenkins access token for #{jenkins_platform.capitalize} not set"\
+        " - use 'export #{jenkins_platform.upcase}_PASSWORD=\"<your password>\"' to set"
+      end
+      PdkSync::JenkinsClient.new(jenkins_server_url, configuration.jenkins_platform_access_settings)
+    rescue StandardError => error
+      raise "Jenkins platform access not set up correctly: #{error}"
+    end
+
+    # @summary
     #   This method when called will access a file set by the global variable 'configuration.managed_modules' and retrieve the information within as an array.
     # @return [Array]
     #   An array of different module names.
@@ -515,7 +533,6 @@ module PdkSync
                         'traditional'
                       end
       end
-      puts module_type
       module_type
     end
 
@@ -725,6 +742,170 @@ module PdkSync
         found = true if gem_version_replacer == version
       end
       raise "Couldn't find version: #{gem_version_replacer} in your repository: #{gem_to_test}".red if found == false
+    end
+
+    # @summary
+    #   This method when called will create a pr on the given repository that will create a pr to merge the given commit into the master with the pdk version as an identifier.
+    # @param [PdkSync::GitPlatformClient] client
+    #   The Git platform client used to gain access to and manipulate the repository.
+    # @param [String] ouput_path
+    #   The location that the command is to be run from.
+    # @param [String] jenkins_client
+    #   Jenkins authentication.
+    # @param [String] repo_name
+    #   Module to run on Jenkins
+    # @param [String] current_branch
+    #   The branch against which the user needs to run the jenkin jobs
+    def self.run_tests_jenkins(jenkins_client, repo_name, current_branch, github_user, job_name)
+      if jenkins_client.nil? == false || repo_name.nil? == false || current_branch.nil? == false
+        pr = jenkins_client.create_adhoc_job(repo_name,
+                                             current_branch,
+                                             github_user,
+                                             job_name)
+        pr
+      end
+    rescue StandardError => error
+      puts "(FAILURE) Jenkins Job creation for #{repo_name} has failed. #{error}".red
+    end
+
+    # convert duration from ms to format h m s ms
+    def self.duration_hrs_and_mins(ms)
+      return '' unless ms
+      hours, ms   = ms.divmod(1000 * 60 * 60)
+      minutes, ms = ms.divmod(1000 * 60)
+      seconds, ms = ms.divmod(1000)
+      "#{hours}h #{minutes}m #{seconds}s #{ms}ms"
+    end
+
+    # return jenkins job urls
+    def self.adhoc_urls(job_name, jenkins_server_urls)
+      adhoc_urls = []
+      # get adhoc jobs
+      adhoc_urls.push("#{jenkins_server_urls}/job/#{job_name}")
+      adhoc_urls.each do |url|
+        conn = Faraday::Connection.new "#{url}/api/json"
+        res = conn.get
+        build_job_data = JSON.parse(res.body.to_s)
+        downstream_job = build_job_data['downstreamProjects']
+        break if downstream_job.empty?
+        downstream_job.each do |item|
+          next if item.nil?
+          adhoc_urls.push(item['url']) unless item['url'].nil? && item['url'].include?('skippable_adhoc')
+        end
+      end
+      adhoc_urls
+    end
+
+    # test_results_jenkins
+    def self.test_results_jenkins(jenkins_server_url, build_id, job_name, module_name)
+      PdkSync::Logger.info 'Fetch results from jenkins'
+      # remove duplicates and sort the list
+      adhoc_urls = adhoc_urls(job_name, jenkins_server_url).uniq.sort_by { |url| JSON.parse(Faraday.get("#{url}/api/json").body.to_s)['fullDisplayName'].scan(%r{[0-9]{2}\s}).first.to_i }
+      report_rows = []
+      @failed = false
+      @in_progress = false
+      @aborted = false
+
+      File.delete("results_#{module_name}.out") if File.exist?("results_#{module_name}.out")
+      # analyse each build result - get status, execution time, logs_link
+      @data = "MODULE_NAME=#{module_name}\nBUILD_ID=#{build_id}\nINITIAL_job=#{jenkins_server_url}/job/#{job_name}/#{build_id}\n\n"
+      write_to_file("results_#{module_name}.out", @data)
+      PdkSync::Logger.info "Analyse test execution report \n"
+      adhoc_urls.each do |url|
+        # next if skipped in build name
+        current_build_data = JSON.parse(Faraday.get("#{url}/api/json").body.to_s)
+        next if url.include?('skippable_adhoc') || current_build_data['color'] == 'notbuilt'
+        next if current_build_data['fullDisplayName'].downcase.include?('skipped')
+        returned_data = get_data_build(url, build_id, module_name) unless @failed || @in_progress
+        generate_report_table(report_rows, url, returned_data)
+      end
+
+      table = Terminal::Table.new title: "Module Test Results for: #{module_name}\nCheck results in #{Dir.pwd}/results_#{module_name}.out ", headings: %w[Status Result Execution_Time], rows: report_rows
+      PdkSync::Logger.info "SUCCESSFUL test results!\n".green unless @failed || @in_progress
+      PdkSync::Logger.info "\n#{table} \n"
+    end
+
+    # generate report table when running tests on jenkins
+    def self.generate_report_table(report_rows, url, data)
+      if @failed
+        report_rows << ['FAILED', url, data[1]] unless data.nil?
+      elsif @aborted
+        report_rows << ['ABORTED', url, data[1]] unless data.nil?
+      else
+        report_rows << [data[0], url, data[1]] unless data.nil?
+      end
+    end
+
+    # for each build from adhoc jobs, get data
+    # if multiple platforms under current url, get data for each platform
+    def self.get_data_build(url, build_id, module_name)
+      current_build_data = JSON.parse(Faraday.get("#{url}/api/json").body.to_s)
+      if current_build_data['activeConfigurations'].nil?
+        returned_data = analyse_jenkins_report(url, module_name, build_id)
+        if returned_data[0] == 'in progress'
+          @in_progress = true
+        elsif returned_data[0] == 'FAILURE'
+          @failed = true
+        elsif returned_data[0] == 'ABORTED'
+          @aborted = true
+        end
+      else
+        platforms_list = []
+        current_build_data['activeConfigurations'].each do |url_child|
+          next if url_child['color'] == 'notbuilt'
+          platforms_list.push(url_child['url'])
+        end
+
+        platforms_list.each do |platform_build|
+          returned_data = analyse_jenkins_report(platform_build, module_name, build_id)
+          if returned_data[0] == 'in progress'
+            @in_progress = true
+          elsif returned_data[0] == 'FAILURE'
+            @failed = true
+          elsif returned_data[0] == 'ABORTED'
+            @aborted = true
+          end
+        end
+      end
+
+      @data = "\nFAILURE. Fix the failures and rerun tests!\n" if @failed
+      @data = "\nIN PROGRESS. Please check test report after the execution is done!\n" if @in_progress
+      write_to_file("results_#{module_name}.out", @data) if @failed || @in_progress
+      PdkSync::Logger.info 'Failed status! Fix errors and rerun.'.red if @failed
+      PdkSync::Logger.info 'Aborted status! Fix errors and rerun.'.red if @aborted
+      PdkSync::Logger.info 'Tests are still running! You can fetch the results later by using this task: test_results_jenkins'.blue if @in_progress
+      returned_data
+    end
+
+    # write test report to file
+    def self.write_to_file(file, _data)
+      File.open(file, 'a') do |f|
+        f.write @data
+      end
+    end
+
+    # analyse jenkins report
+    def self.analyse_jenkins_report(url, module_name, build_id)
+      # builds don't have the same build_id. That's why just the init build will be identified by id, rest of them by lastBuild
+      last_build_job_data = JSON.parse(Faraday.get("#{url}/#{build_id}/api/json").body.to_s) if url.include?('init-manual-parameters_adhoc')
+      last_build_job_data = JSON.parse(Faraday.get("#{url}/lastBuild/api/json").body.to_s) unless url.include?('init-manual-parameters_adhoc')
+
+      # status = 'not_built' unless last_build_job_data
+      if last_build_job_data['result'].nil?
+        status = 'in progress'
+        execution_time = 'running'
+      else
+        status = last_build_job_data['result']
+        execution_time = duration_hrs_and_mins(last_build_job_data['duration'].to_i)
+      end
+
+      # execution_time = 0 unless last_build_job_data
+      logs_link = "#{url}/#{build_id}/" if url.include?('init-manual-parameters_adhoc')
+      logs_link = "#{url}lastBuild/" unless url.include?('init-manual-parameters_adhoc')
+      @data = "Job title =#{last_build_job_data['fullDisplayName']}\n logs_link = #{logs_link}\n status = #{status}\n"
+      return_data = [status, execution_time]
+      write_to_file("results_#{module_name}.out", @data)
+      return_data
     end
   end
 end

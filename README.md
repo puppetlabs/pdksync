@@ -144,17 +144,21 @@ The following rake tasks are available with pdksync:
   - `rake pdksync` PR title outputs as `pdksync - pdksync_heads/master-0-gabccfb1`
   - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
 - `pdksync:run_a_command[:command]` Run a command against modules eg rake 'pdksync:run_a_command[complex command here -f -gx]'
-- `pdksync:gem_file_update[[:gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]]` Run gem_file_update against modules 
-  - eg rake to update gem line `pdksync:gem_file_update['puppet_litmus', "gem 'puppet_litmus'\, git: 'https://github.com/test/puppet_litmus.git'\, branch: 'testbranch'"]'` 
-  - eg rake to update sha `pdksync:gem_file_update['puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', '20ee04ba1234e9e83eb2ffb5056e23d641c7a31']` 
+- `pdksync:gem_file_update[[:gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]]` Run gem_file_update against modules
+  - eg rake to update gem line `pdksync:gem_file_update['puppet_litmus', "gem 'puppet_litmus'\, git: 'https://github.com/test/puppet_litmus.git'\, branch: 'testbranch'"]'`
+  - eg rake to update sha `pdksync:gem_file_update['puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', '20ee04ba1234e9e83eb2ffb5056e23d641c7a31']`
   - eg rake to update version`pdksync:gem_file_update['puppet_litmus', '', '', '', "= 0.9.0", "<= 0.10.0", '', '']`
-  - eg rake to update branch `pdksync:gem_file_update['puppet_litmus', '', '', '', '', '', 'testbranch', 'testbranches']` 
+  - eg rake to update branch `pdksync:gem_file_update['puppet_litmus', '', '', '', '', '', 'testbranch', 'testbranches']`
 - `rake 'gem_testing[:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]'` Run complete Gem file testing (cloning, gemfileupdate, create commit, create PR)PR title outputs as `pdksync_gemtesting - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
-  - eg rake to perform gem file testing `gem_testing['MODULES-testing', 'puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', 'testsha']` 
-- `pdksync:run_tests_locally[:provision_type, :puppet_collection]` Run litmus modules locally 
+  - eg rake to perform gem file testing `gem_testing['MODULES-testing', 'puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', 'testsha']`
+- `pdksync:run_tests_locally[:provision_type, :puppet_collection]` Run litmus modules locally
   - eg rake 'pdksync:run_tests_locally["default"]'
-- `pdksync:fetch_test_results_locally[]` Fetch litmus modules local run results 
+- `pdksync:fetch_test_results_locally[]` Fetch litmus modules local run results
   - eg rake 'pdksync:fetch_test_results_locally[]'
+- `pdksync:run_tests_jenkins[:jenkins_server_url, :github_branch, :test_framework, :github_user]` Run traditional modules on jenkins. For now this rake task works just for test_framework: jenkins.
+  - eg rake 'pdksync:run_tests_jenkins[test_branch, '', test_user]'
+- `pdksync:test_results_jenkins[]` Fetch traditional modules jenkins run results
+  - eg rake 'pdksync:test_results_jenkins[jenkins_server_url]'
 
 ### Configuration
 
@@ -234,7 +238,7 @@ api_endpoint: 'https://gitlab.example.com/api/v4'
 
 ### Setting who has the authoritive
 It may be desirable to allow modules to dictate which version of the pdk-templates they should sync with.
-There are a few settings you can tune to allow for this kind of flexability.  These settings are in the pdksync.yml file.  All of these settings are optional and have sane defaults.  See `rake pdksync:show_config` for the settings that will be used. 
+There are a few settings you can tune to allow for this kind of flexability.  These settings are in the pdksync.yml file.  All of these settings are optional and have sane defaults.  See `rake pdksync:show_config` for the settings that will be used.
 
 - pdk_templates_prefix: 'nwops-'  (example only, keep as empty string)
 - pdk_templates_ref: 1.12.0
@@ -253,12 +257,12 @@ The first setting is `module_is_authoritive`.  When this is set to true the temp
 
 ```
 
-When `module_is_authoritive` is set to false the pdk_templates_ref and pdk_templates_url will override what is found in the modules's metadata.json file.  This is very useful when you have to control pdk-template upgrades on modules. 
+When `module_is_authoritive` is set to false the pdk_templates_ref and pdk_templates_url will override what is found in the modules's metadata.json file.  This is very useful when you have to control pdk-template upgrades on modules.
 
 The other settings dictiate where the templates are located and which branch, tag or reference you want to use.
-`pdk_templates_ref: 'master'` and `pdk_templates_url: https://github.com/puppetlabs/pdk-templates.git`.  These settings will only be utilized if module_is_authoritive is set to false.  However, if you are performing a conversion via pdksync these settings will also be used since the metadata in the module being converted doesn't have pdk settings yet. 
+`pdk_templates_ref: 'master'` and `pdk_templates_url: https://github.com/puppetlabs/pdk-templates.git`.  These settings will only be utilized if module_is_authoritive is set to false.  However, if you are performing a conversion via pdksync these settings will also be used since the metadata in the module being converted doesn't have pdk settings yet.
 
-The last setting `pdk_templates_prefix` is a special use case that allows folks with internal forks of pdk-templates to keep branches of the pdk-template tags with additional custom changes. Setting this to an empty string disables this.  You will most likely need to resolve conflicts with this workflow, so it is not for everyone.  If you know of a better way please submmit a pull request. 
+The last setting `pdk_templates_prefix` is a special use case that allows folks with internal forks of pdk-templates to keep branches of the pdk-template tags with additional custom changes. Setting this to an empty string disables this.  You will most likely need to resolve conflicts with this workflow, so it is not for everyone.  If you know of a better way please submmit a pull request.
 
 This strategy works in conjunction with the pdk-template git tags and the workflow looks like:
   1. git fetch upstream (github.com/puppetlabs/pdk-templates)
@@ -282,16 +286,16 @@ Or you can set a different HOME environment variable that tells pdksync where to
 example: `HOME=ops`
 
 ### Logging output
-Pdksync uses a logger class to log all output.  You can control how the logger works via a few environment variables. 
+Pdksync uses a logger class to log all output.  You can control how the logger works via a few environment variables.
 
-To control the level set the `LOG_LEVEL` to one of 
+To control the level set the `LOG_LEVEL` to one of
 1. info
 2. debug
 3. fatal
 4. error
 5. warn
 
-To control where the logs are sent (defaults to stdout) set the `PDKSYNC_LOG_FILENAME` to a file path. 
+To control where the logs are sent (defaults to stdout) set the `PDKSYNC_LOG_FILENAME` to a file path.
 
 ### Workflow
 --------
