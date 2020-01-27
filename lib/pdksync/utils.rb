@@ -344,6 +344,13 @@ module PdkSync
     end
 
     # @summary
+    #   This method when called will create a directory identified by the set global variable 'configuration.pdksync_gem_dir', on the condition that it does not already exist.
+    def self.create_filespace_gem
+      FileUtils.mkdir_p configuration.pdksync_dir unless Dir.exist?(configuration.pdksync_gem_dir)
+      configuration.pdksync_gem_dir
+    end
+
+    # @summary
     #   This method when called will create and return an octokit client with access to the upstream git repositories.
     # @return [PdkSync::GitPlatformClient] client
     #   The Git platform client that has been created.
@@ -906,6 +913,74 @@ module PdkSync
       return_data = [status, execution_time]
       write_to_file("results_#{module_name}.out", @data)
       return_data
+    end
+
+    # @summary
+    #   Check the most recent tagged release on GitHub for the gem
+    # @param [String] gem_to_test
+    #   The gem to test
+    #   The current version of the gem
+    def self.check_gem_latest_version(gem_to_test)
+      remote_version = Octokit.tags("puppetlabs/#{gem_to_test}").first[:name]
+    rescue StandardError => error
+      puts "(WARNING) Unable to check latest gem version. #{error}".red
+      return remote_version
+    end
+
+    # @summary
+    #   Update the gem version by one
+    # @param [String] gem_version
+    #   The current version of the gem
+    #   The bump version by one of the gem
+    def self.update_gem_latest_version_by_one(gem_version)
+      current_version = Gem::Version.new gem_version
+      new_version = current_version.bump
+    rescue StandardError => error
+      puts "(WARNING) Unable to check latest gem version. #{error}".red
+      return new_version
+    end
+
+    # @summary
+    #   Update Gemfile with multigem
+    # @param [String] output_path
+    #   The location that the command is to be run from.
+    # @param [String] gem_name
+    #   The gem name
+    # @param [String] gemfury_token
+    #   The gemfury token
+    # @param [String] gemfury_user
+    #   The gemfury user
+    def self.update_gemfile_multigem(output_path, gem_name, gemfury_token, gemfury_user)
+      gem_file_name = 'Gemfile'
+      gem_source_line = "source \"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/\""
+      Dir.chdir(output_path) unless Dir.pwd == output_path
+
+      if gem_name.nil? == false && gemfury_token.nil? == false && gemfury_user.nil? == false # rubocop:disable Style/GuardClause
+        # Append the gem with new source location
+        gem_name = gem_name.chomp('"').reverse.chomp('"').reverse
+        File.open('/tmp/out.tmp', 'w') do |out_file|
+          File.foreach(gem_file_name) do |line|
+            if line =~ %r{#{gem_name}}
+              line = line.chomp
+              if line =~ %r{"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/"}
+                puts 'GemFile Already updated'.green
+                out_file.puts line.to_s
+              else
+                out_file.puts "#{line} :source => \"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/\""
+              end
+            else
+              out_file.puts line
+            end
+          end
+        end
+        FileUtils.mv('/tmp/out.tmp', gem_file_name)
+
+        # Insert the new source Gem location to Gemfile
+        file = File.open(gem_file_name)
+        contents = file.readlines.map(&:chomp)
+        contents.insert(2, gem_source_line) unless contents.include?(gem_source_line)
+        File.open(gem_file_name, 'w') { |f| f.write contents.join("\n") }
+      end
     end
   end
 end

@@ -38,7 +38,7 @@ namespace :pdksync do
     PdkSync.main(steps: [:pdk_validate])
   end
 
-  desc "Run a command against modules eg rake 'run_a_command[complex command here -f -gx]'"
+  desc "Run a command against modules eg rake 'run_a_command[complex command here -f -gx, 'backgroud']'"
   task :run_a_command, [:command, :option] do |_task, args|
     PdkSync.main(steps: [:run_a_command], args: args)
   end
@@ -63,6 +63,16 @@ namespace :pdksync do
     PdkSync.main(steps: [:run_tests_jenkins], args: args)
   end
 
+  desc 'Multi Gem Testing, multi_gem_testing[gem_name, version_file, build_gem, gem_path, gemfury_user_name]'
+  task :multi_gem_testing, [:gem_name, :version_file, :build_gem, :gem_path, :gemfury_user_name] do |_task, args|
+    PdkSync.main(steps: [:multi_gem_testing], args: args)
+  end
+
+  desc 'Multi Gem File Update, multigem_file_update[gem_name, gemfury_username]'
+  task :multigem_file_update, [:gem_name, :gemfury_username] do |_task, args|
+    PdkSync.main(steps: [:multigem_file_update], args: args)
+  end
+
   desc 'Display the current configuration of pdksync'
   task :show_config do
     config = PdkSync::Configuration.new
@@ -83,6 +93,11 @@ namespace :git do
   desc 'Clone managed modules'
   task :clone_managed_modules do
     PdkSync.main(steps: [:clone])
+  end
+
+  desc 'Clone managed gem'
+  task :clone_gem, [:gem_name] do |_task, args|
+    PdkSync.main(steps: [:clone_gem], args: args)
   end
 
   desc "Stage commits for modules, branchname and commit message eg rake 'git:create_commit[flippity, commit messagez]'"

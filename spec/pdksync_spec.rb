@@ -7,9 +7,12 @@ require 'octokit'
 describe PdkSync do
   before(:all) do
     @pdksync_dir = './modules_pdksync'
+    @pdksync_gem_dir = './gems_pdksync'
     module_name = 'puppetlabs-testing'
+    gem_name = 'puppet-module-gems'
     @module_names = ['puppetlabs-testing']
-    @output_path = "#{@pdksync_dir}/#{module_name}"
+    @output_path_module = "#{@pdksync_dir}/#{module_name}"
+    @output_path_gem = "#{@pdksync_gem_dir}/#{gem_name}"
     @folder = Dir.pwd
     # Make changes to modules_managed.yaml file
     text = File.read('managed_modules.yml')
@@ -28,6 +31,7 @@ describe PdkSync do
     allow(ENV).to receive(:[]).with('LOG_LEVEL').and_return(nil)
     allow(ENV).to receive(:[]).with('GIT_SSH').and_return(nil)
     allow(ENV).to receive(:[]).with('GITHUB_TOKEN').and_return('blah')
+    allow(ENV).to receive(:[]).with('GEMFURY_TOKEN').and_return('blah')
     allow(ENV).to receive(:[]).with('PDKSYNC_VERSION_CHECK').and_return(nil)
     allow(ENV).to receive(:[]).with('http_proxy').and_return(nil)
     allow(ENV).to receive(:[]).with('HTTP_PROXY').and_return(nil)
@@ -52,12 +56,12 @@ describe PdkSync do
       PdkSync::Utils.create_filespace
       PdkSync.main(steps: [:clone])
       expect(Dir.exist?(@pdksync_dir)).to be(true)
-      expect(Dir.exist?(@output_path)).to be(true)
+      expect(Dir.exist?(@output_path_module)).to be(true)
     end
 
     it 'runs pdk convert, and files have changed' do
       PdkSync.main(steps: [:pdk_convert])
-      File.exist?("#{@output_path}/convert_report.txt")
+      File.exist?("#{@output_path_module}/convert_report.txt")
     end
 
     it 'raise when running a command with no argument' do
@@ -66,7 +70,7 @@ describe PdkSync do
 
     it 'runs a command "touch cat.meow"' do
       PdkSync.main(steps: [:run_a_command], args: { command: 'touch cat.meow' })
-      expect File.exist?("#{@output_path}/cat.meow")
+      expect File.exist?("#{@output_path_module}/cat.meow")
     end
 
     it 'raise when create_commit with no arguments' do
@@ -139,6 +143,31 @@ describe PdkSync do
                                                         gem_line: "gem 'puppet_litmus'\, git: 'https://github.com/puppetlabs/puppet_litmus.git'" })
         expect(File.read('Gemfile')).to match(%r{gem 'puppet_litmus', git: 'https://github.com/puppetlabs/puppet_litmus.git'})
       end
+      it 'multigem updated in the module gemfile' do
+        PdkSync.main(steps: [:multi_gemfile_update], args: { gem_name: 'puppet-module', gemfury_username: 'tester' })
+        expect File.exist?("#{@output_path_module}/Gemfile")
+      end
+    end
+  end
+  context 'main method' do
+    let(:platform) { Object.new }
+
+    it 'runs clone gem sucessfully' do
+      allow(PdkSync::Utils).to receive(:setup_client).and_return(git_client)
+      FileUtils.rm_rf(@pdksync_gem_dir)
+      PdkSync::Utils.create_filespace_gem
+      PdkSync.main(steps: [:clone_gem], args: { gem_name: 'puppet-module-gems' })
+      expect(Dir.exist?(@pdksync_dir)).to be(true)
+      expect(Dir.exist?(@pdksync_gem_dir)).to be(true)
+      expect(Dir.exist?(@output_path_gem)).to be(true)
+    end
+    it 'raise when running a command with no argument' do
+      expect { PdkSync.main(steps: [:multi_gem_testing]) }.to raise_error(RuntimeError, %r{"multi_gem_testing" requires arguments to run version_file and build_gem})
+    end
+    it 'runs a command for updating the version and building the gem' do
+      allow(Octokit).to receive(:tags).with('puppetlabs/puppet-module-gems').and_return([{ name: '1' }])
+      PdkSync.main(steps: [:multi_gem_testing], args: { gem_name: 'puppet-module-gems', version_file: 'config/info.yml', build_gem: 'exe/build-gems.rb', gem_path: 'pkg', gem_username: 'tester' })
+      expect File.exist?("#{@output_path_gem}/pkg")
     end
   end
   after(:all) do

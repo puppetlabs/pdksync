@@ -21,6 +21,7 @@ module PdkSync
     DEFAULT_CONFIG = {
       namespace: 'puppetlabs',
       pdksync_dir: 'modules_pdksync',
+      pdksync_gem_dir: 'gems_pdksync',
       push_file_destination: 'origin',
       create_pr_against: 'master',
       managed_modules: 'managed_modules.yml',
@@ -65,6 +66,12 @@ module PdkSync
         jenkins_password: ENV['JENKINS_PASSWORD'].freeze,
         jenkins_api_endpoint: ''
       }
+    end
+
+    # @return [Hash] - returns the access settings for gemfury account
+    def gemfury_access_settings
+      valid_access_token_gem_fury?
+      @gemfury_access_token = access_token_gem_fury
     end
 
     # @return [String] return a rendered string for pdk to use the templates
@@ -113,6 +120,15 @@ module PdkSync
       true
     end
 
+    # @return [Boolean] true if the access token for the gemfury was supplied
+    def valid_access_token_gem_fury?
+      if access_token_gem_fury.nil?
+        raise 'Gemfury access token not set'\
+        " - use 'export GEMFURY_TOKEN=\"<your token>\"' to set"
+      end
+      true
+    end
+
     # @return [String] the platform specific access token
     def access_token
       case git_platform
@@ -121,6 +137,11 @@ module PdkSync
       when :gitlab
         ENV['GITLAB_TOKEN'].freeze
       end
+    end
+
+    # @return [String] the gem_fury access token
+    def access_token_gem_fury
+      ENV['GEMFURY_TOKEN'].freeze
     end
   end
 end
