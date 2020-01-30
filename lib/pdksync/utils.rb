@@ -924,7 +924,7 @@ module PdkSync
       remote_version = Octokit.tags("puppetlabs/#{gem_to_test}").first[:name]
     rescue StandardError => error
       puts "(WARNING) Unable to check latest gem version. #{error}".red
-      return remote_version
+      remote_version
     end
 
     # @summary
@@ -937,7 +937,7 @@ module PdkSync
       new_version = current_version.bump
     rescue StandardError => error
       puts "(WARNING) Unable to check latest gem version. #{error}".red
-      return new_version
+      new_version
     end
 
     # @summary

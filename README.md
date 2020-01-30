@@ -95,7 +95,7 @@ bundle install --path .bundle/gems/
 bundle exec rake git:clone_managed_modules
 ```
 
-pdksync tool is extended with the new feature to update the Gemfile. Puppet provides a lot of useful gems to access and manage their functionality between modules. This functionality will help user to perform gem testing prior to release. User is given new rake tasks to update SHA/Version/Branch/line in the Gemfile. Then the changes can be committed, PR can be created which will run the acceptance tests in the PR. If all the tests are executing successfully then the user can close the PRS and release the gem. Below given are the workflows for doing module gem testing with pdksync.
+pdksync tool is extended with the feature to update the Gemfile. Puppet provides a lot of useful gems to access and manage their functionality between modules. This functionality will help user to perform gem testing prior to release. User is given new rake tasks to update SHA/Version/Branch/line in the Gemfile. Then the changes can be committed, PR can be created which will run the acceptance tests in the PR. If all the tests are executing successfully then the user can close the PRS and release the gem. Below given are the workflows for doing module gem testing with pdksync.
 
 
 In Workflow 1 we can clone modules, update the gem file, create the commit, push the changes and create the PR using separate rake tasks.
@@ -127,7 +127,7 @@ bundle exec rake 'pdksync:fetch_test_results_locally[]'
 
 Once the verified gem is released we can use pdksync to update the the new version of gem released in the  .sync.yaml file.
 
-pdksync tool is extended with the new feature to perform multi gem testing.(`puppet-module-gems`)This functionality will identify the current version and bump the version by one.Then it will build and push the gems to gemfury account.Export the GEMFURY_TOKEN to use this rake task.
+pdksync tool is extended with the feature to perform multi gem testing (`puppet-module-gems`). This functionality will identify the current version and bump the version by one. Then it will build and push the gems to gemfury account. Export the GEMFURY_TOKEN to use this rake task.
 
  ```shell
    export GEMFURY_TOKEN=<access_token>
@@ -149,7 +149,7 @@ bundle exec rake git:clone_gem
 ```
 Below given are the workflows for doing multi gem testing with pdksync.
 
-In this workflow we can clone gems, update the version, build the gem, push the changes to gemfury and update the gem file of the required modules with the latest gem updated in the fury.Then we can create PR or run tests locally or run tests through jenkins to verify the module test results.
+In this workflow we can clone gems, update the version, build the gem, push the changes to gemfury and update the gem file of the required modules with the latest gem updated in the fury. Then we can create PR or run tests locally or run tests through jenkins to verify the module test results.
 
 ```shell
 bundle install --path .bundle/gems/
