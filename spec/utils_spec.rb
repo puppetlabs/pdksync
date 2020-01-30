@@ -89,6 +89,17 @@ describe 'PdkSync::Utils' do
     expect(PdkSync::Utils.check_pdk_version).to be true
   end
 
+  it '#self.check_gem_latest_version' do
+    process = double
+    allow(process).to receive(:exitstatus).and_return(true)
+    allow(Octokit).to receive(:tags).with('puppetlabs/puppet_module_gems').and_return([{ name: '0.4.0' }])
+    expect(PdkSync::Utils.check_gem_latest_version('puppet_module_gems')).to eq '0.4.0'
+  end
+
+  it '#self.update_gem_latest_version_by_one' do
+    expect(PdkSync::Utils.update_gem_latest_version_by_one('0.4.0')).to eq Gem::Version.new('0.5')
+  end
+
   it '#self.create_filespace' do
     expect(PdkSync::Utils.create_filespace).to eq('modules_pdksync')
   end
@@ -112,5 +123,9 @@ describe 'PdkSync::Utils' do
     allow_any_instance_of(PdkSync::Configuration).to receive(:managed_modules).and_return(File.join(fixtures_dir, 'fake_managed_modules.yaml'))
     allow(client).to receive(:repository?).with('puppetlabs/puppetlabs-testing').and_return(true)
     expect(PdkSync::Utils.validate_modules_exist(client, ['puppetlabs-testing'])).to be true
+  end
+
+  it '#self.create_filespace_gem' do
+    expect(PdkSync::Utils.create_filespace_gem).to eq('gems_pdksync')
   end
 end
