@@ -346,7 +346,7 @@ module PdkSync
     # @summary
     #   This method when called will create a directory identified by the set global variable 'configuration.pdksync_gem_dir', on the condition that it does not already exist.
     def self.create_filespace_gem
-      FileUtils.mkdir_p configuration.pdksync_dir unless Dir.exist?(configuration.pdksync_gem_dir)
+      FileUtils.mkdir_p configuration.pdksync_gem_dir unless Dir.exist?(configuration.pdksync_gem_dir)
       configuration.pdksync_gem_dir
     end
 
@@ -958,28 +958,34 @@ module PdkSync
       if gem_name.nil? == false && gemfury_token.nil? == false && gemfury_user.nil? == false # rubocop:disable Style/GuardClause
         # Append the gem with new source location
         gem_name = gem_name.chomp('"').reverse.chomp('"').reverse
-        File.open('/tmp/out.tmp', 'w') do |out_file|
-          File.foreach(gem_file_name) do |line|
-            if line =~ %r{#{gem_name}}
-              line = line.chomp
-              if line =~ %r{"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/"}
-                puts 'GemFile Already updated'.green
-                out_file.puts line.to_s
+        begin
+          File.open('/tmp/out.tmp', 'w') do |out_file|
+            File.foreach(gem_file_name) do |line|
+              if line =~ %r{#{gem_name}}
+                line = line.chomp
+                if line =~ %r{"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/"}
+                  puts 'GemFile Already updated'.green
+                  out_file.puts line.to_s
+                else
+                  out_file.puts "#{line} :source => \"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/\""
+                end
               else
-                out_file.puts "#{line} :source => \"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/\""
+                out_file.puts line
               end
-            else
-              out_file.puts line
             end
           end
-        end
-        FileUtils.mv('/tmp/out.tmp', gem_file_name)
+          FileUtils.mv('/tmp/out.tmp', gem_file_name)
 
-        # Insert the new source Gem location to Gemfile
-        file = File.open(gem_file_name)
-        contents = file.readlines.map(&:chomp)
-        contents.insert(2, gem_source_line) unless contents.include?(gem_source_line)
-        File.open(gem_file_name, 'w') { |f| f.write contents.join("\n") }
+          # Insert the new source Gem location to Gemfile
+          file = File.open(gem_file_name)
+          contents = file.readlines.map(&:chomp)
+          contents.insert(2, gem_source_line) unless contents.include?(gem_source_line)
+          File.open(gem_file_name, 'w') { |f| f.write contents.join("\n") }
+        rescue Errno::ENOENT => e
+          raise "Couldn't find file: #{gem_file_name} #{e} in your repository: #{gem_file_name}".red
+        rescue Errno::EACCES => e
+          raise "Does not have required permissions to the #{gem_file_name} #{e} in your repository: #{gem_file_name}".red
+        end
       end
     end
   end

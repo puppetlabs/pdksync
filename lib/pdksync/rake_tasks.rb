@@ -38,7 +38,7 @@ namespace :pdksync do
     PdkSync.main(steps: [:pdk_validate])
   end
 
-  desc "Run a command against modules eg rake 'run_a_command[complex command here -f -gx, 'backgroud']'"
+  desc "Run a command against modules eg rake 'run_a_command[complex command here -f -gx, 'background']'"
   task :run_a_command, [:command, :option] do |_task, args|
     PdkSync.main(steps: [:run_a_command], args: args)
   end
