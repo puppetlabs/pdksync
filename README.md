@@ -133,19 +133,12 @@ pdksync tool is extended with the feature to perform multi gem testing (`puppet-
    export GEMFURY_TOKEN=<access_token>
    ```
 
-Update the gem in the below file
-managed_gems.yml:
-```yaml
----
-- gemrepo
-```
-
 Run the following commands to check that everything is working as expected:
 
 ```shell
 bundle install --path .bundle/gems/
 bundle exec rake -T
-bundle exec rake git:clone_gem
+bundle exec rake 'git:clone_gem['gem_name']'
 ```
 Below given are the workflows for doing multi gem testing with pdksync.
 
@@ -153,7 +146,7 @@ In this workflow we can clone gems, update the version, build the gem, push the 
 
 ```shell
 bundle install --path .bundle/gems/
-bundle exec rake git:clone_gem
+bundle exec rake 'git:clone_gem[]'
 bundle exec rake 'pdksync:multi_gem_testing[]'
 bundle exec rake 'pdksync:multigem_file_update[]'
 ```
