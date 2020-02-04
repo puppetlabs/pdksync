@@ -30,6 +30,7 @@ describe PdkSync do
     allow(ENV).to receive(:[]).with('PDKSYNC_LOG_FILENAME').and_return(nil)
     allow(ENV).to receive(:[]).with('LOG_LEVEL').and_return(nil)
     allow(ENV).to receive(:[]).with('GIT_SSH').and_return(nil)
+    allow(ENV).to receive(:[]).with('GIT_PATH').and_return(nil)
     allow(ENV).to receive(:[]).with('GITHUB_TOKEN').and_return('blah')
     allow(ENV).to receive(:[]).with('GEMFURY_TOKEN').and_return('blah')
     allow(ENV).to receive(:[]).with('PDKSYNC_VERSION_CHECK').and_return(nil)
