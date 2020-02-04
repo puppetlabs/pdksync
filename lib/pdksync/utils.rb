@@ -967,7 +967,7 @@ module PdkSync
                   puts 'GemFile Already updated'.green
                   out_file.puts line.to_s
                 else
-                  out_file.puts "#{line} :source => \"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/\""
+                  out_file.puts "#{line} , :source => \"https://#{gemfury_token}@gem.fury.io/#{gemfury_user}/\""
                 end
               else
                 out_file.puts line
