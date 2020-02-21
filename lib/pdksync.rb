@@ -148,7 +148,6 @@ module PdkSync
         Dir.chdir("#{output_path}/#{gem_args[:gem_path]}") unless Dir.pwd == output_path
         gemfury_token = Utils.configuration.gemfury_access_settings
         Dir.glob('*.gem') do |filename|
-          next if @gemfury_token.nil?
           PdkSync::Logger.info filename
           Dir.chdir(main_path) unless Dir.pwd == main_path
           exit_status = Utils.run_command("#{output_path}/#{gem_args[:gem_path]}", "curl -F package=@#{filename} https://" + gemfury_token + "@push.fury.io/#{gem_args[:gemfury_username]}/", nil)
