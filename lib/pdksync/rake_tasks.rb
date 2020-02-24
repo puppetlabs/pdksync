@@ -63,8 +63,8 @@ namespace :pdksync do
     PdkSync.main(steps: [:run_tests_jenkins], args: args)
   end
 
-  desc 'Multi Gem Testing, multi_gem_testing[gem_name, version_file, build_gem, gem_path, gemfury_user_name]'
-  task :multi_gem_testing, [:gem_name, :version_file, :build_gem, :gem_path, :gemfury_user_name] do |_task, args|
+  desc 'Multi Gem Testing, multi_gem_testing[gem_name, version_file, build_gem, gem_path, gemfury_username]'
+  task :multi_gem_testing, [:gem_name, :version_file, :build_gem, :gem_path, :gemfury_username] do |_task, args|
     PdkSync.main(steps: [:multi_gem_testing], args: args)
   end
 

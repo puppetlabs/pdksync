@@ -133,10 +133,12 @@ module PdkSync
         new_gem_version = Utils.update_gem_latest_version_by_one(current_gem_version)
         PdkSync::Logger.info new_gem_version
         Dir.chdir(main_path) unless Dir.pwd == main_path
-        exit_status = Utils.run_command(output_path, "sed s/current_gem_version/new_gem_version/g #{gem_args[:version_file]} >> test.yml", nil)
+        exit_status = Utils.run_command(output_path, "sed s/#{current_gem_version}/#{new_gem_version}/g #{gem_args[:version_file]} >> test.yml", nil)
         PdkSync::Logger.info 'Updated the version'
         Dir.chdir(main_path) unless Dir.pwd == main_path
         exit_status = Utils.run_command(output_path, "cp test.yml #{gem_args[:version_file]}", nil)
+        Dir.chdir(main_path) unless Dir.pwd == main_path
+        exit_status = Utils.run_command(output_path, 'rm -rf test.yml', nil)
         PdkSync::Logger.info 'bundle install'
         Dir.chdir(main_path) unless Dir.pwd == main_path
         exit_status = Utils.run_command(output_path, 'bundle install', nil)

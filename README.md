@@ -184,7 +184,7 @@ The following rake tasks are available with pdksync:
 - `pdksync:test_results_jenkins[]` Fetch traditional modules jenkins run results
   - eg rake 'pdksync:test_results_jenkins[jenkins_server_url]'
 - `git:clone_gem[:gem_name]` Clone gem.
-- `pdksync:multi_gem_testing[:gem_name, :version_file, :build_gem, :gem_path, :gemfury_user_name]` Build and Push new gems built to the gemfury account for testing eg rake 'pdksync:multi_gem_testing[]'
+- `pdksync:multi_gem_testing[:gem_name, :version_file, :build_gem, :gem_path, :gemfury_username]` Build and Push new gems built to the gemfury account for testing eg rake 'pdksync:multi_gem_testing[]'
 - `pdksync:multigem_file_update[:gem_name, :gemfury_username]` Update Gemfile of the modules with the new gem should be pushed to Gemfury.'
 
 ### Configuration
