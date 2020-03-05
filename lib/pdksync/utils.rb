@@ -684,12 +684,12 @@ module PdkSync
         git_repo.each do |item|
           i += 1
           if item =~ %r{((git@|http(s)?:\/\/)([\w\.@]+)(\/|:))([\w,\-,\_]+)\/([\w,\-,\_]+)(.git){0,1}((\/){0,1})}
-            git_repo = item.split('git:')[1]
+            git_repo = item.split('git:')[1].strip.delete("'")
             break
           elsif git_repo.size == i
             # git_repo = "https://github.com/puppetlabs#{gem_to_test}"
             sep = configuration.git_base_uri.start_with?('git@') ? ':' : '/'
-            git_repo = "#{configuration.git_base_uri}#{sep}#{namespace}/#{gem_to_test}"
+            git_repo = "#{configuration.git_base_uri}#{sep}#{configuration.namespace}/#{gem_to_test}"
           end
         end
         print 'delete module directory, '
