@@ -17,6 +17,16 @@ module PdkSync
       @configuration ||= PdkSync::Configuration.new
     end
 
+    def self.on_windows?
+      # Ruby only sets File::ALT_SEPARATOR on Windows and the Ruby standard
+      # library uses that to test what platform it's on.
+      !!File::ALT_SEPARATOR # rubocop:disable Style/DoubleNegation
+    end
+
+    def self.temp_file_path
+      @temp_file_path ||= on_windows? ? "#{ENV['TEMP']}\\out.tmp" : '/tmp/out.tmp'
+    end
+
     # @summary
     #   This method when called will delete any preexisting branch on the given repository that matches the given name.
     # @param [PdkSync::GitPlatformClient] client
@@ -478,12 +488,12 @@ module PdkSync
 
         # Delete the gem in the Gemfile to add the new line
         gem_test = gem_to_test.chomp('"').reverse.chomp('"').reverse
-        File.open('/tmp/out.tmp', 'w') do |out_file|
+        File.open(temp_file_path, 'w') do |out_file|
           File.foreach(gem_file_name) do |line|
             out_file.puts line unless line =~ %r{#{gem_test}}
           end
         end
-        FileUtils.mv('/tmp/out.tmp', gem_file_name)
+        FileUtils.mv(temp_file_path, gem_file_name)
 
         # Insert the new Gem to test
         file = File.open(gem_file_name)
@@ -959,7 +969,7 @@ module PdkSync
         # Append the gem with new source location
         gem_name = gem_name.chomp('"').reverse.chomp('"').reverse
         begin
-          File.open('/tmp/out.tmp', 'w') do |out_file|
+          File.open(temp_file_path, 'w') do |out_file|
             File.foreach(gem_file_name) do |line|
               if line =~ %r{#{gem_name}}
                 line = line.chomp
@@ -974,7 +984,7 @@ module PdkSync
               end
             end
           end
-          FileUtils.mv('/tmp/out.tmp', gem_file_name)
+          FileUtils.mv(temp_file_path, gem_file_name)
 
           # Insert the new source Gem location to Gemfile
           file = File.open(gem_file_name)
