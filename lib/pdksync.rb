@@ -15,7 +15,6 @@ require 'octokit'
 require 'pdk/util/template_uri'
 require 'pdksync/logger'
 require 'pdksync/utils'
-require 'pry'
 require 'terminal-table'
 
 # @summary
