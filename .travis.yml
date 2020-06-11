@@ -11,13 +11,17 @@ before_install:
 - bundle -v
 script:
 - bundle exec $CHECK
-rvm:
-- 2.4.1
 matrix:
   fast_finish: true
   include:
   - env: CHECK='rubocop'
+    rvm: 2.5
   - env: CHECK='rspec spec'
+    rvm: 2.4
+  - env: CHECK='rspec spec'
+    rvm: 2.5
+  - env: CHECK='rspec spec'
+    rvm: 2.7
 branches:
   only:
   - master
