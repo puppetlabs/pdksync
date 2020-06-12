@@ -692,7 +692,7 @@ module PdkSync
             git_repo = "#{configuration.git_base_uri}#{sep}#{configuration.namespace}/#{gem_to_test}"
           end
         end
-        print 'delete module directory, '
+        print 'clone module directory, '
         git_repo = run_command(configuration.pdksync_dir.to_s, "git clone #{git_repo}", nil)
       elsif gem_to_test
         git_repo = clone_directory(configuration.namespace, gem_to_test, output_path.to_s)
