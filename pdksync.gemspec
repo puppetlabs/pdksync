@@ -18,9 +18,12 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_development_dependency 'bundler'
+  spec.add_development_dependency 'codecov'
+  spec.add_development_dependency 'pry'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'rubocop', '~> 0.50.0'
-  spec.add_development_dependency 'pry'
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'simplecov-console'
   spec.add_runtime_dependency 'pdk', '>= 1.14.1'
   spec.add_runtime_dependency 'git', '~>1.3'
   spec.add_runtime_dependency 'rake'

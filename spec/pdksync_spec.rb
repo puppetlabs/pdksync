@@ -121,13 +121,15 @@ describe PdkSync do
 
     describe 'gem_file_update with valid values' do
       before(:all) do
-        # rubocop:disable LineLength
-        PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus', gem_line: "gem 'puppet_litmus'\, git: 'https://github.com/puppetlabs/puppet_litmus.git'\, branch: 'master'\, ref: '04da90638f5b5fd7f007123c8c0cc551c8cb3e54'\, '=0.1.0'" })
+        PdkSync.main(steps: [:gem_file_update], args: {
+                       gem_to_test: 'puppet_litmus',
+                       gem_line: "gem 'puppet_litmus'\, git: 'https://github.com/puppetlabs/puppet_litmus.git'\, branch: 'master'\, ref: '04da90638f5b5fd7f007123c8c0cc551c8cb3e54'\, '=0.1.0'"
+                     })
       end
       it 'gem_file_update with valid gem_branch_replacer' do
         PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus',
-                                                        gem_branch_finder: 'master', gem_branch_replacer: 'install_modules_with_puppetfile' })
-        expect(File.read('Gemfile')).to match(%r{install_modules_with_puppetfile})
+                                                        gem_branch_finder: 'master', gem_branch_replacer: 'master' })
+        expect(File.read('Gemfile')).to match(%r{master})
       end
       it 'gem_file_update runs, and contains the gem_sha given' do
         PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus',
