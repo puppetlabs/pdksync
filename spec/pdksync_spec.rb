@@ -126,8 +126,8 @@ describe PdkSync do
       end
       it 'gem_file_update with valid gem_branch_replacer' do
         PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus',
-                                                        gem_branch_finder: 'master', gem_branch_replacer: 'install_modules_with_puppetfile' })
-        expect(File.read('Gemfile')).to match(%r{install_modules_with_puppetfile})
+                                                        gem_branch_finder: 'master', gem_branch_replacer: 'master' })
+        expect(File.read('Gemfile')).to match(%r{master})
       end
       it 'gem_file_update runs, and contains the gem_sha given' do
         PdkSync.main(steps: [:gem_file_update], args: { gem_to_test: 'puppet_litmus',
