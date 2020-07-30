@@ -338,6 +338,15 @@ module PdkSync
           PdkSync::Logger.info 'Updated with multigem, '
         end
 
+        if steps.include?(:add_provision_list)
+          result = Utils.add_provision_list(output_path, module_args[:key], module_args[:provisioner], [module_args[:images], module_args.extras].flatten)
+          raise "#{output_path}/provision.yaml does not exist" unless result
+        end
+
+        if steps.include?(:generate_vmpooler_release_checks)
+          Utils.generate_vmpooler_release_checks(output_path, module_args[:puppet_version].to_i)
+        end
+
         PdkSync::Logger.info 'done'
       end
       table = Terminal::Table.new title: 'Module Test Results', headings: %w[Module Status Result From], rows: report_rows

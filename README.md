@@ -186,6 +186,67 @@ The following rake tasks are available with pdksync:
 - `git:clone_gem[:gem_name]` Clone gem.
 - `pdksync:multi_gem_testing[:gem_name, :version_file, :build_gem, :gem_path, :gemfury_username]` Build and Push new gems built to the gemfury account for testing eg rake 'pdksync:multi_gem_testing[]'
 - `pdksync:multigem_file_update[:gem_name, :gemfury_username]` Update Gemfile of the modules with the new gem should be pushed to Gemfury.'
+- `pdksync:add_provision_list[:key, :provisioner, :images]` Add a provision list key to provision.yaml.
+- `pdksync:generate_vmpooler_release_checks[:puppet_version]` Generates release checks in provision.yaml based on module compatible platforms and puppet version
+
+### Adding/Updating `provision.yaml`
+To add/update an entry in the `provision.yaml`, run the following task:
+```ruby
+bundle exec rake pdksync:add_provision_list[:key, :provisioner, :images]
+```
+The `:images` parameter is a variable in length - everything from the 3rd arg onwards, separated by commas, will be treated as an image.
+For example:
+```ruby
+bundle exec rake "pdksync:add_provision_list[release_checks_latest_os, abs, 'redhat-8-x86_64', 'centos-8-x86_64', 'debian-10-x86_64', 'sles-15-x86_64', 'ubuntu-2004-x86_64', 'win-2019-core-x86_64', 'win-10-pro-x86_64']"
+```
+This will create a new entry (or update an existing entry, if it already exists) in the `provision.yaml`:
+```yaml
+release_checks_latest_os:
+    provisioner: abs
+    images:
+    - redhat-8-x86_64
+    - centos-8-x86_64
+    - debian-10-x86_64
+    - sles-15-x86_64
+    - ubuntu-2004-x86_64
+    - win-2019-core-x86_64
+    - win-10-pro-x86_64
+```
+
+### Generating Release Checks Config in `provision.yaml` for Given Puppet Version
+To generate a release checks configuration that will use VMPooler (via the ABS provisioner) in the `provision.yaml` that satisfies both:
+- The supported platforms of the given Puppet version
+- The supported platforms of the module
+
+...you can run:
+```ruby
+pdksync:generate_vmpooler_release_checks[:puppet_version]
+```
+
+#### Step 1: Create Puppet version supported platform config entry
+Ensure that the there is an entry in the `lib/pdksync/conf/puppet_abs_support_platforms.yaml` config for the Puppet version you wish to add an entry for:
+```yaml
+7:
+  centos: ['7', '8']
+  debian: ['9', '10']
+  oracle: ['7']
+  redhat: ['7', '8']
+  sles: ['12', '15']
+  scientific: ['7']
+  ubuntu: ['18.04', '20.04']
+  win: ['2012r2', '2016-core', '2019-core', '10']
+```
+**NOTE: Please be aware of the requirements regarding the platform naming and version syntax. Instructions and an explanation are within the `puppet_support_platforms.yaml`**
+
+The platforms specified above do not necessarily have to reflect ALL the platforms that Puppet version supports - this is the configuration we wish to test against.
+If you do not wish to test against `solaris` then simply omit it from the above config.
+
+#### Step 2: Add the config entries to `provision.yaml`
+Say you want to add a configuration key for Puppet 7 (_and you have ensured the `puppet_support_platforms.yaml` is correct as defined in the step above_), you would run:
+```ruby
+bundle exec rake 'pdksync:generate_vmpooler_release_checks[7]'
+```
+This will create a `release_checks_7` entry in the `provision.yaml` of the managed modules cloned down that contains a list of appropriate number of platforms to satisfy the conditions outlined above.
 
 ### Configuration
 

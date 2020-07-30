@@ -998,5 +998,111 @@ module PdkSync
         end
       end
     end
+
+    # @summary
+    #   Adds an entry to the 'provision.yaml' of a module with the values given
+    # @param [String] module_path
+    #   Path to the module root dir
+    # @param [String] key
+    #   Key name in 'provision.yaml' (e.g. "release_checks_7)
+    # @param [String] provisioner
+    #   The value for the provisioner key (e.g. "abs")
+    # @param [Array] images
+    #   The list of images for the images key (e.g. ['ubuntu-1804-x86_64, ubuntu-2004-x86_64', 'centos-8-x86_64'])
+    # @return [Boolean]
+    #   True if entry was successfully added to 'provision.yaml'
+    #   False if 'provision.yaml' does not exist or is an empty file
+    def self.add_provision_list(module_path, key, provisioner, images)
+      path_to_provision_yaml = "#{module_path}/provision.yaml"
+      return false unless File.exist? path_to_provision_yaml
+      PdkSync::Logger.info "Updating #{path_to_provision_yaml}"
+      provision_yaml = YAML.safe_load(File.read(path_to_provision_yaml))
+      return false if provision_yaml.nil?
+      provision_yaml[key] = {}
+      provision_yaml[key]['provisioner'] = provisioner
+      provision_yaml[key]['images'] = images
+      File.write(path_to_provision_yaml, YAML.dump(provision_yaml))
+    end
+
+    # @summary
+    #   Query the 'metadata.json' in the given module path and return the compatible platforms
+    # @param [String] module_path
+    #   Path to the module root dir
+    # @return [Hash]
+    #   The compatible OSs defined in the 'operatingsystem_support' key of the 'metadata.json'
+    def self.module_supported_platforms(module_path)
+      PdkSync::Logger.info 'Determining supported platforms from metadata.json'
+      os_support_key = 'operatingsystem_support'
+      metadata_json = "#{module_path}/metadata.json"
+      raise 'Could not locate metadata.json' unless File.exist? metadata_json
+      module_metadata = JSON.parse(File.read(metadata_json))
+      raise "Could not locate '#{os_support_key}' key from #{metadata_json}" unless module_metadata.key? os_support_key
+      module_metadata[os_support_key]
+    end
+
+    # @summary
+    #   Take a Windows version extracted from the module's 'metadata.json' and normalize it to the version conventions
+    #   that VMPooler uses
+    # @param ver
+    #   Version from 'metadata.json'
+    # @return [String]
+    #   Normalised version that is used by VMPooler templates
+    def self.normalize_win_version(ver)
+      PdkSync::Logger.debug "Normalising Windows version from metadata.json: #{ver}"
+      win_ver_matcher = ver.match(%r{(?:Server\s)?(?<ver>\d+)(?:\s(?<rel>R\d))?})
+      raise "Unable to determine Windows version from metadata.json: #{ver}" unless win_ver_matcher
+      normalized_version = win_ver_matcher['ver']
+      normalized_version = '10-pro' if normalized_version == '10'
+      normalized_version += win_ver_matcher['rel'].downcase if win_ver_matcher['rel']
+      normalized_version
+    end
+
+    # @summary
+    #   Generate an entry in the 'provision.yaml' for running release checks against the platforms that the given
+    #   Puppet version. Will compare the supported platforms for the given Puppet version against the compatible
+    #   platforms defined in the module's 'metadata.json' and generate a list of platforms that are the same.
+    # @param [String] module_path
+    #   Path to the module root dir
+    # @param [String] puppet_version
+    #   Puppet version we are generating platform checks for
+    def self.generate_vmpooler_release_checks(module_path, puppet_version)
+      PdkSync::Logger.info "Generating release checks provision.yaml key for Puppet version #{puppet_version}"
+      # This YAML is where the compatible platforms for each Puppet version is stored
+      agent_test_platforms_yaml_file_path = 'lib/pdksync/conf/puppet_abs_supported_platforms.yaml'
+      agent_test_platforms = YAML.safe_load(File.read(agent_test_platforms_yaml_file_path))
+      raise "No configuration for Puppet #{puppet_version} found in #{agent_test_platforms_yaml_file_path}" unless agent_test_platforms.key? puppet_version
+      agent_test_platforms = agent_test_platforms[puppet_version]
+      module_supported_platforms = module_supported_platforms(module_path)
+      images = []
+      PdkSync::Logger.debug 'Processing compatible platforms from metadata.json'
+      module_supported_platforms.each do |os_vers|
+        os = os_vers['operatingsystem'].downcase
+        # 'Windows' and 'OracleLinux' are the definitions in 'metadata.json', however the VMPooler images are 'win' and 'oracle'
+        os = 'win' if os == 'windows'
+        os = 'oracle' if os == 'oraclelinux'
+        vers = os_vers['operatingsystemrelease']
+        if agent_test_platforms.keys.select { |k| k.start_with? os }.empty?
+          PdkSync::Logger.warn "'#{os}' is a compatible platform but was not defined as test platform for Puppet #{puppet_version} in #{agent_test_platforms_yaml_file_path}"
+          next
+        end
+        vers.each do |ver|
+          PdkSync::Logger.debug "Checking '#{os} #{ver}'"
+          if os == 'win'
+            win_ver = normalize_win_version(ver)
+            PdkSync::Logger.debug "Normalised Windows version: #{win_ver}"
+            next unless agent_test_platforms['win'].include? win_ver
+            PdkSync::Logger.debug "'#{os} #{ver}' SUPPORTED by Puppet #{puppet_version}"
+            images << "win-#{win_ver}-x86_64"
+          else
+            next unless agent_test_platforms[os].include? ver
+            PdkSync::Logger.debug "'#{os} #{ver}' SUPPORTED by Puppet #{puppet_version}"
+            images << "#{os}-#{ver.gsub('.', '')}-x86_64"
+          end
+        end
+      end
+      images.uniq!
+      result = add_provision_list(module_path, "release_checks_#{puppet_version}", 'abs', images)
+      PdkSync::Logger.warn "#{module_path}/provision.yaml does not exist" unless result
+    end
   end
 end

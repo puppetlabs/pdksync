@@ -1,0 +1,41 @@
+# PUPPET VERSION PLATFORM COMPATIBILITY
+#
+# Define the Puppet version as a root key, then specify the OS platform(s) and versions(s) that this Puppet version is
+# compatible with AND that you wish to test on. If you wish to exclude a platform from testing, simply omit it.
+#
+# OS names and versions must conform to the VMPooler nomenclature and conventions.
+#
+# Running 'bundle exec rake 'pdksync:generate_vmpooler_release_checks[7]' will generate an entry in the 'provision.yaml'
+# for each managed module that contains a configuration that satisfies both:
+# - The module's compatible platforms
+# - The Puppet version's compatible platforms (in this example: '7')
+#
+# NOTE: arch will always be assumed to be 'x86_64'
+---
+5:
+  centos: ['5', '6', '7', '8']
+  debian: ['8', '9', '10']
+  oracle: ['5', '6', '7']
+  redhat: ['5', '6', '7', '8']
+  sles: ['12', '15']
+  scientific: ['6', '7']
+  ubuntu: ['14.04', '16.04', '18.04']
+  win: ['2008r2', '2012r2', '2016', '2019', '10-pro']
+6:
+  centos: ['5', '6', '7', '8']
+  debian: ['8', '9', '10']
+  oracle: ['5', '6', '7']
+  redhat: ['5', '6', '7', '8']
+  sles: ['12', '15']
+  scientific: ['6', '7']
+  ubuntu: ['14.04', '16.04', '18.04', '20.04']
+  win: ['2008r2', '2012r2', '2016', '2019', '10-pro']
+7:
+  centos: ['7', '8']
+  debian: ['9', '10']
+  oracle: ['7']
+  redhat: ['7', '8']
+  sles: ['12', '15']
+  scientific: ['7']
+  ubuntu: ['18.04', '20.04']
+  win: ['2012r2', '2016', '2019', '10-pro']
