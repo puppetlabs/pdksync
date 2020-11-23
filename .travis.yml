@@ -12,11 +12,11 @@ jobs:
   include:
     - env: CHECK='rubocop'
       rvm: 2.5
-    - env: CHECK='rspec spec'
+    - env: CHECK='rake spec'
       rvm: 2.4
-    - env: CHECK='rspec spec'
+    - env: CHECK='rake spec'
       rvm: 2.5
-    - env: CHECK='rspec spec'
+    - env: CHECK='rake spec'
       rvm: 2.7
 branches:
   only:
