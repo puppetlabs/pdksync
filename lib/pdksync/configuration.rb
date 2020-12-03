@@ -23,7 +23,7 @@ module PdkSync
       pdksync_dir: 'modules_pdksync',
       pdksync_gem_dir: 'gems_pdksync',
       push_file_destination: 'origin',
-      create_pr_against: 'master',
+      create_pr_against: 'main',
       managed_modules: 'managed_modules.yml',
       pdksync_label: 'maintenance',
       git_platform: :github,
