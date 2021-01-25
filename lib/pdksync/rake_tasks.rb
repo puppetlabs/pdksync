@@ -87,6 +87,16 @@ namespace :pdksync do
   task :test_results_jenkins, [:jenkins_server_url] do |_task, args|
     PdkSync.main(steps: [:test_results_jenkins], args: args)
   end
+
+  desc 'Add a provision list key to provision.yaml'
+  task :add_provision_list, [:key, :provisioner, :images] do |_task, args|
+    PdkSync.main(steps: [:add_provision_list], args: args)
+  end
+
+  desc 'Generates release checks in provision.yaml based on module compatible platforms and puppet version'
+  task :generate_vmpooler_release_checks, [:puppet_version] do |_task, args|
+    PdkSync.main(steps: [:generate_vmpooler_release_checks], args: args)
+  end
 end
 
 namespace :git do
