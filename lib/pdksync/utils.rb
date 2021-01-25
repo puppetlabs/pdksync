@@ -1096,7 +1096,7 @@ module PdkSync
           else
             next unless agent_test_platforms[os].include? ver
             PdkSync::Logger.debug "'#{os} #{ver}' SUPPORTED by Puppet #{puppet_version}"
-            images << "#{os}-#{ver.gsub('.', '')}-x86_64"
+            images << "#{os}-#{ver.delete('.')}-x86_64"
           end
         end
       end
