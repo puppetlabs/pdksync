@@ -37,7 +37,7 @@ describe 'PdkSync::Utils' do
 
   it '#self.create_commit' do
     File.write(File.join(@tmp_dir, 'README.md'), rand(32_332))
-    expect(PdkSync::Utils.create_commit(cloned_module, 'master', 'boom')).to match(%r{README})
+    expect(PdkSync::Utils.create_commit(cloned_module, 'main', 'boom')).to match(%r{README})
   end
 
   it '#self.run_command' do
@@ -49,14 +49,14 @@ describe 'PdkSync::Utils' do
   end
 
   it '#self.return_template_ref' do
-    expect(PdkSync::Utils.return_template_ref(metadata_file)).to match(%r{#{PDK::VERSION}})
+    expect(PdkSync::Utils.return_template_ref(metadata_file)).to match(%r{heads/main})
   end
 
   it '#self.module_templates_url' do
     allow(Octokit).to receive(:tags).with('puppetlabs/pdk').and_return([{ name: 'v1.14.1' }])
     url, version = PdkSync::Utils.module_templates_url(metadata_file).split('#')
     expect(url).to eq('https://github.com/puppetlabs/pdk-templates')
-    expect(version).to match(%r{\d\.\d\d\.\d})
+    expect(version).to match(%r{main})
   end
 
   it '#self.change_module_template_url' do
