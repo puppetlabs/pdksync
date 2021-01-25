@@ -20,7 +20,7 @@ jobs:
       rvm: 2.7
 branches:
   only:
-    - master
+    - main
     - "/^v\\d/"
     - release
 env:
