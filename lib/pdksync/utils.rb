@@ -1053,8 +1053,170 @@ module PdkSync
       raise "Unable to determine Windows version from metadata.json: #{ver}" unless win_ver_matcher
       normalized_version = win_ver_matcher['ver']
       normalized_version = '10-pro' if normalized_version == '10'
-      normalized_version += win_ver_matcher['rel'].downcase if win_ver_matcher['rel']
+      normalized_version += win_ver_matcher['rel'].upcase if win_ver_matcher['rel']
       normalized_version
+    end
+
+    # @summary
+    #   Normalize the given os name
+    # @param os
+    #   The OS name to normalize
+    # @return [String]
+    #   Normalized os name
+    def self.normalize_os(os)
+      case os
+      when %r{aix}i
+        'AIX'
+      when %r{cent}i
+        'CentOS'
+      when %r{darwin}i
+        'Darwin'
+      when %r{deb}i
+        'Debian'
+      when %r{fedora}i
+        'Fedora'
+      when %r{oracle}i
+        'OracleLinux'
+      when %r{osx}i
+        'OSX'
+      when %r{pan}i
+        'PAN-OS'
+      when %r{red}i
+        'RedHat'
+      when %r{sci}i
+        'Scientific'
+      when %r{suse|sles}i
+        'SLES'
+      when %r{sol}i
+        'Solaris'
+      when %r{ubuntu}i
+        'Ubuntu'
+      when %r{win}i
+        'Windows'
+      else
+        raise "Could not normalize OS value: #{os}"
+      end
+    end
+
+    # @summary
+    #   Get the metadata.json of the given module
+    # @param module_path
+    #   Path to the root dir of the module
+    # @return [JSON]
+    #   JSON of the metadata.json
+    def self.metadata_json(module_path)
+      metadata_json = "#{module_path}/metadata.json"
+      raise 'Could not locate metadata.json' unless File.exist? metadata_json
+      JSON.parse(File.read(metadata_json))
+    end
+
+    OPERATINGSYSTEM = 'operatingsystem'.freeze
+    OPERATINGSYSTEMRELEASE = 'operatingsystemrelease'.freeze
+    OPERATINGSYSTEM_SUPPORT = 'operatingsystem_support'.freeze
+
+    # @summary
+    #   Write the given metadata in JSON format to the given module root dir path
+    # @param module_path
+    #   Path to the root dir of the module
+    # @param metadata_json
+    #   Metadata in JSON format to write to the module root dir
+    def self.write_metadata_json(module_path, metadata_json)
+      File.open(File.join(module_path, 'metadata.json'), 'w') do |f|
+        f.write(JSON.pretty_generate(metadata_json) + "\n")
+      end
+    end
+
+    # @summary
+    #   Removes the OS version from the supported platforms
+    #   TODO: Remove entire OS entry when version is nil
+    #   TODO: Remove entire OS entry when versions is empty
+    # @param module_path
+    #   Path to the root dir of the module
+    # @param os_to_remove
+    #   OS we want to remove version from
+    # @param version_to_remove
+    #   Version from OS we want to remove
+    def self.remove_platform_from_metadata(module_path, os_to_remove, version_to_remove)
+      new_metadata_json = metadata_json(module_path)
+      new_metadata_json[OPERATINGSYSTEM_SUPPORT].each do |os_vers|
+        if (os = normalize_os(os_vers[OPERATINGSYSTEM]))
+          next unless os == os_to_remove
+          vers = os_vers[OPERATINGSYSTEMRELEASE]
+          next unless (ver_index = vers.find_index(version_to_remove))
+          PdkSync::Logger.info "Removing #{os} #{vers[ver_index]} from metadata.json"
+          vers.delete_at(ver_index)
+        else
+          PdkSync::Logger.info 'No entry in metadata.json to replace'
+          return true
+        end
+      end
+      write_metadata_json(module_path, new_metadata_json)
+    end
+
+    # @summary
+    #   Adds an OS version to the supported platforms. Creates a new OS entry if it does not exist
+    # @param module_path
+    #   Path to the root dir of the module
+    # @param os_to_add
+    #   OS we want to add
+    # @param version_to_add
+    #   Version we want to add
+    def self.add_platform_to_metadata(module_path, os_to_add, version_to_add)
+      os_to_add = normalize_os(os_to_add)
+      new_metadata_json = metadata_json(module_path)
+      updated_existing_entry = false
+      new_metadata_json[OPERATINGSYSTEM_SUPPORT].each do |os_vers|
+        next unless (os = normalize_os(os_vers[OPERATINGSYSTEM]))
+        next unless os == os_to_add
+        PdkSync::Logger.info "Adding #{os_to_add} version #{version_to_add} to existing entry"
+        os_vers[OPERATINGSYSTEMRELEASE] << version_to_add
+        os_vers[OPERATINGSYSTEMRELEASE].uniq!
+        os_vers[OPERATINGSYSTEMRELEASE].sort_by!(&:to_f)
+        updated_existing_entry = true
+        break
+      end
+      unless updated_existing_entry
+        PdkSync::Logger.info "Adding #{os_to_add} version #{version_to_add} to new entry"
+        supported_platform_entry = {}
+        supported_platform_entry[OPERATINGSYSTEM] = os_to_add
+        supported_platform_entry[OPERATINGSYSTEMRELEASE] = [version_to_add]
+        new_metadata_json[OPERATINGSYSTEM_SUPPORT] << supported_platform_entry
+      end
+      write_metadata_json(module_path, new_metadata_json)
+    end
+
+    NAME = 'name'.freeze
+    REQUIREMENTS = 'requirements'.freeze
+
+    # @summary
+    #   Updates the requirements parameter in the metadata.json. If the requirement or  a key within it doesn't exist,
+    #   it is created.
+    #   TODO: Ability to remove requirement
+    # @param module_path
+    #   Path to the root dir of the module
+    # @param name
+    #   Name attribute of the requirement
+    # @param key
+    #   The key name of a K/V pair to be added / updated in the requirement
+    # @param value
+    #   The value of the key to be added / updated in the requirement
+    def self.update_requirements(module_path, name, key, value)
+      new_metadata_json = metadata_json(module_path)
+      updated_existing_entry = false
+      new_metadata_json[REQUIREMENTS].each do |requirement|
+        next unless requirement[NAME] == name
+        PdkSync::Logger.info "Updating [#{requirement['name']}] #{requirement.key? key ? "dependency's existing" : 'with a new'} key [#{key}] to value [#{value}]"
+        requirement[key] = value
+        updated_existing_entry = true
+      end
+      unless updated_existing_entry
+        PdkSync::Logger.info "Adding new requirement [#{name}] with key [#{key}] of value [#{value}]"
+        new_requirement = {}
+        new_requirement[NAME] = name
+        new_requirement[key] = value
+        new_metadata_json[REQUIREMENTS] << new_requirement
+      end
+      write_metadata_json(module_path, new_metadata_json)
     end
 
     # @summary
