@@ -117,6 +117,11 @@ namespace :pdksync do
   task :update_requirements, [:name, :key, :value] do |_task, args|
     PdkSync.main(steps: [:update_requirements], args: args)
   end
+
+  desc 'Normalise the OS and OS versions in the metadata.json'
+  task :normalize_metadata_supported_platforms do |_task, args|
+    PdkSync.main(steps: [:normalize_metadata_supported_platforms], args: args)
+  end
 end
 
 namespace :git do

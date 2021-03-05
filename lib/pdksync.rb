@@ -363,6 +363,10 @@ module PdkSync
           Utils.update_requirements(output_path, module_args[:name], module_args[:key], module_args[:value])
         end
 
+        if steps.include?(:normalize_metadata_supported_platforms)
+          Utils.normalize_metadata_supported_platforms(output_path)
+        end
+
         PdkSync::Logger.info 'done'
       end
       table = Terminal::Table.new title: 'Module Test Results', headings: %w[Module Status Result From], rows: report_rows

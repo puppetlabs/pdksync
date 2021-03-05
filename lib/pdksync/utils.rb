@@ -1052,8 +1052,7 @@ module PdkSync
       win_ver_matcher = ver.match(%r{(?:Server\s)?(?<ver>\d+)(?:\s(?<rel>R\d))?})
       raise "Unable to determine Windows version from metadata.json: #{ver}" unless win_ver_matcher
       normalized_version = win_ver_matcher['ver']
-      normalized_version = '10-pro' if normalized_version == '10'
-      normalized_version += win_ver_matcher['rel'].upcase if win_ver_matcher['rel']
+      normalized_version += " #{win_ver_matcher['rel'].upcase}" if win_ver_matcher['rel']
       normalized_version
     end
 
@@ -1124,6 +1123,31 @@ module PdkSync
       File.open(File.join(module_path, 'metadata.json'), 'w') do |f|
         f.write(JSON.pretty_generate(metadata_json) + "\n")
       end
+    end
+
+    # @summary
+    #   Normalize the 'operatingsystem_support' entries in the metadata.json
+    # @param module_path
+    #   Path to the root dir of the module
+    def self.normalize_metadata_supported_platforms(module_path)
+      new_metadata_json = metadata_json(module_path)
+
+      new_metadata_json[OPERATINGSYSTEM_SUPPORT].each do |os_vers|
+        normalized_os = normalize_os(os_vers[OPERATINGSYSTEM])
+        unless normalized_os == os_vers[OPERATINGSYSTEM]
+          PdkSync::Logger.info "Corrected OS Name: '#{os_vers[OPERATINGSYSTEM]}' -> '#{normalized_os}'"
+          os_vers[OPERATINGSYSTEM] = normalized_os
+        end
+        if normalized_os == 'Windows'
+          normalized_vers = os_vers[OPERATINGSYSTEMRELEASE].collect { |v| normalize_win_version(v) }
+          unless normalized_vers == os_vers[OPERATINGSYSTEMRELEASE]
+            PdkSync::Logger.info "Corrected OS Versions: #{os_vers[OPERATINGSYSTEMRELEASE]} -> #{normalized_vers}"
+            os_vers[OPERATINGSYSTEMRELEASE] = normalized_vers
+          end
+        end
+      end
+
+      write_metadata_json(module_path, new_metadata_json)
     end
 
     # @summary
