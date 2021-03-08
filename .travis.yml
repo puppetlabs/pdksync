@@ -6,7 +6,7 @@ cache: bundler
 before_install:
   - bundle -v
 script:
-  - SIMPLECOV=yes bundle exec $CHECK
+  - bundle exec $CHECK
 jobs:
   fast_finish: true
   include:
