@@ -347,6 +347,26 @@ module PdkSync
           Utils.generate_vmpooler_release_checks(output_path, module_args[:puppet_version].to_i)
         end
 
+        if steps.include?(:update_os_support)
+          Utils.update_os_support(output_path)
+        end
+
+        if steps.include?(:remove_platform_from_metadata)
+          Utils.remove_platform_from_metadata(output_path, module_args[:os], module_args[:version])
+        end
+
+        if steps.include?(:add_platform_to_metadata)
+          Utils.add_platform_to_metadata(output_path, module_args[:os], module_args[:version])
+        end
+
+        if steps.include?(:update_requirements)
+          Utils.update_requirements(output_path, module_args[:name], module_args[:key], module_args[:value])
+        end
+
+        if steps.include?(:normalize_metadata_supported_platforms)
+          Utils.normalize_metadata_supported_platforms(output_path)
+        end
+
         PdkSync::Logger.info 'done'
       end
       table = Terminal::Table.new title: 'Module Test Results', headings: %w[Module Status Result From], rows: report_rows

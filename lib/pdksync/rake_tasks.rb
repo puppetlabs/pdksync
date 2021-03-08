@@ -97,6 +97,31 @@ namespace :pdksync do
   task :generate_vmpooler_release_checks, [:puppet_version] do |_task, args|
     PdkSync.main(steps: [:generate_vmpooler_release_checks], args: args)
   end
+
+  desc 'Update the metadata.json OS supported list to that defined in conf/supported_os_list.yaml'
+  task :update_os_support do |_task, args|
+    PdkSync.main(steps: [:update_os_support], args: args)
+  end
+
+  desc 'Remove a platform version from the metadata.json'
+  task :remove_platform_from_metadata, [:os, :version] do |_task, args|
+    PdkSync.main(steps: [:remove_platform_from_metadata], args: args)
+  end
+
+  desc 'Add a platform version to the metadata.json'
+  task :add_platform_to_metadata, [:os, :version] do |_task, args|
+    PdkSync.main(steps: [:add_platform_to_metadata], args: args)
+  end
+
+  desc 'Add or update a requirement in the metadata.json'
+  task :update_requirements, [:name, :key, :value] do |_task, args|
+    PdkSync.main(steps: [:update_requirements], args: args)
+  end
+
+  desc 'Normalise the OS and OS versions in the metadata.json'
+  task :normalize_metadata_supported_platforms do |_task, args|
+    PdkSync.main(steps: [:normalize_metadata_supported_platforms], args: args)
+  end
 end
 
 namespace :git do
