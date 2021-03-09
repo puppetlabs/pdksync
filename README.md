@@ -248,6 +248,76 @@ bundle exec rake 'pdksync:generate_vmpooler_release_checks[7]'
 ```
 This will create a `release_checks_7` entry in the `provision.yaml` of the managed modules cloned down that contains a list of appropriate number of platforms to satisfy the conditions outlined above.
 
+### Adding a new platform to `metadata.json`
+
+To add a new OS or OS version to the `operatingsystem_support` key in the `metadata.json`:
+
+```ruby
+bundle exec rake 'pdksync:add_platform_to_metadata[:os, :version]'
+```
+
+For example, to add a new OS called 'FooBar OS' and versions `1`, `2` and `3`:
+
+```ruby
+bundle exec rake 'pdksync:add_platform_to_metadata[FooBar,1]'
+bundle exec rake 'pdksync:add_platform_to_metadata[FooBar,2]'
+bundle exec rake 'pdksync:add_platform_to_metadata[FooBar,3]'
+```
+
+To add a new version (e.g. `22.04`) to an existing entry (e.g. `Ubuntu`):
+
+```ruby
+bundle exec rake 'pdksync:add_platform_to_metadata[Ubuntu,22.04]'
+```
+
+**PLEASE NOTE: All OS names are normalised to the conventions defined in the `normalize_os` method - see below for more details.**
+
+### Removing a platform from `metadata.json`
+
+To remove a platform version from `metadata.json`:
+
+```ruby
+bundle exec rake 'pdksync:remove_platform_from_metadata[:os, :version]'
+```
+
+**PLEASE NOTE: There is currently a limitation on removing an entire OS if no versions are specified - feel free to enhance with a PR :)**
+
+For example, to remove version `14.04` from `Ubuntu`:
+
+```ruby
+bundle exec rake 'pdksync:remove_platform_from_metadata[Ubuntu,14.04]'
+```
+
+### Update requirements
+
+To add / modify a requirement from the `requirements` key of the `metadata.json`:
+
+```ruby
+bundle exec rake 'pdksync:update_requirements[:name, :key, :value]'
+```
+
+**PLEASE NOTE: There is currently a limitation on removing an entire requirement entry - feel free to enhance with a PR :)**
+
+To update the `puppet` `version_requirement` requirement to `>= 6.0.0 < 8.0.0`:
+
+```ruby
+bundle exec rake 'pdksync:update_requirements[puppet,version_requirement,>= 6.0.0 < 8.0.0]'
+```
+
+To add a new requirement called `foobar` with a parameter called `baz` which has a value of `123`:
+
+```ruby
+bundle exec rake 'pdksync:update_requirements[foobar,baz,123]'
+```
+
+### Normalize Supported Platforms
+
+To normalize the platforms and versions (Windows only) defined in the `operatingsystem_support` key of the `metadata.json` based on [these rules](https://github.com/puppetlabs/pdksync/blob/ebb84d81d2c15115f896995043eac6d666a114a0/lib/pdksync/utils.rb#L1043-L1098):
+
+```ruby
+bundle exec rake 'pdksync:normalize_metadata_supported_platforms'
+```
+
 ### Configuration
 
 By default pdksync will use hardcoded values for configuring itself. However, if you wish to override these values, create a `pdksync.yml` in your working directory and use the following format:
