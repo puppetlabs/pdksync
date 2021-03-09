@@ -4,3 +4,4 @@ modules/
 Gemfile.lock
 .bundle/
 modules_pdksync/
+.idea/
