@@ -147,7 +147,7 @@ module PdkSync
     end
 
     # @summary
-    #   This method when called will create a pr on the given repository that will create a pr to merge the given commit into the master with the pdk version as an identifier.
+    #   This method when called will create a pr on the given repository that will create a pr to merge the given commit into the main with the pdk version as an identifier.
     # @param [PdkSync::GitPlatformClient] client
     #   The Git platform client used to gain access to and manipulate the repository.
     # @param [String] repo_name
@@ -762,7 +762,7 @@ module PdkSync
     end
 
     # @summary
-    #   This method when called will create a pr on the given repository that will create a pr to merge the given commit into the master with the pdk version as an identifier.
+    #   This method when called will create a pr on the given repository that will create a pr to merge the given commit into the main with the pdk version as an identifier.
     # @param [PdkSync::GitPlatformClient] client
     #   The Git platform client used to gain access to and manipulate the repository.
     # @param [String] ouput_path
@@ -1138,12 +1138,11 @@ module PdkSync
           PdkSync::Logger.info "Corrected OS Name: '#{os_vers[OPERATINGSYSTEM]}' -> '#{normalized_os}'"
           os_vers[OPERATINGSYSTEM] = normalized_os
         end
-        if normalized_os == 'Windows'
-          normalized_vers = os_vers[OPERATINGSYSTEMRELEASE].collect { |v| normalize_win_version(v) }
-          unless normalized_vers == os_vers[OPERATINGSYSTEMRELEASE]
-            PdkSync::Logger.info "Corrected OS Versions: #{os_vers[OPERATINGSYSTEMRELEASE]} -> #{normalized_vers}"
-            os_vers[OPERATINGSYSTEMRELEASE] = normalized_vers
-          end
+        next unless normalized_os == 'Windows'
+        normalized_vers = os_vers[OPERATINGSYSTEMRELEASE].map { |v| normalize_win_version(v) }
+        unless normalized_vers == os_vers[OPERATINGSYSTEMRELEASE]
+          PdkSync::Logger.info "Corrected OS Versions: #{os_vers[OPERATINGSYSTEMRELEASE]} -> #{normalized_vers}"
+          os_vers[OPERATINGSYSTEMRELEASE] = normalized_vers
         end
       end
 

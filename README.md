@@ -27,7 +27,7 @@ Pdksync by default expects that your Puppet module repositories live on GitHub a
 ### Usage
 ----------
 
-> Note: This tool creates a 'live' pull (merge) request against the master branch of the module it is running against — defined in `managed_modules.yml`. Before running this tool, ensure this file reflects the modules you wish it to run against. Additionally make sure that the Pdksync configuration file `$HOME/.pdksync.yml` sets the correct namespace, Git platform and Git base URI for your modules. See section [Configuration](#configuration) for details.
+> Note: This tool creates a 'live' pull (merge) request against the main branch of the module it is running against — defined in `managed_modules.yml`. Before running this tool, ensure this file reflects the modules you wish it to run against. Additionally make sure that the Pdksync configuration file `$HOME/.pdksync.yml` sets the correct namespace, Git platform and Git base URI for your modules. See section [Configuration](#configuration) for details.
 
 1. To use pdksync, clone the GitHub repo or install it as a gem. Set up the environment by exporting a GitHub token:
 
@@ -151,7 +151,7 @@ bundle exec rake 'pdksync:multi_gem_testing[]'
 bundle exec rake 'pdksync:multigem_file_update[]'
 ```
 
-The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote master — where the local copy was originally cloned. A pull request against master is opened, and pdksync begins to clone the next repository.
+The rake tasks take in a file, `managed_modules.yml`, stored within the local directory that lists all the repositories that need to be updated. It then clones them, one after another, so that a local copy exists. The `pdk update` command is ran against this local copy, with the subsequent changes being added into a commit on a unique branch. It is then pushed back to the remote origin — where the local copy was originally cloned. A pull request against main is opened, and pdksync begins to clone the next repository.
 
 By default, pdksync will supply a label to a PR (default is 'maintenance'). This can be changed by creating `pdksync.yml` in the local directory and setting the `pdksync_label` key. You must ensure that the label selected exists on the modules that you are applying pdksync to. Should you wish to disable this feature, set `pdksync_label` to an empty string i.e. `''`. Similarly, when supplying a label using the `git:create_pr` rake task, the label must exist on each of the managed modules to run successfully.
 
@@ -165,15 +165,15 @@ The following rake tasks are available with pdksync:
 - `pdksync:pdk_convert` Runs PDK convert against modules.
 - `pdksync:pdk_validate` Runs PDK validate against modules.
 - `pdksync[:additional_title]` Run full pdksync process, clone repository, pdk update, create pr. Additional information can be added to the title, which will be appended before the reference section.
-  - `rake pdksync` PR title outputs as `pdksync - pdksync_heads/master-0-gabccfb1`
-  - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
+  - `rake pdksync` PR title outputs as `pdksync - pdksync_heads/main-0-gabccfb1`
+  - `rake 'pdksync[MODULES-8231]'` PR title outputs as `pdksync - MODULES-8231 - pdksync_heads/main-0-gabccfb1`
 - `pdksync:run_a_command[:command, :option]` Run a command against modules eg rake 'pdksync:run_a_command[complex command here -f -gx, 'background']'. :option is an optional parameter which states to run command in backgroud.
 - `pdksync:gem_file_update[[:gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]]` Run gem_file_update against modules
   - eg rake to update gem line `pdksync:gem_file_update['puppet_litmus', "gem 'puppet_litmus'\, git: 'https://github.com/test/puppet_litmus.git'\, branch: 'testbranch'"]'`
   - eg rake to update sha `pdksync:gem_file_update['puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', '20ee04ba1234e9e83eb2ffb5056e23d641c7a31']`
   - eg rake to update version`pdksync:gem_file_update['puppet_litmus', '', '', '', "= 0.9.0", "<= 0.10.0", '', '']`
   - eg rake to update branch `pdksync:gem_file_update['puppet_litmus', '', '', '', '', '', 'testbranch', 'testbranches']`
-- `rake 'gem_testing[:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]'` Run complete Gem file testing (cloning, gemfileupdate, create commit, create PR)PR title outputs as `pdksync_gemtesting - MODULES-8231 - pdksync_heads/master-0-gabccfb1`
+- `rake 'gem_testing[:additional_title, :gem_to_test, :gem_line, :gem_sha_finder, :gem_sha_replacer, :gem_version_finder, :gem_version_replacer, :gem_branch_finder, :gem_branch_replacer]'` Run complete Gem file testing (cloning, gemfileupdate, create commit, create PR)PR title outputs as `pdksync_gemtesting - MODULES-8231 - pdksync_heads/main-0-gabccfb1`
   - eg rake to perform gem file testing `gem_testing['MODULES-testing', 'puppet_litmus', '', '20ee04ba1234e9e83eb2ffb5056e23d641c7a018', 'testsha']`
 - `pdksync:run_tests_locally[:provision_type, :puppet_collection]` Run litmus modules locally
   - eg rake 'pdksync:run_tests_locally["default"]'
@@ -327,7 +327,7 @@ namespace: 'puppetlabs'
 pdksync_dir: 'modules_pdksync'
 pdksync_gem_dir: 'gems_pdksync',
 push_file_destination: 'origin'
-create_pr_against: 'master'
+create_pr_against: 'main'
 managed_modules: 'managed_modules.yml'
 pdksync_label: 'maintenance'
 git_platform: :github
@@ -410,8 +410,8 @@ The first setting is `module_is_authoritive`.  When this is set to true the temp
 # module/metadata.json
 {
 "pdk-version": "1.11.1",
-"template-url": "https://github.com/puppetlabs/pdk-templates#master",
-"template-ref": "heads/master-0-gb096033"
+"template-url": "https://github.com/puppetlabs/pdk-templates#main",
+"template-ref": "heads/main-0-gb096033"
 }
 
 ```
@@ -419,13 +419,13 @@ The first setting is `module_is_authoritive`.  When this is set to true the temp
 When `module_is_authoritive` is set to false the pdk_templates_ref and pdk_templates_url will override what is found in the modules's metadata.json file.  This is very useful when you have to control pdk-template upgrades on modules.
 
 The other settings dictiate where the templates are located and which branch, tag or reference you want to use.
-`pdk_templates_ref: 'master'` and `pdk_templates_url: https://github.com/puppetlabs/pdk-templates.git`.  These settings will only be utilized if module_is_authoritive is set to false.  However, if you are performing a conversion via pdksync these settings will also be used since the metadata in the module being converted doesn't have pdk settings yet.
+`pdk_templates_ref: 'main'` and `pdk_templates_url: https://github.com/puppetlabs/pdk-templates.git`.  These settings will only be utilized if module_is_authoritive is set to false.  However, if you are performing a conversion via pdksync these settings will also be used since the metadata in the module being converted doesn't have pdk settings yet.
 
 The last setting `pdk_templates_prefix` is a special use case that allows folks with internal forks of pdk-templates to keep branches of the pdk-template tags with additional custom changes. Setting this to an empty string disables this.  You will most likely need to resolve conflicts with this workflow, so it is not for everyone.  If you know of a better way please submmit a pull request.
 
 This strategy works in conjunction with the pdk-template git tags and the workflow looks like:
   1. git fetch upstream (github.com/puppetlabs/pdk-templates)
-  2. git checkout master && git rebase upstream/master
+  2. git checkout main && git rebase upstream/main
   3. git checkout -b nwops-1.0.13 nwops-1.0.12
   4. git rebase 1.0.13
   5. git push origin nwops-1.0.13
