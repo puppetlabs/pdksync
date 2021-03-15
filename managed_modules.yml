@@ -48,7 +48,6 @@
 #- puppetlabs-vcsrepo
 #- puppetlabs-vsphere
 #- puppetlabs-websphere_application_server
-#- puppetlabs-windows
 #- puppetlabs-wsus_client
 ## testing only
 #- puppetlabs-testing
