@@ -35,7 +35,6 @@
 #- puppetlabs-reboot
 #- puppetlabs-registry
 #- puppetlabs-resource
-#- puppetlabs-resource_api
 #- puppetlabs-rook
 #- puppetlabs-satellite_pe_tools
 #- puppetlabs-scheduled_task
@@ -48,7 +47,6 @@
 #- puppetlabs-vcsrepo
 #- puppetlabs-vsphere
 #- puppetlabs-websphere_application_server
-#- puppetlabs-windows
 #- puppetlabs-wsus_client
 ## testing only
 #- puppetlabs-testing
