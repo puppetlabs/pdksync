@@ -43,7 +43,6 @@
 #- puppetlabs-stdlib
 #- puppetlabs-tagmail
 #- puppetlabs-tomcat
-#- puppetlabs-translate
 #- puppetlabs-vcsrepo
 #- puppetlabs-vsphere
 #- puppetlabs-websphere_application_server
