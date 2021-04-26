@@ -37,6 +37,8 @@ describe PdkSync do
     allow(ENV).to receive(:[]).with('http_proxy').and_return(nil)
     allow(ENV).to receive(:[]).with('HTTP_PROXY').and_return(nil)
     allow(ENV).to receive(:[]).with('PDKSYNC_CONFIG_PATH').and_return(nil)
+    allow(ENV).to receive(:[]).with('TERM').and_return(nil)
+    allow(ENV).to receive(:[]).with('NO_COLOR').and_return(nil)
     allow(PdkSync::Utils).to receive(:return_modules).and_return(@module_names)
     allow(PdkSync::Utils).to receive(:validate_modules_exist).and_return(@module_names)
     allow(PdkSync::Utils).to receive(:setup_client).and_return(git_client)

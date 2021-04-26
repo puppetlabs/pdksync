@@ -49,14 +49,14 @@ describe 'PdkSync::Utils' do
   end
 
   it '#self.return_template_ref' do
-    expect(PdkSync::Utils.return_template_ref(metadata_file)).to match(%r{remotes/origin/auto_releasewf-0-ga999675})
+    expect(PdkSync::Utils.return_template_ref(metadata_file)).to match(%r{^heads\/main\S+$})
   end
 
   it '#self.module_templates_url' do
     allow(Octokit).to receive(:tags).with('puppetlabs/pdk').and_return([{ name: 'v1.14.1' }])
     url, version = PdkSync::Utils.module_templates_url(metadata_file).split('#')
-    expect(url).to eq('https://github.com/carabasdaniel/pdk-templates')
-    expect(version).to match(%r{auto_releasewf})
+    expect(url).to eq('https://github.com/puppetlabs/pdk-templates')
+    expect(version).to match(%r{main})
   end
 
   it '#self.change_module_template_url' do
