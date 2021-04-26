@@ -181,7 +181,7 @@ module PdkSync
         if steps.include?(:pdk_validate)
           Dir.chdir(main_path) unless Dir.pwd == main_path
           exit_status = Utils.run_command(output_path, "#{Utils.return_pdk_path} validate -a", nil)
-          PdkSync::Logger.info 'validated'
+          PdkSync::Logger.info 'validated' if exit_status.zero?
           next unless exit_status.zero?
         end
         if steps.include?(:run_a_command)
