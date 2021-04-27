@@ -7,7 +7,6 @@
 #- puppetlabs-acl
 #- puppetlabs-apache
 #- puppetlabs-apt
-#- puppetlabs-azure
 #- puppetlabs-chocolatey
 #- puppetlabs-concat
 #- puppetlabs-docker
