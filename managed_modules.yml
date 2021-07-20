@@ -33,7 +33,6 @@
 #- puppetlabs-puppet_conf
 #- puppetlabs-reboot
 #- puppetlabs-registry
-#- puppetlabs-resource
 #- puppetlabs-rook
 #- puppetlabs-satellite_pe_tools
 #- puppetlabs-scheduled_task
