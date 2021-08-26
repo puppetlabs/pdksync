@@ -67,7 +67,7 @@ source "https://rubygems.org"
 
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
-gem 'pdksync', github: 'puppetlabs/pdksync'
+gem 'pdksync'
 gem 'rake'
 ```
 
