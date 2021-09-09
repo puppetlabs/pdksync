@@ -49,6 +49,35 @@ bundle install --path .bundle/gems/
 bundle exec rake pdksync
 ```
 
+### Github Token Permissions
+----------
+
+Follow the steps below to set up a Github token with the minimum level of permissions required by `pdksync`:
+
+- Log in to your Github account and navigate to the [Personal Access Tokens](https://github.com/settings/tokens) section under `Settings -> Developer settings`
+- Click [`Generate new token`](https://github.com/settings/tokens/new)
+- Select the check boxes appropriate for your use case below
+
+#### **Public Repos, No Workflow Modifications Permitted**
+
+- [ ] **repo**
+  - [ ] repo:status
+  - [ ] repo_deployment
+  - [x] public_repo
+  - [ ] repo:invite
+  - [ ] security_events
+- [ ] workflow  
+
+#### **Private Repos or Public Repos with Workflow Modifications Permitted**
+
+- [x] **repo**
+  - [x] repo:status
+  - [x] repo_deployment
+  - [x] public_repo
+  - [x] repo:invite
+  - [x] security_events
+- [x] workflow  
+
 ### How it works
 ------------
 
