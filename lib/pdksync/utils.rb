@@ -1092,6 +1092,10 @@ module PdkSync
         'Ubuntu'
       when %r{win}i
         'Windows'
+      when %r{rocky}i
+        'Rocky'
+      when %r{almalinux}i
+        'AlmaLinux'
       else
         raise "Could not normalize OS value: #{os}"
       end
