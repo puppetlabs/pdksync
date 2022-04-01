@@ -1066,7 +1066,9 @@ module PdkSync
       case os
       when %r{aix}i
         'AIX'
-      when %r{cent}i
+      when %r{centos stream}i
+        'CentOS Stream'
+      when %r{centos\z}i
         'CentOS'
       when %r{darwin}i
         'Darwin'
