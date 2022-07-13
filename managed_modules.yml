@@ -1,6 +1,5 @@
 ---
 ## IA content team
-#- cisco_ios
 #- device_manager
 #- provision
 #- puppetlabs-accounts
