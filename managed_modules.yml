@@ -1,6 +1,5 @@
 ---
 ## IA content team
-#- cisco_ios
 #- device_manager
 #- provision
 #- puppetlabs-accounts
@@ -16,8 +15,6 @@
 #- puppetlabs-facter_task
 #- puppetlabs-firewall
 #- puppetlabs-haproxy
-#- puppetlabs-helm
-#- puppetlabs-ibm_installation_manager
 #- puppetlabs-iis
 #- puppetlabs-inifile
 #- puppetlabs-java
@@ -27,23 +24,18 @@
 #- puppetlabs-mysql
 #- puppetlabs-ntp
 #- puppetlabs-package
-#- puppetlabs-panos
 #- puppetlabs-postgresql
 #- puppetlabs-powershell
 #- puppetlabs-puppet_conf
 #- puppetlabs-reboot
 #- puppetlabs-registry
-#- puppetlabs-rook
 #- puppetlabs-satellite_pe_tools
 #- puppetlabs-scheduled_task
 #- puppetlabs-service
 #- puppetlabs-sqlserver
 #- puppetlabs-stdlib
-#- puppetlabs-tagmail
 #- puppetlabs-tomcat
 #- puppetlabs-vcsrepo
-#- puppetlabs-vsphere
-#- puppetlabs-websphere_application_server
 #- puppetlabs-wsus_client
 ## testing only
 #- puppetlabs-testing
