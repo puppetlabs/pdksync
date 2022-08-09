@@ -217,6 +217,8 @@ The following rake tasks are available with pdksync:
 - `pdksync:multigem_file_update[:gem_name, :gemfury_username]` Update Gemfile of the modules with the new gem should be pushed to Gemfury.'
 - `pdksync:add_provision_list[:key, :provisioner, :images]` Add a provision list key to provision.yaml.
 - `pdksync:generate_vmpooler_release_checks[:puppet_version]` Generates release checks in provision.yaml based on module compatible platforms and puppet version
+- `pdksync:add_platform_to_metadata[:os, :version]` Add a given OS Version to the metadata
+- `pdksync:remove_platform_from_metadata[:os, :version]` Remove a given OS Version from the metadata
 
 ### Adding/Updating `provision.yaml`
 To add/update an entry in the `provision.yaml`, run the following task:
