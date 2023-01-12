@@ -46,7 +46,7 @@ module PdkSync
       logger.fatal(message)
     end
 
-    def self.crit(message)
+    def self.error(message)
       logger.error(message)
     end
 
