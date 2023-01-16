@@ -249,7 +249,7 @@ module PdkSync
           stdout, stderr, status = Open3.capture3(command)
         end
         PdkSync::Logger.info "\n#{stdout}\n"
-        PdkSync::Logger.crit "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
+        PdkSync::Logger.error "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
         status.exitstatus
       else
         # Environment cleanup required due to Ruby subshells using current Bundler environment
