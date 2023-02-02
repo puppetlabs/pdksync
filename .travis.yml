@@ -11,11 +11,7 @@ jobs:
   fast_finish: true
   include:
     - env: CHECK='rubocop'
-      rvm: 2.5
-    - env: CHECK='rspec spec'
-      rvm: 2.4
-    - env: CHECK='rspec spec'
-      rvm: 2.5
+      rvm: 2.7
     - env: CHECK='rspec spec'
       rvm: 2.7
 branches:

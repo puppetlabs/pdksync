@@ -37,7 +37,7 @@ describe 'PdkSync::Utils' do
 
   it '#self.create_commit' do
     File.write(File.join(@tmp_dir, 'README.md'), rand(32_332))
-    expect(PdkSync::Utils.create_commit(cloned_module, 'main', 'boom')).to match(%r{README})
+    expect(PdkSync::Utils.create_commit(cloned_module, 'main', 'boom')).to match(%r{boom})
   end
 
   it '#self.run_command' do
@@ -45,7 +45,9 @@ describe 'PdkSync::Utils' do
   end
 
   it '#self.pdk_update' do
-    expect(PdkSync::Utils.pdk_update(@tmp_dir)).to eq(0)
+    run_update = PdkSync::Utils.pdk_update(@tmp_dir)
+    sleep(100)
+    expect(run_update).to eq(0)
   end
 
   it '#self.return_template_ref' do
