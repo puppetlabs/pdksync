@@ -45,12 +45,12 @@ def pupmods_dir
 end
 
 def remote_testing_repo
-  File.join(pupmods_dir, 'puppetlabs-testing.git')
+  File.join(pupmods_dir, 'puppetlabs-motd.git')
 end
 
 # localizes the remote repo for faster testing, download once and use the local machine as the remote repo
 def setup_fake_module
-  Git.clone('https://github.com/puppetlabs/puppetlabs-testing.git', remote_testing_repo) unless Dir.exist?(File.join(remote_testing_repo, '.git'))
+  Git.clone('https://github.com/puppetlabs/puppetlabs-motd.git', remote_testing_repo) unless Dir.exist?(File.join(remote_testing_repo, '.git'))
 end
 
 def destroy_fake_modules

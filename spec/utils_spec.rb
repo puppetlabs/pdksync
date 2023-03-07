@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'pdksync/utils'
 require 'tempfile'
+
 describe 'PdkSync::Utils' do
   before(:all) do
     @tmp_dir = Dir.mktmpdir('testing')
@@ -11,7 +12,7 @@ describe 'PdkSync::Utils' do
       Git.open(@tmp_dir)
     rescue ArgumentError
       PdkSync::Utils.clone_directory('puppetlabs',
-                                     'puppetlabs-testing', @tmp_dir)
+                                     'puppetlabs-motd', @tmp_dir)
     end
   end
 
@@ -21,6 +22,8 @@ describe 'PdkSync::Utils' do
 
   before(:each) do
     cloned_module
+    cloned_module.config('user.name', 'puppetlabs')
+    cloned_module.config('user.email', 'email@email.com')
   end
 
   after(:all) do
@@ -30,14 +33,14 @@ describe 'PdkSync::Utils' do
   it '#self.clone_directory' do
     Dir.mktmpdir do |dir|
       PdkSync::Utils.clone_directory('puppetlabs',
-                                     'puppetlabs-testing', dir)
+                                     'puppetlabs-motd', dir)
       expect(cloned_module).to be_a Git::Base
     end
   end
 
   it '#self.create_commit' do
     File.write(File.join(@tmp_dir, 'README.md'), rand(32_332))
-    expect(PdkSync::Utils.create_commit(cloned_module, 'main', 'boom')).to match(%r{README})
+    expect(PdkSync::Utils.create_commit(cloned_module, 'main', 'boom')).to match(%r{1 file changed})
   end
 
   it '#self.run_command' do
@@ -49,13 +52,13 @@ describe 'PdkSync::Utils' do
   end
 
   it '#self.return_template_ref' do
-    expect(PdkSync::Utils.return_template_ref(metadata_file)).to match(%r{^heads\/main\S+$})
+    expect(PdkSync::Utils.return_template_ref(metadata_file)).to match(%r{tags/})
   end
 
   it '#self.module_templates_url' do
     allow(Octokit).to receive(:tags).with('puppetlabs/pdk').and_return([{ name: 'v1.14.1' }])
     url, version = PdkSync::Utils.module_templates_url(metadata_file).split('#')
-    expect(url).to eq('https://github.com/puppetlabs/pdk-templates')
+    expect(url).to eq('https://github.com/puppetlabs/pdk-templates.git')
     expect(version).to match(%r{main})
   end
 
@@ -115,14 +118,14 @@ describe 'PdkSync::Utils' do
 
   it '#self.return_modules' do
     allow_any_instance_of(PdkSync::Configuration).to receive(:managed_modules).and_return(File.join(fixtures_dir, 'fake_managed_modules.yaml'))
-    expect(PdkSync::Utils.return_modules).to eq(['puppetlabs/puppetlabs-testing'])
+    expect(PdkSync::Utils.return_modules).to eq(['puppetlabs/puppetlabs-motd'])
   end
 
   it '#self.validate_modules_exist' do
     client = double
     allow_any_instance_of(PdkSync::Configuration).to receive(:managed_modules).and_return(File.join(fixtures_dir, 'fake_managed_modules.yaml'))
-    allow(client).to receive(:repository?).with('puppetlabs/puppetlabs-testing').and_return(true)
-    expect(PdkSync::Utils.validate_modules_exist(client, ['puppetlabs-testing'])).to be true
+    allow(client).to receive(:repository?).with('puppetlabs/puppetlabs-motd').and_return(true)
+    expect(PdkSync::Utils.validate_modules_exist(client, ['puppetlabs-motd'])).to be true
   end
 
   it '#self.create_filespace_gem' do
