@@ -8,15 +8,15 @@ describe PdkSync do
   before(:all) do
     @pdksync_dir = './modules_pdksync'
     @pdksync_gem_dir = './gems_pdksync'
-    module_name = 'puppetlabs-testing'
+    module_name = 'puppetlabs-motd'
     gem_name = 'puppet-module-gems'
-    @module_names = ['puppetlabs-testing']
+    @module_names = ['puppetlabs-motd']
     @output_path_module = "#{@pdksync_dir}/#{module_name}"
     @output_path_gem = "#{@pdksync_gem_dir}/#{gem_name}"
     @folder = Dir.pwd
     # Make changes to modules_managed.yaml file
     text = File.read('managed_modules.yml')
-    new_contents = text.gsub(%r{#- puppetlabs-testing$}, '- puppetlabs-testing')
+    new_contents = text.gsub(%r{#- puppetlabs-motd$}, '- puppetlabs-motd')
     File.open('managed_modules.yml', 'w') { |file| file.puts new_contents }
   end
 
@@ -179,7 +179,7 @@ describe PdkSync do
     # Make changes to modules_managed.yaml file
     Dir.chdir(@folder)
     text = File.read('managed_modules.yml')
-    new_contents = text.gsub(%r{- puppetlabs-testing$}, '#- puppetlabs-testing')
+    new_contents = text.gsub(%r{- puppetlabs-motd$}, '#- puppetlabs-motd')
     File.open('managed_modules.yml', 'w') { |file| file.puts new_contents }
   end
 end
