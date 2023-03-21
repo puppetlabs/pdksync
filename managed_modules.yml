@@ -1,7 +1,6 @@
 ---
-## IA content team
+## Content and Tooling Team
 #- device_manager
-#- provision
 #- puppetlabs-accounts
 #- puppetlabs-acl
 #- puppetlabs-apache
@@ -9,8 +8,6 @@
 #- puppetlabs-chocolatey
 #- puppetlabs-concat
 #- puppetlabs-docker
-#- puppetlabs-dsc
-#- puppetlabs-dsc_lite
 #- puppetlabs-exec
 #- puppetlabs-facter_task
 #- puppetlabs-firewall
@@ -21,6 +18,7 @@
 #- puppetlabs-java_ks
 #- puppetlabs-kubernetes
 #- puppetlabs-motd
+#- puppetlabs-mount_iso
 #- puppetlabs-mysql
 #- puppetlabs-ntp
 #- puppetlabs-package
@@ -37,7 +35,3 @@
 #- puppetlabs-tomcat
 #- puppetlabs-vcsrepo
 #- puppetlabs-wsus_client
-## testing only
-#- puppetlabs-testing
-#- puppetlabs-testing1
-#- puppetlabs-testing2
