@@ -544,12 +544,6 @@ Gemfile:
       - gem 'octokit'
         platforms: ruby
 ```
-- Make changes to your travis configuration:
-```yaml
-.travis.yml:
-  branches:
-    - release
-```
 - Delete files that you don't want to exist in the repo:
 ```yaml
 .gitlab-ci.yml:
