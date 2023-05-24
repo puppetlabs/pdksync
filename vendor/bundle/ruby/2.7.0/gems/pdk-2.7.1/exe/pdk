@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+require 'pdk/cli'
+
+begin
+  PDK::CLI.run(ARGV)
+rescue Interrupt
+  warn "\nAborted!"
+  exit 1
+end

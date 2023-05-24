@@ -1,0 +1,13 @@
+current directory: /home/runner/work/pdksync/pdksync/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+/opt/hostedtoolcache/Ruby/2.7.8/x64/bin/ruby -I /opt/hostedtoolcache/Ruby/2.7.8/x64/lib/ruby/2.7.0 -r ./siteconf20230521-1789-tut2aq.rb extconf.rb
+creating Makefile
+
+current directory: /home/runner/work/pdksync/pdksync/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make "DESTDIR=" clean
+
+current directory: /home/runner/work/pdksync/pdksync/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make "DESTDIR="
+make: Nothing to be done for 'all'.
+
+current directory: /home/runner/work/pdksync/pdksync/vendor/bundle/ruby/2.7.0/gems/json-2.6.3/ext/json
+make "DESTDIR=" install
