@@ -17,9 +17,11 @@
 #- puppetlabs-java
 #- puppetlabs-java_ks
 #- puppetlabs-kubernetes
+#- puppetlabs-lvm 
 #- puppetlabs-motd
 #- puppetlabs-mount_iso
 #- puppetlabs-mysql
+#- puppetlabs-node_encrypt 
 #- puppetlabs-ntp
 #- puppetlabs-package
 #- puppetlabs-postgresql
