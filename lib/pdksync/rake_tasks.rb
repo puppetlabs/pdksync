@@ -1,5 +1,5 @@
 require 'pdksync'
-require 'colorize'
+require 'logger'
 
 desc 'Run full pdksync process, clone repository, pdk update, create pr. Additional title information can be added to the title, which will be appended before the reference section.'
 task :pdksync, [:additional_title] do |_task, args|
@@ -77,9 +77,9 @@ namespace :pdksync do
   task :show_config do
     config = PdkSync::Configuration.new
     puts 'Please note that you can override any of the configuration by using an additional file at `$HOME/.pdksync.yml`.'.bold.red
-    puts "\nPDKSync Configuration".bold.yellow
+    puts "\nPDKSync Configuration:".bold.yellow
     config.to_h.each do |key, value|
-      puts "- #{key}: ".bold + value.to_s.cyan
+      puts "- #{key}: " + value.to_s.light_blue
     end
   end
 
