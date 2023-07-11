@@ -9,7 +9,6 @@ require 'pdksync/gitplatformclient'
 
 require 'json'
 require 'yaml'
-require 'colorize'
 require 'bundler'
 require 'octokit'
 require 'pdk/util/template_uri'

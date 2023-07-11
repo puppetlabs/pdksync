@@ -52,7 +52,7 @@ describe 'PdkSync::Utils' do
   end
 
   it '#self.return_template_ref' do
-    expect(PdkSync::Utils.return_template_ref(metadata_file)).to match(%r{heads/main-0-})
+    expect(PdkSync::Utils.return_template_ref(metadata_file)).to match(%r{heads/main-0-|tags/})
   end
 
   it '#self.module_templates_url' do

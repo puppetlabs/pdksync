@@ -30,6 +30,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'rake'
   spec.add_runtime_dependency 'gitlab'
   spec.add_runtime_dependency 'octokit'
-  spec.add_runtime_dependency 'colorize'
   spec.add_runtime_dependency 'jenkins_api_client'
 end
