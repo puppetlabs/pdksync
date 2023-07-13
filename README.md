@@ -166,7 +166,7 @@ Run the following commands to check that everything is working as expected:
 
 ```shell
 bundle install --path .bundle/gems/
-bundle exec rake -T
+bundle exec rake -D
 bundle exec rake 'git:clone_gem['gem_name']'
 ```
 Below given are the workflows for doing multi gem testing with pdksync.
@@ -219,6 +219,9 @@ The following rake tasks are available with pdksync:
 - `pdksync:generate_vmpooler_release_checks[:puppet_version]` Generates release checks in provision.yaml based on module compatible platforms and puppet version
 - `pdksync:add_platform_to_metadata[:os, :version]` Add a given OS Version to the metadata
 - `pdksync:remove_platform_from_metadata[:os, :version]` Remove a given OS Version from the metadata
+
+
+You can run ```bundle exec rake -D``` to view the list of available rake tasks.
 
 ### Adding/Updating `provision.yaml`
 To add/update an entry in the `provision.yaml`, run the following task:
