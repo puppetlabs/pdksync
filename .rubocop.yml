@@ -1,6 +1,15 @@
 ---
+inherit_from: .rubocop_todo.yml
+
+require:
+- rubocop-performance
+- rubocop-rspec
 AllCops:
+  NewCops: enable
   DisplayCopNames: true
+  ExtraDetails: true
+  DisplayStyleGuide: true
+  TargetRubyVersion: '2.7'
   Include:
     - "./**/*.rb"
   Exclude:
@@ -57,37 +66,6 @@ Style/TrailingCommaInArguments:
 Style/SymbolArray:
   Description: Using percent style obscures symbolic intent of array's contents.
   EnforcedStyle: brackets
-inherit_from: ".rubocop_todo.yml"
-Style/CollectionMethods:
-  Enabled: true
-Style/MethodCalledOnDoEndBlock:
-  Enabled: true
-Style/StringMethods:
-  Enabled: true
-Layout/EndOfLine:
-  Enabled: false
-Metrics/AbcSize:
-  Enabled: false
-Metrics/BlockLength:
-  Enabled: false
-Metrics/ClassLength:
-  Enabled: false
-Metrics/CyclomaticComplexity:
-  Enabled: false
-Metrics/MethodLength:
-  Enabled: false
-Metrics/ModuleLength:
-  Enabled: false
-Metrics/ParameterLists:
-  Enabled: false
-Metrics/PerceivedComplexity:
-  Enabled: false
-Style/AsciiComments:
-  Enabled: false
-Style/IfUnlessModifier:
-  Enabled: false
-Style/SymbolProc:
-  Enabled: false
 Style/Documentation:
   Exclude:
     - lib/pdksync/utils.rb
