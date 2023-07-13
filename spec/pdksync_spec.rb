@@ -9,7 +9,7 @@ describe PdkSync do
     @pdksync_dir = './modules_pdksync'
     @pdksync_gem_dir = './gems_pdksync'
     module_name = 'puppetlabs-motd'
-    gem_name = 'puppet-module-gems'
+    gem_name = 'puppet-strings'
     @module_names = ['puppetlabs-motd']
     @output_path_module = "#{@pdksync_dir}/#{module_name}"
     @output_path_gem = "#{@pdksync_gem_dir}/#{gem_name}"
@@ -161,7 +161,7 @@ describe PdkSync do
       allow(PdkSync::Utils).to receive(:setup_client).and_return(git_client)
       FileUtils.rm_rf(@pdksync_gem_dir)
       PdkSync::Utils.create_filespace_gem
-      PdkSync.main(steps: [:clone_gem], args: { gem_name: 'puppet-module-gems' })
+      PdkSync.main(steps: [:clone_gem], args: { gem_name: 'puppet-strings' })
       expect(Dir.exist?(@pdksync_dir)).to be(true)
       expect(Dir.exist?(@pdksync_gem_dir)).to be(true)
       expect(Dir.exist?(@output_path_gem)).to be(true)
@@ -170,8 +170,8 @@ describe PdkSync do
       expect { PdkSync.main(steps: [:multi_gem_testing]) }.to raise_error(RuntimeError, %r{"multi_gem_testing" requires arguments to run version_file and build_gem})
     end
     it 'runs a command for updating the version and building the gem' do
-      allow(Octokit).to receive(:tags).with('puppetlabs/puppet-module-gems').and_return([{ name: '1' }])
-      PdkSync.main(steps: [:multi_gem_testing], args: { gem_name: 'puppet-module-gems', version_file: 'config/info.yml', build_gem: 'exe/build-gems.rb', gem_path: 'pkg', gem_username: 'tester' })
+      allow(Octokit).to receive(:tags).with('puppetlabs/puppet-strings').and_return([{ name: '1' }])
+      PdkSync.main(steps: [:multi_gem_testing], args: { gem_name: 'puppet-strings', version_file: 'lib/puppet-strings/version.rb', build_gem: 'rake build', gem_path: 'pkg', gem_username: 'tester' })
       expect File.exist?("#{@output_path_gem}/pkg")
     end
   end
