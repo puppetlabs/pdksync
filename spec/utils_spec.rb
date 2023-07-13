@@ -110,9 +110,9 @@ describe 'PdkSync::Utils' do
   it '#self.setup_client' do
     g = double(PdkSync::GitPlatformClient)
     expect(PdkSync::GitPlatformClient).to receive(:new).with(:github,
-                                                             access_token: 'github-token',
+                                                             {access_token: 'github-token',
                                                              api_endpoint: nil,
-                                                             gitlab_api_endpoint: 'https://gitlab.com/api/v4').and_return(g)
+                                                             gitlab_api_endpoint: 'https://gitlab.com/api/v4'}).and_return(g)
     expect(PdkSync::Utils.setup_client).to eq(g)
   end
 
