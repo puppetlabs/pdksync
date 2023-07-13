@@ -161,7 +161,7 @@ module PdkSync
         repo_name = File.join(Utils.configuration.namespace, module_name)
         output_path = File.join(Utils.configuration.pdksync_dir, module_name)
         if steps.include?(:clone)
-          Utils.validate_modules_exist(client, module_names)
+          Utils.validate_modules_exist(client, [module_name])
           Utils.clean_env(output_path) if Dir.exist?(output_path)
           PdkSync::Logger.info 'delete module directory'
           @git_repo = Utils.clone_directory(Utils.configuration.namespace, module_name, output_path)
