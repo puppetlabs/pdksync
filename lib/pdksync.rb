@@ -174,14 +174,14 @@ module PdkSync
         next unless File.directory?(output_path)
         if steps.include?(:pdk_convert)
           exit_status = Utils.run_command(output_path, "#{Utils.return_pdk_path} convert --force #{configuration.templates}", nil)
+          break unless exit_status.zero?
           PdkSync::Logger.info 'converted'
-          next unless exit_status.zero?
         end
         if steps.include?(:pdk_validate)
           Dir.chdir(main_path) unless Dir.pwd == main_path
           exit_status = Utils.run_command(output_path, "#{Utils.return_pdk_path} validate -a", nil)
           PdkSync::Logger.info 'validated' if exit_status.zero?
-          next unless exit_status.zero?
+          break unless exit_status.zero?
         end
         if steps.include?(:run_a_command)
           Dir.chdir(main_path) unless Dir.pwd == main_path
@@ -191,7 +191,7 @@ module PdkSync
             next unless pid != 0 # rubocop:disable Metrics/BlockNesting
           else
             exit_status = Utils.run_command(output_path, module_args[:command], nil)
-            next unless exit_status.zero? # rubocop:disable Metrics/BlockNesting
+            break unless exit_status.zero? # rubocop:disable Metrics/BlockNesting
           end
         end
         if steps.include?(:gem_file_update)
@@ -214,7 +214,7 @@ module PdkSync
         end
         if steps.include?(:pdk_update)
           Dir.chdir(main_path) unless Dir.pwd == main_path
-          next unless Utils.pdk_update(output_path).zero?
+          break unless Utils.pdk_update(output_path).zero?
           if steps.include?(:use_pdk_ref)
             ref = Utils.return_template_ref(File.join(output_path, 'metadata.json'))
             pr_title = module_args[:additional_title] ? "#{module_args[:additional_title]} - pdksync_#{ref}" : "pdksync_#{ref}" # rubocop:disable Metrics/BlockNesting
