@@ -21,8 +21,8 @@ Pdksync by default expects that your Puppet module repositories live on GitHub a
 
 ### Requirements
 --------
-* Ruby >= 2.4.4
-* Bundler ~> 1.15
+* Ruby >= 2.7
+* Bundler >= 1.15
 
 ### Usage
 ----------
