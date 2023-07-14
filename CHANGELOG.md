@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
+## [v0.8.0](https://github.com/puppetlabs/pdksync/tree/v0.8.0) - 2023-07-14
+
+[Full Changelog](https://github.com/puppetlabs/pdksync/compare/v0.7.0...v0.8.0)
+
+### Added
+
+- Improve module validation performance [#193](https://github.com/puppetlabs/pdksync/pull/193) ([seanmil](https://github.com/seanmil))
+- (CONT-1138) - Add ruby 3.x compatibility [#191](https://github.com/puppetlabs/pdksync/pull/191) ([jordanbreen28](https://github.com/jordanbreen28))
+
+### Fixed
+
+- (CONT-1215) - Fix formatting for pdksync:show_config [#189](https://github.com/puppetlabs/pdksync/pull/189) ([jordanbreen28](https://github.com/jordanbreen28))
+
 ## [v0.7.0](https://github.com/puppetlabs/pdksync/tree/v0.7.0) - 2023-05-25
 
 [Full Changelog](https://github.com/puppetlabs/pdksync/compare/v0.6.0...v0.7.0)
