@@ -32,8 +32,11 @@
 #- puppetlabs-satellite_pe_tools
 #- puppetlabs-scheduled_task
 #- puppetlabs-service
+#- puppetlabs-sslcertificate
 #- puppetlabs-sqlserver
 #- puppetlabs-stdlib
 #- puppetlabs-tomcat
 #- puppetlabs-vcsrepo
+#- puppetlabs-windows_env
+#- puppetlabs-windows_eventlog
 #- puppetlabs-wsus_client
