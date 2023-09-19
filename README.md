@@ -1,6 +1,6 @@
 # Pdksync
 
-[![Code Owners](https://img.shields.io/badge/owners-DevX--team-blue)](https://github.com/puppetlabs/pdk/blob/main/CODEOWNERS)
+[![Code Owners](https://img.shields.io/badge/owners-DevX--team-blue)](https://github.com/puppetlabs/pdksync/blob/main/CODEOWNERS)]
 ![ci](https://github.com/puppetlabs/pdksync/actions/workflows/ci.yml/badge.svg)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/puppetlabs/pdksync)
 
