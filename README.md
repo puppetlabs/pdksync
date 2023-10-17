@@ -607,3 +607,7 @@ git commit -am 'Add some feature'
 git push origin my-new-feature
 ```
 5. Create a new pull request
+
+## License
+
+This codebase is licensed under Apache 2.0. However, the open source dependencies included in this codebase might be subject to other software licenses such as AGPL, GPL2.0, and MIT.
