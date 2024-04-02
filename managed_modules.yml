@@ -1,6 +1,5 @@
 ---
 ## Content and Tooling Team
-#- device_manager
 #- puppetlabs-accounts
 #- puppetlabs-acl
 #- puppetlabs-apache
