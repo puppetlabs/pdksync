@@ -1153,6 +1153,21 @@ module PdkSync
     end
 
     # @summary
+    #   Updates the metadata.json to match the supported platforms in the supported_os_list.yaml
+    # @param module_path
+    #   Path to the root dir of the module
+    def self.update_os_support(module_path)
+      metadata_json = "#{module_path}/metadata.json"
+      raise 'Could not locate metadata.json' unless File.exist? metadata_json
+      new_metadata_json = JSON.parse(File.read(metadata_json))
+      supported_os_list = 'lib/pdksync/conf/supported_os_list.yaml'
+      supported_platforms = YAML.safe_load(File.read(supported_os_list))
+      new_metadata_json[OPERATINGSYSTEM_SUPPORT] = supported_platforms[OPERATINGSYSTEM_SUPPORT]
+      PdkSync::Logger.info 'Updating metadata.json'
+      write_metadata_json(module_path, new_metadata_json)
+    end
+
+    # @summary
     #   Removes the OS version from the supported platforms
     #   TODO: Remove entire OS entry when version is nil
     #   TODO: Remove entire OS entry when versions is empty
