@@ -1166,7 +1166,7 @@ module PdkSync
       new_metadata_json = metadata_json(module_path)
       new_metadata_json[OPERATINGSYSTEM_SUPPORT].each do |os_vers|
         if (os = normalize_os(os_vers[OPERATINGSYSTEM]))
-          next unless os == os_to_remove
+          next unless os.downcase == os_to_remove.downcase
           vers = os_vers[OPERATINGSYSTEMRELEASE]
           next unless (ver_index = vers.find_index(version_to_remove))
           PdkSync::Logger.info "Removing #{os} #{vers[ver_index]} from metadata.json"
