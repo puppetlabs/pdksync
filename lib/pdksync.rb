@@ -307,6 +307,10 @@ module PdkSync
           end
         end
         if steps.include?(:test_results_jenkins)
+          unless File.exist?("results_#{module_name}.out")
+            PdkSync::Logger.fatal "results_#{module_name}.out does not exist"
+            exit(1)
+          end
           Dir.chdir(main_path) unless Dir.pwd == main_path
           PdkSync::Logger.info 'Fetch test results from jenkins, '
           module_type = Utils.module_type(output_path, module_name)
