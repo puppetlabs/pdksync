@@ -624,8 +624,7 @@ module PdkSync
       # Run the tests
       Dir.chdir(old_path)
       unless File.exist?("#{output_path}/litmusacceptance.out")
-        PdkSync::Logger.fatal "File #{output_path}/litmusacceptance.out does not exist."
-        exit(1)
+        raise "FATAL - File #{output_path}/litmusacceptance.out does not exist.".red
       end
 
       lines = IO.readlines("#{output_path}/litmusacceptance.out")[-10..-1]
