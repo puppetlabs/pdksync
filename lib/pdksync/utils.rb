@@ -247,7 +247,7 @@ module PdkSync
         else
           stdout, stderr, status = Open3.capture3(command)
         end
-        PdkSync::Logger.info "\n#{stdout}\n"
+        PdkSync::Logger.info "\n#{stdout}\n" unless stdout.empty?
         PdkSync::Logger.error "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
         status.exitstatus
       else
