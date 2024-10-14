@@ -152,6 +152,13 @@ describe PdkSync do
         PdkSync.main(steps: [:multi_gemfile_update], args: { gem_name: 'puppet-module', gemfury_username: 'tester' })
         expect File.exist?("#{@output_path_module}/Gemfile")
       end
+      it 'removes the specified platform from the metadata file' do
+        PdkSync::Utils.remove_platform_from_metadata('modules_pdksync/puppetlabs-motd', 'UbUNTU', '22.04')
+        metadata = JSON.parse(File.read('modules_pdksync/puppetlabs-motd/metadata.json'))
+        ubuntu_entry = metadata['operatingsystem_support'].find { |os| os['operatingsystem'] == 'Ubuntu' }
+        puts ubuntu_entry['operatingsystemrelease']
+        expect(ubuntu_entry['operatingsystemrelease']).not_to include('22.04')
+      end
     end
   end
   context 'main method' do
