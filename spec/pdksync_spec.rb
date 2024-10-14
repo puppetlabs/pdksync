@@ -110,6 +110,9 @@ describe PdkSync do
     it 'raise when run_tests with no arguments' do
       expect { PdkSync.main(steps: [:run_tests_locally]) }.to raise_error(NoMethodError) # , %r{run_tests" requires arguments (module_type) to run.})
     end
+    it 'raise when litmusacceptance.out does not exist' do
+      expect { PdkSync::Utils.fetch_test_results_locally('modules_pdksync/puppetlabs-motd', 'litmus', 'puppetlabs-motd', []) }.to raise_error(RuntimeError, %r{FATAL - File modules_pdksync/puppetlabs-motd/litmusacceptance.out does not exist.})
+    end
     it 'raise when run_tests_jenkins with no arguments' do
       allow(ENV).to receive(:[]).with('JENKINS_USERNAME').and_return('JENKINS_USERNAME')
       allow(ENV).to receive(:[]).with('JENKINS_PASSWORD').and_return('JENKINS_PASSWORD')

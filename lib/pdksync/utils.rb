@@ -623,6 +623,10 @@ module PdkSync
 
       # Run the tests
       Dir.chdir(old_path)
+      unless File.exist?("#{output_path}/litmusacceptance.out")
+        raise "FATAL - File #{output_path}/litmusacceptance.out does not exist.".red
+      end
+
       lines = IO.readlines("#{output_path}/litmusacceptance.out")[-10..-1]
       if lines.find { |e| %r{exit} =~ e } # rubocop:disable Style/ConditionalAssignment
         report_rows << if lines.find { |e| %r{^Failed} =~ e } || lines.find { |e| %r{--trace} =~ e }
