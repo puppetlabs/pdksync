@@ -27,6 +27,7 @@ Pdksync by default expects that your Puppet module repositories live on GitHub a
 --------
 * Ruby >= 2.7
 * Bundler >= 1.15
+* Obtain a forge api access key so that pdksync can access the puppetcore gems.  This key will be referenced below as the `PUPPET_FORGE_TOKEN`.  For more information see [Puppet Documentation](https://www.puppet.com/docs/puppet/8/system_requirements#plan_requirements) and the [dev.to blog](https://dev.to/puppet/lets-get-started-with-puppet-core-3p5j).
 
 ### Usage
 ----------
@@ -44,6 +45,14 @@ Pdksync by default expects that your Puppet module repositories live on GitHub a
    ```shell
    export GITLAB_TOKEN=<access_token>
    ```
+
+   Finally, set the `PUPPET_FORGE_TOKEN` environment variable to the forge api access key and the `BUNDLE_RUBYGEMS___PUPPETCORE__PUPPET__COM` to the expected bundler credential so that pdksync can access the puppetcore gems:
+
+   ```shell
+   export PUPPET_FORGE_TOKEN=<API access key>
+   export BUNDLE_RUBYGEMS___PUPPETCORE__PUPPET__COM: "forge-key:${PUPPET_FORGE_TOKEN}"
+   ```
+
 2. Before the script will run, you need to install the gems:
 ```shell
 bundle install --path .bundle/gems/
