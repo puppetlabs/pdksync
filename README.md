@@ -25,7 +25,7 @@ Pdksync by default expects that your Puppet module repositories live on GitHub a
 
 ### Requirements
 --------
-* Ruby >= 2.7
+* Ruby >= 3.1
 * Bundler >= 1.15
 * Obtain a forge api access key so that pdksync can access the puppetcore gems.  This key will be referenced below as the `PUPPET_FORGE_TOKEN`.  For more information see [Puppet Documentation](https://www.puppet.com/docs/puppet/8/system_requirements#plan_requirements) and the [dev.to blog](https://dev.to/puppet/lets-get-started-with-puppet-core-3p5j).
 
