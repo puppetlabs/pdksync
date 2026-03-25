@@ -275,7 +275,8 @@ module PdkSync
         module_temp_ref ||= configuration.pdk_templates_ref
         template_ref = configuration.module_is_authoritive ? module_temp_ref : configuration.pdk_templates_ref
         change_module_template_url(configuration.pdk_templates_url, template_ref) unless configuration.module_is_authoritive
-        _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force --template-ref=#{template_ref}")
+        # PDK 3.5+ does not support PUPPET_GEM_VERSION; unset it to avoid errors
+        _stdout, stderr, status = Open3.capture3({ 'PUPPET_GEM_VERSION' => nil }, "#{return_pdk_path} update --force --template-ref=#{template_ref}")
         PdkSync::Logger.fatal "Unable to run `pdk update`: #{stderr}" unless status.exitstatus.zero?
         status.exitstatus
       end
