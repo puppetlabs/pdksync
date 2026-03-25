@@ -8,19 +8,17 @@ describe 'PdkSync::Utils' do
   end
 
   let(:cloned_module) do
-    begin
-      Git.open(@tmp_dir)
-    rescue ArgumentError
-      PdkSync::Utils.clone_directory('puppetlabs',
-                                     'puppetlabs-motd', @tmp_dir)
-    end
+    Git.open(@tmp_dir)
+  rescue ArgumentError
+    PdkSync::Utils.clone_directory('puppetlabs',
+                                   'puppetlabs-motd', @tmp_dir)
   end
 
   let(:metadata_file) do
     File.join(@tmp_dir, 'metadata.json')
   end
 
-  before(:each) do
+  before do
     cloned_module
     cloned_module.config('user.name', 'puppetlabs')
     cloned_module.config('user.email', 'email@email.com')
@@ -48,6 +46,15 @@ describe 'PdkSync::Utils' do
   end
 
   it '#self.pdk_update' do
+    skip 'PUPPET_FORGE_TOKEN not set' unless ENV['PUPPET_FORGE_TOKEN']
+    # Configure credentials using PDK's own bundler so they persist
+    # through PDK's internal environment isolation
+    Dir.chdir(@tmp_dir) do
+      Open3.capture3(
+        PdkSync::Utils.return_pdk_path, 'bundle', 'config', 'set', '--global',
+        'rubygems-puppetcore.puppet.com', "forge-key:#{ENV.fetch('PUPPET_FORGE_TOKEN')}"
+      )
+    end
     expect(PdkSync::Utils.pdk_update(@tmp_dir)).to eq(0)
   end
 
@@ -110,9 +117,9 @@ describe 'PdkSync::Utils' do
   it '#self.setup_client' do
     g = double(PdkSync::GitPlatformClient)
     expect(PdkSync::GitPlatformClient).to receive(:new).with(:github,
-                                                             {access_token: 'github-token',
-                                                             api_endpoint: nil,
-                                                             gitlab_api_endpoint: 'https://gitlab.com/api/v4'}).and_return(g)
+                                                             { access_token: 'github-token',
+                                                               api_endpoint: nil,
+                                                               gitlab_api_endpoint: 'https://gitlab.com/api/v4' }).and_return(g)
     expect(PdkSync::Utils.setup_client).to eq(g)
   end
 

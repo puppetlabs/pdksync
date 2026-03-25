@@ -26,4 +26,3 @@ jobs:
     with:
       rake_task: "spec:coverage"
       ruby_version: ${{ matrix.ruby_version }}
-
