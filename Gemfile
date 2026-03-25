@@ -1,5 +1,9 @@
 source "https://rubygems.org"
 
+source "https://rubygems-puppetcore.puppet.com" do
+  gem 'pdk', '>= 3.5.1'
+end
+
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
 # Specify your gem's dependencies in pdksync.gemspec

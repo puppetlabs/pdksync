@@ -46,15 +46,6 @@ describe 'PdkSync::Utils' do
   end
 
   it '#self.pdk_update' do
-    skip 'PUPPET_FORGE_TOKEN not set' unless ENV['PUPPET_FORGE_TOKEN']
-    # Configure credentials using PDK's own bundler so they persist
-    # through PDK's internal environment isolation
-    Dir.chdir(@tmp_dir) do
-      Open3.capture3(
-        PdkSync::Utils.return_pdk_path, 'bundle', 'config', 'set', '--global',
-        'rubygems-puppetcore.puppet.com', "forge-key:#{ENV.fetch('PUPPET_FORGE_TOKEN')}"
-      )
-    end
     expect(PdkSync::Utils.pdk_update(@tmp_dir)).to eq(0)
   end
 
