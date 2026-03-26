@@ -5,6 +5,10 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+env:
+  PUPPET_GEM_VERSION: "~> 8.0"
+  BUNDLE_RUBYGEMS___PUPPETCORE__PUPPET__COM: "forge-key:${{ secrets.PUPPET_FORGE_TOKEN || secrets.PUPPET_FORGE_TOKEN_PUBLIC }}"
+
 jobs:
 
   spec:
@@ -14,8 +18,35 @@ jobs:
         ruby_version:
           - '3.2'
     name: "spec (ruby ${{ matrix.ruby_version }})"
-    uses: "puppetlabs/cat-github-actions/.github/workflows/gem_ci.yml@main"
-    secrets: "inherit"
-    with:
-      ruby_version: ${{ matrix.ruby_version }}
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: "checkout"
+        uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 1
+
+      - name: "install pdk package"
+        run: |
+          wget -q "https://apt.puppet.com/puppet-tools-release-$(lsb_release -cs).deb" -O /tmp/puppet-tools-release.deb
+          sudo dpkg -i /tmp/puppet-tools-release.deb
+          sudo apt-get update
+          sudo apt-get install -y pdk
+          pdk --version
+
+      - name: "setup ruby"
+        uses: "ruby/setup-ruby@v1"
+        with:
+          ruby-version: ${{ matrix.ruby_version }}
+          bundler-cache: true
+
+      - name: "bundle environment"
+        run: |
+          echo ::group::bundler environment
+          bundle env
+          echo ::endgroup::
+
+      - name: "spec"
+        run: |
+          bundle exec rake spec
 
