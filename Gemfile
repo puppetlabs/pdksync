@@ -5,10 +5,6 @@ git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 # Specify your gem's dependencies in pdksync.gemspec
 gemspec
 
-source "https://rubygems-puppetcore.puppet.com" do
-  gem 'pdk'
-end
-
 group :development do
   gem 'rb-readline', require: true
 end

@@ -240,14 +240,12 @@ module PdkSync
 
       # Environment cleanup required due to Ruby subshells using current Bundler environment
       if option.nil? == true
-        if command =~ %r{^bundle}
+        if command =~ %r{^bundle|pdk\b}
           Bundler.with_unbundled_env do
             stdout, stderr, status = Open3.capture3(command)
           end
         else
-          # Pass through BUNDLE_* credentials for PDK commands
-          env = command =~ %r{pdk\b} ? pdk_env_passthrough : {}
-          stdout, stderr, status = Open3.capture3(env, command)
+          stdout, stderr, status = Open3.capture3(command)
         end
         PdkSync::Logger.info "\n#{stdout}\n" unless stdout.empty?
         PdkSync::Logger.error "Unable to run command '#{command}': #{stderr}" unless status.exitstatus.zero?
@@ -255,36 +253,13 @@ module PdkSync
       else
         # Environment cleanup required due to Ruby subshells using current Bundler environment
         if command =~ %r{^sh }
-          Bundler.with_unbundled_env do
+          Bundler.with_clean_env do
             pid = spawn(command, out: 'run_command.out', err: 'run_command.err')
             Process.detach(pid)
           end
         end
         pid
       end
-    end
-
-    # @summary
-    #   Builds an env hash that passes BUNDLE_* credentials through PDK's subprocess
-    #   chain. PDK uses Bundler.with_unbundled_env which strips ALL BUNDLE_* env vars,
-    #   and sets BUNDLE_IGNORE_CONFIG=1 which prevents reading config files.
-    #   This method works around both by:
-    #   1. Copying BUNDLE_* credentials under a PDKSYNC_BUNDLE_ prefix (survives stripping)
-    #   2. Injecting a RUBYOPT -r script that restores them before Bundler initializes
-    # @return [Hash] env hash to pass to Open3.capture3 or similar
-    def self.pdk_env_passthrough
-      env = {}
-      forge_key = ENV['BUNDLE_RUBYGEMS___PUPPETCORE__PUPPET__COM']
-      return env unless forge_key
-
-      helper_path = File.expand_path('env_passthrough.rb', __dir__)
-      env['PDKSYNC_BUNDLE_RUBYGEMS___PUPPETCORE__PUPPET__COM'] = forge_key
-      rubyopt_r = "-r#{helper_path}"
-      env['RUBYOPT'] = "#{ENV.fetch('RUBYOPT', '')} #{rubyopt_r}".strip
-      # Bundler.with_unbundled_env restores RUBYOPT from BUNDLER_ORIG_RUBYOPT,
-      # wiping any entries we added. Setting this ensures our -r entry survives.
-      env['BUNDLER_ORIG_RUBYOPT'] = rubyopt_r
-      env
     end
 
     # @summary
@@ -300,7 +275,11 @@ module PdkSync
         module_temp_ref ||= configuration.pdk_templates_ref
         template_ref = configuration.module_is_authoritive ? module_temp_ref : configuration.pdk_templates_ref
         change_module_template_url(configuration.pdk_templates_url, template_ref) unless configuration.module_is_authoritive
-        _stdout, stderr, status = Open3.capture3(pdk_env_passthrough, "#{return_pdk_path} update --force --template-ref=#{template_ref}")
+        stderr = nil
+        status = nil
+        Bundler.with_unbundled_env do
+          _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force --template-ref=#{template_ref}")
+        end
         PdkSync::Logger.fatal "Unable to run `pdk update`: #{stderr}" unless status.exitstatus.zero?
         status.exitstatus
       end
