@@ -240,8 +240,8 @@ module PdkSync
 
       # Environment cleanup required due to Ruby subshells using current Bundler environment
       if option.nil? == true
-        if command =~ %r{^bundle}
-          Bundler.with_clean_env do
+        if command =~ %r{^bundle|pdk\b}
+          Bundler.with_unbundled_env do
             stdout, stderr, status = Open3.capture3(command)
           end
         else
@@ -275,7 +275,11 @@ module PdkSync
         module_temp_ref ||= configuration.pdk_templates_ref
         template_ref = configuration.module_is_authoritive ? module_temp_ref : configuration.pdk_templates_ref
         change_module_template_url(configuration.pdk_templates_url, template_ref) unless configuration.module_is_authoritive
-        _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force --template-ref=#{template_ref}")
+        stderr = nil
+        status = nil
+        Bundler.with_unbundled_env do
+          _stdout, stderr, status = Open3.capture3("#{return_pdk_path} update --force --template-ref=#{template_ref}")
+        end
         PdkSync::Logger.fatal "Unable to run `pdk update`: #{stderr}" unless status.exitstatus.zero?
         status.exitstatus
       end
