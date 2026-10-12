@@ -49,6 +49,12 @@ jobs:
           bundle env
           echo ::endgroup::
 
+      - name: "DEBUG raw pdk update"
+        run: |
+          git clone --depth 1 https://github.com/puppetlabs/puppetlabs-motd.git /tmp/motd_debug
+          cd /tmp/motd_debug
+          pdk update --force --debug 2>&1 | tail -250
+
       - name: "spec"
         run: |
           bundle exec rake spec
