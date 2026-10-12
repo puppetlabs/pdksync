@@ -7,7 +7,6 @@ on:
 
 env:
   PUPPET_GEM_VERSION: "~> 8.0"
-  BUNDLE_RUBYGEMS___PUPPETCORE__PUPPET__COM: "forge-key:${{ secrets.PUPPET_FORGE_TOKEN || secrets.PUPPET_FORGE_TOKEN_PUBLIC }}"
 
 jobs:
 
@@ -39,6 +38,10 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby_version }}
           bundler-cache: true
+
+      - name: "configure puppetcore credentials"
+        run: |
+          bundle config set --global rubygems-puppetcore.puppet.com "forge-key:${{ secrets.PUPPET_FORGE_TOKEN || secrets.PUPPET_FORGE_TOKEN_PUBLIC }}"
 
       - name: "bundle environment"
         run: |
