@@ -1,6 +1,6 @@
 # Pdksync
 
-> **⚠️ Deprecated:** PDKSync is no longer active development/maintenance. This repository will be archived (or moved to a toybox namespace) in the near future. Please do not take on new dependencies on this tool. 
+> **⚠️ Deprecated:** PDKSync is no longer under active development/maintenance. This repository will be archived (or moved to a toybox namespace) in the near future. Please do not take on new dependencies on this tool. 
 
 [![Code Owners](https://img.shields.io/badge/owners-DevX--team-blue)](https://github.com/puppetlabs/pdksync/blob/main/CODEOWNERS)
 ![ci](https://github.com/puppetlabs/pdksync/actions/workflows/ci.yml/badge.svg)
